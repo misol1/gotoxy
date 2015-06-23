@@ -75,7 +75,7 @@ if %KEY% == 85 call :MAKEDIRLIST&call :SHOWLIST & rem U
 if %KEY% == 121 set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST & rem y
 if %KEY% == 115 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmd /C !ANSWER!&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem s
 if %KEY% == 83 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmd /C !ANSWER!&echo.&pause&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem S
-if %KEY% == 70 call :GETANSWER "Search for:"& if not "!ANSWER!"=="" call :FINDOP & rem F
+if %KEY% == 6 call :GETANSWER "Search for:"& if not "!ANSWER!"=="" call :FINDOP & rem ^F
 if %KEY% == 111 call :SORTOP & rem o
 if %KEY% == 63 call :SHOWHELP & rem ?
 if %KEY% == 571 call :SHOWHELP & rem F1
@@ -89,19 +89,22 @@ if %KEY% == 78 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITC
 if %KEY% == 101 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%! & rem e
 if %KEY% == 69 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & rem E
 if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
+if %KEY% == 102 if "!FT%CURRPOS%!"=="/" set KEY=70& rem f for folder
+if %KEY% == 70 call :SHOWBOTTOMBAR !FO%CURRPOS%! & rem F
 if %KEY% == 100 if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST & rem d
 if %KEY% == 114 call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST & rem r
 if %KEY% == 99 if not "!FT%CURRPOS%!"=="/" call :GETANSWER "Copy file to:"& if not "!ANSWER!"=="" call :COPYOP %CURRPOS% "!ANSWER!" copy Copied " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem c
 if %KEY% == 109 if not !FO%CURRPOS%!==".." call :GETANSWER "Move file/folder to:"& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :COPYOP %CURRPOS% "!ANSWER!" move Moved " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem m
 if %KEY% == 89 if not "!FT%CURRPOS%!"=="/" if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! copy Copied " to alternate path." & rem Y
-if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! move Moved " to alternate path." & call :MAKEDIRLIST R&call :SHOWLIST & rem CTRL-y
+if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! move Moved " to alternate path." & call :MAKEDIRLIST R&call :SHOWLIST & rem ^Y
 if %KEY% == 107 call :GETANSWER "New folder:"& if not "!ANSWER!"=="" cmd /C mkdir !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem k
+if %KEY% == 47 call :GETANSWER "Go to path:"& if not "!ANSWER!"=="" if exist "!ANSWER!\" cd /D "!ANSWER!"& call :MAKEDIRLIST R&call :SHOWLIST & rem /
 
 if %KEY% == 32 call :MARKITEM & rem SPACE
-if %KEY% == 9 call :MULTIOP & rem CTRL-i
+if %KEY% == 9 call :MULTIOP & rem ^I
 if %KEY% == 68 call :MULTIDELOP & rem D
 if %KEY% == 84 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP copy !DIR%DIROP%!& rem T
-if %KEY% == 20 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP move !DIR%DIROP%!& rem CTRL-t
+if %KEY% == 20 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP move !DIR%DIROP%!& rem ^T
 if %KEY% == 67 call :GETANSWER "Copy selected files to:"& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP copy "!ANSWER!" SKIPYN & rem C
 if %KEY% == 77 call :GETANSWER "Move selected files to:"& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP move "!ANSWER!" SKIPYN & rem M
 goto MAINLOOP
@@ -387,8 +390,8 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%Esc/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%n/N: %HLPC2%edit current/specified file (option2)\n%HLPC1%i: %HLPC2%invoke file\n%HLPC1%j: %HLPC2%invoke file and reread file list after\n%HLPC1%I: %HLPC2%Perform action with file/folder\n%HLPC1%f: %HLPC2%show file information\n%HLPC1%F: %HLPC2%show full file/folder name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n\n%HLPC1%Space: %HLPC2%select file/folder\n%HLPC1%^Space: %HLPC2%deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected items\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n\n%HLPC1%Arguments: %HLPC2%list [path] [columns] [rows]\n"
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%F: %HLPC2%find file in list starting with specified string\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%Esc/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%n/N: %HLPC2%edit current/specified file (option2)\n%HLPC1%i: %HLPC2%invoke file\n%HLPC1%j: %HLPC2%invoke file and reread file list after\n%HLPC1%I: %HLPC2%Perform action with file/folder\n%HLPC1%f: %HLPC2%show file information\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n\n%HLPC1%Space: %HLPC2%select file/folder\n%HLPC1%^Space: %HLPC2%deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected items\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n\n%HLPC1%Arguments: %HLPC2%list [path] [columns] [rows]\n"
 :HELPLOOP
 cmdwiz getch
 if not %ERRORLEVEL% == 27 goto HELPLOOP
