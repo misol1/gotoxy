@@ -1,0 +1,1 @@
+@games 1 fxmenu.dat fxcmds.dat " EyeCandy" 19 %1
