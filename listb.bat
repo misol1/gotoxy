@@ -253,7 +253,7 @@ goto :eof
 
 
 :MAKEDIRLIST
-for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set F%%a=&set FT%%a=&set FC%%a=
+for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set F%%a=&set FT%%a=&set FC%%a=&set FS%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 dir /-p /b /ad  >%MYTEMP%folders.dat
 set CNT=0
