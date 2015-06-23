@@ -99,7 +99,7 @@ if %KEY% == 109 if not !FO%CURRPOS%!==".." call :GETANSWER "Move file/folder to:
 if %KEY% == 89 if not "!FT%CURRPOS%!"=="/" if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! copy Copied " to alternate path." & rem Y
 if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! move Moved " to alternate path." & call :MAKEDIRLIST R&call :SHOWLIST & rem ^Y
 if %KEY% == 107 call :GETANSWER "New folder:"& if not "!ANSWER!"=="" cmd /C mkdir !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem k
-if %KEY% == 47 call :GETANSWER "Go to path:"& if not "!ANSWER!"=="" if exist "!ANSWER!\" cd /D "!ANSWER!"& call :MAKEDIRLIST R&call :SHOWLIST & rem /
+if %KEY% == 47 call :GETANSWER "Go to path:"& if not "!ANSWER!"=="" call :SETPATHOP "!ANSWER!" & rem /
 
 if %KEY% == 32 call :MARKITEM & rem SPACE
 if %KEY% == 9 call :MULTIOP & rem ^I
@@ -115,6 +115,19 @@ cmdwiz showcursor 1
 set /a LINES-=1
 gotoxy 0 !LINES!
 endlocal&if %KEY%==120 cd %CD%
+goto :eof
+
+
+:SETPATHOP
+set BS=\
+if "%~1" == "\" set BS=
+if "%~1" == "/" set BS=
+set NEWPATH="%~1"
+set NEWPATH=%NEWPATH:/=\%
+if not exist "%NEWPATH:~1,-1%%BS%" call :SHOWBOTTOMBAR "No such path" & goto :eof
+cd /D %NEWPATH%
+call :MAKEDIRLIST R
+call :SHOWLIST
 goto :eof
 
 
