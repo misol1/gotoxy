@@ -1,20 +1,21 @@
 # gotoxy
-Windows command line input/output tools, for text based games/utils
+Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015).
 
-Also included are a whole bunch of BAT games/utilities, sowing how to use the two executables: gotoxy.exe / cmdwiz.exe
+Also included are a whole bunch of BAT games/utilities, showing how to use the two executables: gotoxy.exe / cmdwiz.exe
 
-```
 Games: Snake, Flappy, Freecell, Solitaire, Yahtzee, Mastermind, Invaders
-Utils: Listb(file manager), editor(edit gxy files), animplay, hiscore
-```
 
-Mikael Sollenborn 2015
+Utils: Listb(file manager), editor(edit gxy files), animplay, hiscore
+
+
+Sorry about the current lack of documentation; have a look at the example files and all will be clear :)
 
 
 gotoxy.exe
 ----------
 ```
-Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]
+Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol]
+              [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]
 
 Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
       8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White
@@ -36,5 +37,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 cmdwiz.exe
 ----------
 ```
-Usage: cmdwiz [getconsoledim setbuffersize getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]
+Usage: cmdwiz [getconsoledim setbuffersize getch getkeystate quickedit getmouse
+               getch_or_mouse getch_and_mouse getcharat getcolorat showcursor
+               getcursorpos saveblock copyblock moveblock playsound delay gettime
+               await] [params]
 ```
