@@ -1,11 +1,9 @@
 # gotoxy
 Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015).
 
-Also included are a whole bunch of BAT games/utilities, showing how to use the two executables.
-
-Notable example files: Listb(file manager), Editor, Snake, Flappy, Freecell, Solitaire, Yahtzee
-
 Sorry about the current lack of documentation; have a look at the example files and all will be clear :)
+
+Notable examples: Listb(file manager), Editor, Snake, Flappy, Freecell, Solitaire, Yahtzee
 
 
 gotoxy.exe
