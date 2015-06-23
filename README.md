@@ -3,14 +3,17 @@ Windows command line input/output tools, for text based games/utils
 
 Also included are a whole bunch of BAT games/utilities, sowing how to use the two executables: gotoxy.exe / cmdwiz.exe
 
+```
 Games: Snake, Flappy, Freecell, Solitaire, Yahtzee, Mastermind, Invaders
 Utils: Listb(file manager), editor(edit gxy files), animplay, hiscore
+```
 
 Mikael Sollenborn 2015
 
 
 gotoxy.exe
 ----------
+```
 Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]
 
 Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
@@ -28,8 +31,10 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
         \\: print \
        \wx: delay x ms
        \Wx: delay up to x ms
-
+```
 
 cmdwiz.exe
 ----------
+```
 Usage: cmdwiz [getconsoledim setbuffersize getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]
+```
