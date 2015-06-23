@@ -1,7 +1,7 @@
 # gotoxy
-Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015).
+Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015)
 
-Sorry about the current lack of documentation; have a look at the example files and all will be clear :)
+Sorry about the current lack of documentation; have a look at the example files and all will be clear...
 
 Notable examples: Listb(file manager), Editor, Snake, Flappy, Freecell, Solitaire, Yahtzee
 
