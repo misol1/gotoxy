@@ -1,5 +1,7 @@
 @echo off
 
+if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C !FO%CURRPOS%!&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
+
 if not "%KEY%" == "97" goto NOT_a & rem a
 if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1

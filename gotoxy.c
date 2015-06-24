@@ -98,6 +98,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 	int bufdims[4] = {0,0,80,25}, bNewHandle = 0, bCopyback = 0;
 	HANDLE hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	unsigned int startT = GetTickCount();
+	int transpChar = -1, transpFg = -1, transpBg = -1;
+	char ch;
      
     str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * MAX_STR_SIZE);
 	if (!str)
@@ -106,15 +108,17 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
     while (i < strlen(text)) {
 		j = 0;
 		for(; i < strlen(text); i++) {
-			if (text[i] == '\\') {
+		    ch = text[i];
+			if (ch == '\\') {
 				i++;
+		        ch = text[i];
 				if (i < strlen(text)) {
-					if (text[i] == 'n') {
+					if (ch == 'n') {
 						i++;
 						yp = 1;
 						break;
 					}
-					else if (text[i] == '-') {
+					else if (ch == '-') {
 						i++;
 						yp = 0;
 						if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
@@ -122,7 +126,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						}
 						break;
 					}
-					else if (text[i] == '\\') {
+					else if (ch == '\\') {
 						str[j].Char.AsciiChar = text[i];
 						str[j].Attributes = fgCol | (bgCol<<4);
 						j++;
@@ -130,7 +134,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 							yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
 						}
 					}
-					else if (text[i] == 'w' || text[i] == 'W') {
+					else if (ch == 'w' || ch == 'W') {
 						char number[1024], oldC = text[i];
 						int k = 0;
 						i++;
@@ -151,7 +155,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						}
 						break;
 					}
-					else if (text[i] == 'p') {
+					else if (ch == 'p') {
 					    int bY = 0, k = 0;
 						char number[1024];
 					    i++;
@@ -185,7 +189,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						else
 						  i--;
 					}
-					else if (text[i] == 'o' || text[i] == 'O') {
+					else if (ch == 'o' || ch == 'O') {
 					    int dI = 0, k = 0;
 						char number[1024], oldC = text[i];
 						
@@ -231,7 +235,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						else
 						  i--;
 					}
-					else if (text[i] == 'g') {
+					else if (ch == 'g') {
 					    int v = 0, v16 = 0;
 						i++;
 						v16 = GetCol(text[i], 0);
@@ -244,7 +248,26 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						str[j].Attributes = fgCol | (bgCol<<4);
 						j++;
 					}
-					else if (text[i] == 'N') {
+					else if (ch == 't') {
+					    int v = 0, v16 = 0;
+						i++;
+						v16 = GetCol(text[i], 0);
+						i++;
+						if (i < strlen(text)) {
+							v = GetCol(text[i], 0);
+						}
+						i++;
+						if (i < strlen(text)) {
+							transpFg = GetCol(text[i], -1);
+						}
+						i++;
+						if (i < strlen(text)) {
+							transpBg = GetCol(text[i], -1);
+						}
+						v16 = (v16*16) + v;
+						transpChar = v16;
+					}
+					else if (ch == 'N') {
 					  ClrScr(hCurrHandle, fgCol | (bgCol<<4));
 					  newX = newY = 0;
 					  j = 0;
@@ -252,7 +275,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					  i++;
 					  break;
 					}
-					else if (text[i] == 'r') {
+					else if (ch == 'r') {
 					  int tmp1, tmp2;
 					  tmp1 = oldfc;
 					  tmp2 = oldbc;
@@ -272,7 +295,16 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					}
 				}
 			} else {
-				str[j].Char.AsciiChar = text[i];
+			    if (ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
+					yp = 0;
+					i++;
+					if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
+						yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
+					}
+					break;
+				}
+				
+				str[j].Char.AsciiChar = ch;
 				str[j].Attributes = fgCol | (bgCol<<4);
 				j++;
 				
@@ -373,7 +405,7 @@ int main(int argc, char **argv) {
     printf("Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
     // Info from "color /?" in dos prompt (but not using hex)
     printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0\n \\ox;y;w;h: write to offscreen buffer, copy back at end of command or \\o\n        \\r: restore old color\n      \\gxx: ascii character in hex\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n");
+    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n");
     return 0;
   }
 

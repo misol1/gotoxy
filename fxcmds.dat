@@ -1,4 +1,5 @@
 call starfield.bat&fx.bat
+call starfield2.bat&fx.bat
 call sprite3.bat 14 5&fx.bat
 call slidescreen.bat r 0&fx.bat
 call random.bat 0&fx.bat

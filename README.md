@@ -18,15 +18,17 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 [text] supports control codes:
      \px;y: cursor position x y
        \xx: fgcol and bgcol in hex, eg \A0
- \ox;y;w;h: write to offscreen buffer, copy back at end of command or \o
         \r: restore old color
       \gxx: ascii character in hex
+    \txxXX: set character xx with col XX as transparent
         \n: newline
         \N: clear screen
         \-: skip character (transparent)
         \\: print \
        \wx: delay x ms
        \Wx: delay up to x ms
+ \ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \o
+ \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \O
 ```
 
 cmdwiz.exe

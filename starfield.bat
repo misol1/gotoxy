@@ -14,16 +14,14 @@ if not "%4" == "" set XDELAY=%4
 
 mode con lines=%YSIZE% cols=%XSIZE%
 
-set /a XSIZE=%XSIZE%*%XDELAY%
+set /a XMAX=%XSIZE%*%XDELAY%
 
 for /L %%b in (0,1,%NOF%) do call :MAKESTAR %%b
 set CNT=0
 
-::for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!   .&set /a STARX%%b+=!STARS%%b!&if !STARX%%b! geq %XSIZE% call :MAKESTAR %%b -3
-
 :LOOP
 set FIELD=
-for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!   .&set /a STARX%%b+=!STARS%%b!&if !STARX%%b! geq %XSIZE% set STARX%%b=-3-(!RANDOM!%%35)&set /a STARY%%b=!RANDOM! %% %YSIZE%
+for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!   .&set /a STARX%%b+=!STARS%%b!&if !STARX%%b! geq %XMAX% set /a STARX%%b=-3-(!RANDOM! %% %XSIZE%)&set /a STARY%%b=!RANDOM! %% %YSIZE%
 gotoxy.exe 0 0 "%FIELD%" 7 0
 
 set /a CNT+=1
@@ -39,7 +37,7 @@ goto :eof
 
 :MAKESTAR
 set /a STARY%1=%RANDOM% %% %YSIZE%
-set /a STARX%1=%RANDOM% %% %XSIZE%
+set /a STARX%1=%RANDOM% %% %XMAX%
 if not "%2" == "" set STARX%1=%2
 set /a STARS%1=%RANDOM% %% 3 + 1
 if !STARS%1! == 1 set STARC%1=\80
