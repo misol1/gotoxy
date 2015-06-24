@@ -87,38 +87,36 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
 }
 
 void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos) {
-    int i = 0, j;
+    int i = 0, j, inlen;
     COORD a, b;
     SMALL_RECT r;
     CHAR_INFO *str;
 	int orgx = *x, yp = 0;
-	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
 	int oldfc = 7,oldbc = 0;
     HANDLE hNewScreenBuffer = INVALID_HANDLE_VALUE;
 	int bufdims[4] = {0,0,80,25}, bNewHandle = 0, bCopyback = 0;
 	HANDLE hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-	int transpChar = -1, transpFg = -1, transpBg = -1;
+	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
+	int transpChar = -1, transpFg = -1, transpBg = -1, fgBgCol;
 	char ch;
 	unsigned int startT = GetTickCount();
      
     str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * MAX_STR_SIZE);
 	if (!str)
 	  return;
-	
-    while (i < strlen(text)) {
+
+	fgBgCol = fgCol | (bgCol<<4);
+	inlen = strlen(text);
+
+    while (i < inlen) {
 		j = 0;
-		for(; i < strlen(text); i++) {
+		for(; i < inlen; i++) {
 		    ch = text[i];
 			if (ch == '\\') {
 				i++;
 		        ch = text[i];
-				if (i < strlen(text)) {
-					if (ch == 'n') {
-						i++;
-						yp = 1;
-						break;
-					}
-					else if (ch == '-') {
+				if (i < inlen) {
+					if (ch == '-') {
 						if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
 							yp = 0; i++; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
 						}
@@ -128,44 +126,28 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					      yp=0; i++; break;
 					    }
 					}
-					else if (ch == '\\') {
-						str[j].Char.AsciiChar = text[i];
-						str[j].Attributes = fgCol | (bgCol<<4);
-						j++;
-						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
-							yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
-						}
-					}
-					else if (ch == 'w' || ch == 'W') {
-						char number[1024], oldC = text[i];
-						int k = 0;
+					else if (ch == 'g') {
+					    int v = 0, v16 = 0;
 						i++;
-						yp = 0;
-						while(i < strlen(text)) {
-							if (text[i]>='0' && text[i]<='9') {
-							  number[k++]=text[i];
-							  if (!(i+1 < strlen(text))) {
-							    number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
-							  }
-							} else {
-							  if (k > 0) {
-							    number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
-							  }
-							  break;
-							}
-						    i++;
+						v16 = GetCol(text[i], 0);
+						i++;
+						if (i < inlen) {
+							v = GetCol(text[i], 0);
 						}
-						break;
+						v16 = (v16*16) + v;
+				        str[j].Char.AsciiChar = v16;
+						str[j].Attributes = fgBgCol;
+						j++;
 					}
 					else if (ch == 'p') {
 					    int bY = 0, k = 0;
 						char number[1024];
 					    i++;
 						yp = 0;
-						while(i < strlen(text)) {
+						while(i < inlen) {
 							if (text[i] == '-' || (text[i]>='0' && text[i]<='9')) {
 							  number[k++]=text[i];
-							  if (!(i+1 < strlen(text))) {
+							  if (!(i+1 < inlen)) {
 							    number[k] = 0;
 								if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
 							  }
@@ -191,11 +173,55 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						else
 						  i--;
 					}
+					else if (ch == '\\') {
+						str[j].Char.AsciiChar = text[i];
+						str[j].Attributes = fgBgCol;
+						j++;
+						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
+							yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
+						}
+					}
+					else if (ch == 'n') {
+						i++;
+						yp = 1;
+						break;
+					}
+					else if (ch == 'r') {
+					  int tmp1, tmp2;
+					  tmp1 = oldfc;
+					  tmp2 = oldbc;
+					  fgCol = oldfc;
+					  bgCol = oldbc;
+					  oldfc = tmp1;
+					  oldbc = tmp2;
+					  fgBgCol = fgCol | (bgCol<<4);
+					}
+					else if (ch == 'w' || ch == 'W') {
+						char number[1024], oldC = text[i];
+						int k = 0;
+						i++;
+						yp = 0;
+						while(i < inlen) {
+							if (text[i]>='0' && text[i]<='9') {
+							  number[k++]=text[i];
+							  if (!(i+1 < inlen)) {
+							    number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
+							  }
+							} else {
+							  if (k > 0) {
+							    number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
+							  }
+							  break;
+							}
+						    i++;
+						}
+						break;
+					}
 					else if (ch == 'o' || ch == 'O') {
 					    int dI = 0, k = 0;
 						char number[1024], oldC = text[i];
 						
-					    if (i+1 >= strlen(text) || !(text[i+1]>='0' && text[i+1]<='9') ) {
+					    if (i+1 >= inlen || !(text[i+1]>='0' && text[i+1]<='9') ) {
 						  if (hNewScreenBuffer != INVALID_HANDLE_VALUE)
 							  bCopyback = 1;
 					      i++;
@@ -204,10 +230,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						
 					    i++;
 						yp = 0;
-						while(i < strlen(text)) {
+						while(i < inlen) {
 							if (text[i]>='0' && text[i]<='9') {
 							  number[k++]=text[i];
-							  if (!(i+1 < strlen(text))) {
+							  if (!(i+1 < inlen)) {
 							    number[k] = 0;
 								bufdims[dI++] = atoi(number);
 								if (dI > 3) dI = 3;
@@ -237,63 +263,42 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						else
 						  i--;
 					}
-					else if (ch == 'g') {
-					    int v = 0, v16 = 0;
-						i++;
-						v16 = GetCol(text[i], 0);
-						i++;
-						if (i < strlen(text)) {
-							v = GetCol(text[i], 0);
-						}
-						v16 = (v16*16) + v;
-				        str[j].Char.AsciiChar = v16;
-						str[j].Attributes = fgCol | (bgCol<<4);
-						j++;
-					}
 					else if (ch == 't') {
 					    int v = 0, v16 = 0;
 						i++;
 						v16 = GetCol(text[i], 0);
 						i++;
-						if (i < strlen(text)) {
+						if (i < inlen) {
 							v = GetCol(text[i], 0);
 						}
 						i++;
-						if (i < strlen(text)) {
+						if (i < inlen) {
 							transpFg = GetCol(text[i], -1);
 						}
 						i++;
-						if (i < strlen(text)) {
+						if (i < inlen) {
 							transpBg = GetCol(text[i], -1);
 						}
 						v16 = (v16*16) + v;
 						transpChar = v16;
 					}
 					else if (ch == 'N') {
-					  ClrScr(hCurrHandle, fgCol | (bgCol<<4));
+					  ClrScr(hCurrHandle, fgBgCol);
 					  newX = newY = 0;
 					  j = 0;
 					  yp = 0;
 					  i++;
 					  break;
 					}
-					else if (ch == 'r') {
-					  int tmp1, tmp2;
-					  tmp1 = oldfc;
-					  tmp2 = oldbc;
-					  fgCol = oldfc;
-					  bgCol = oldbc;
-					  oldfc = tmp1;
-					  oldbc = tmp2;
-					}
 					else {
 						oldfc = fgCol;
 						oldbc = bgCol;
 						fgCol = GetCol(text[i], fgCol);
 						i++;
-						if (i < strlen(text)) {
+						if (i < inlen) {
 							bgCol = GetCol(text[i], bgCol);
 						}
+						fgBgCol = fgCol | (bgCol<<4);
 					}
 				}
 			} else {
@@ -308,7 +313,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					}
 				} else {
 				  str[j].Char.AsciiChar = ch;
-				  str[j].Attributes = fgCol | (bgCol<<4);
+				  str[j].Attributes = fgBgCol;
 				  j++;
 				
 				  if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
