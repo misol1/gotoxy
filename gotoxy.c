@@ -97,9 +97,9 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
     HANDLE hNewScreenBuffer = INVALID_HANDLE_VALUE;
 	int bufdims[4] = {0,0,80,25}, bNewHandle = 0, bCopyback = 0;
 	HANDLE hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-	unsigned int startT = GetTickCount();
 	int transpChar = -1, transpFg = -1, transpBg = -1;
 	char ch;
+	unsigned int startT = GetTickCount();
      
     str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * MAX_STR_SIZE);
 	if (!str)
