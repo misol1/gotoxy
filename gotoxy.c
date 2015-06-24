@@ -119,12 +119,14 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						break;
 					}
 					else if (ch == '-') {
-						i++;
-						yp = 0;
 						if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
-							yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
+							yp = 0; i++; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
 						}
-						break;
+					    if (j == 0)
+					      *x += 1;
+					    else {
+					      yp=0; i++; break;
+					    }
 					}
 					else if (ch == '\\') {
 						str[j].Char.AsciiChar = text[i];
@@ -296,20 +298,22 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 				}
 			} else {
 			    if (ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
-					yp = 0;
-					i++;
 					if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
-						yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
+						yp = 0; i++; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
 					}
-					break;
-				}
+					if (j == 0)
+					  *x += 1;
+					else {
+					  yp=0; i++; break;
+					}
+				} else {
+				  str[j].Char.AsciiChar = ch;
+				  str[j].Attributes = fgCol | (bgCol<<4);
+				  j++;
 				
-				str[j].Char.AsciiChar = ch;
-				str[j].Attributes = fgCol | (bgCol<<4);
-				j++;
-				
-				if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
-				  yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
+				  if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
+				    yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
+				  }
 				}
 			}
 		}
