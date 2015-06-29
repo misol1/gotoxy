@@ -25,15 +25,15 @@ exit /b 1
 :NOT_a
 if not "%KEY%" == "122" goto NOT_z & rem z
 set XTENSION=%~x1
-if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" goto :eof
+if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" exit /b 0 & goto :eof
 cls
 unzip %1
 exit /b 3
 
 :NOT_z
 if not "%KEY%" == "90" goto NOT_SHIFTz & rem Z
-call :COUNTITEMS CNT Y& if !CNT! lss 1 call :SHOWBOTTOMBAR "No items selected."&goto :eof
-call :GETANSWER "Zip archive name:"& if "!ANSWER!"=="" goto :eof
+call :COUNTITEMS CNT Y& if !CNT! lss 1 call :SHOWBOTTOMBAR "No items selected." & exit /b 0 & goto :eof
+call :GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
 cls
 set ZCMD=zip -r %ANSWER%
 for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " set ZCMD=!ZCMD! !FO%%a!
@@ -75,7 +75,6 @@ cmdwiz showcursor 1
 set ANSWER=
 set /P ANSWER=
 cmdwiz showcursor 0
-call :SHOWTOPBAR
 goto :eof
 
 :strlen <resultVar> <stringVar>

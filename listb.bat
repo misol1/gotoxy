@@ -128,6 +128,7 @@ set RESULT=%ERRORLEVEL%
 if %RESULT% equ 1 call :SHOWLIST
 if %RESULT% equ 2 call :MAKEDIRLIST&call :SHOWLIST
 if %RESULT% equ 3 call :MAKEDIRLIST R&call :SHOWLIST
+call :SHOWTOPBAR
 goto :eof
 
 
