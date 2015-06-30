@@ -1,5 +1,5 @@
 @echo off
-if "%1" == "SHOW_EXTENDED_HELP" goto SHOWHELP
+if "%~1" == "SHOW_EXTENDED_HELP" goto SHOWHELP
 
 if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
 
