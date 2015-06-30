@@ -71,6 +71,7 @@ goto MAINLOOP
 
 if %KEY% == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN (folder)
 if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" cls&%VIEWCMD% !FO%CURRPOS%!&call :SHOWLIST R & rem RETURN (files)
+::if %KEY% == 60 call :GOTOPARENT & rem <
 if %KEY% == 60 cd ..&call :MAKEDIRLIST&call :SHOWLIST & rem <
 if %KEY% == 120 goto EXITLIST & rem x
 if %KEY% == 113 goto EXITLIST & rem q
@@ -123,6 +124,16 @@ cmdwiz showcursor 1
 set /a LINES-=1
 gotoxy 0 !LINES!
 endlocal&if %KEY%==120 cd "%CD%"
+goto :eof
+
+
+:GOTOPARENT
+echo "%CD%">%MYTEMP%out.dat
+set ANSWER=
+for /F "delims=\ tokens=*" %%a in (%MYTEMP%out.dat) do set ANSWER=%%~na
+cd ..&call :MAKEDIRLIST
+if not "%ANSWER%" == "" call :FINDOP SKIPSHOW
+call :SHOWLIST
 goto :eof
 
 
@@ -251,20 +262,20 @@ goto :eof
 
 
 :FINDOP
-call :strlen LEN !ANSWER!
-for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,%LEN%!&if !FTP!==!ANSWER! set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST& goto :eof
+call :strlen LEN "!ANSWER!"
+for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,%LEN%!&if !FTP!==!ANSWER! set OLDPOS=%CURRPOS%& set CURRPOS=%%a& if "%2"=="" call :UPDATELIST & goto :eof
 goto :eof
 
 
 :MAKEDIRLIST
 for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set FT%%a=&set FS%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
-dir /-p /b /ad  >%MYTEMP%folders.dat
+dir /-p /b /ad  >%MYTEMP%folders.dat 2>nul
 set CNT=0
 call :strlenIncludeCitation LEN "%CD%"
 if %LEN% geq 6 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=/&set /a CNT+=1
-dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat
+dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
 for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set /a CNT+=1
 
 set /a FCOUNT=%CNT%
