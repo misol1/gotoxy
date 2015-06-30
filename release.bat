@@ -31,6 +31,7 @@ copy gotoxy_extended.exe %EDATE%
 copy gxy2anim.bat %EDATE%
 copy hiscore.bat %EDATE%
 copy listb.bat %EDATE%
+copy extendlistb.bat %EDATE%
 copy makeanim-chess1.bat %EDATE%
 copy snake.bat %EDATE%
 copy mastermind.bat %EDATE%
