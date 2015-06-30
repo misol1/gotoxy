@@ -38,6 +38,7 @@ set EDITCMD=b
 set EDITCMD2=npp
 set NEWWINDOWCMD=start dosgo.bat
 
+cls
 call :MAKEDIRLIST
 call :SHOWLIST
 
