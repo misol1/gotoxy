@@ -257,15 +257,15 @@ goto :eof
 
 
 :MAKEDIRLIST
-for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set F%%a=&set FT%%a=&set FS%%a=
+for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set FT%%a=&set FS%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 dir /-p /b /ad  >%MYTEMP%folders.dat
 set CNT=0
 call :strlenIncludeCitation LEN "%CD%"
-if %LEN% geq 6 set F!CNT!=".."&set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
-for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set F!CNT!=!FNAME:^&=^^^&!&set FT!CNT!=/&set /a CNT+=1
+if %LEN% geq 6 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
+for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=/&set /a CNT+=1
 dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat
-for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set F!CNT!=!FNAME:^&=^^^&!&set /a CNT+=1
+for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set /a CNT+=1
 
 set /a FCOUNT=%CNT%
 set /a FCOUNTSUB=%CNT%-1
@@ -293,7 +293,8 @@ set /a PARTPRINT=%LH%+1
 set BGCOL=0&if %CNT%==%CURRPOS% set BGCOL=%CURRCOL%
 set FGCOL=%FILECOL%&if "!FT%CNT%!"=="/" set FGCOL=%DIRCOL%
 set SEL= &if not "!FS%CNT%!"=="" set SEL=!FS%CNT%!
-set FNAME=!F%CNT%!
+set FNAME=!FO%CNT%!
+set FNAME=!FNAME:^&=^^^&!
 set FNAME=%FNAME:~1,-1%!FT%CNT%!
 set SHOWS="%SHOWS:~1,-1%\%FGCOL%%BGCOL%!FNAME:~0,%CXM%!%SEL%\n"
 set /a Y+=1
@@ -328,7 +329,8 @@ set /a NY=(%N% %% %LH%)+1
 
 set FGCOL=%FILECOL%0&if "!FT%OLDPOS%!"=="/" set FGCOL=%DIRCOL%0
 set SEL= &if not "!FS%OLDPOS%!"=="" set SEL=!FS%OLDPOS%!
-set FNAME=!F%OLDPOS%!
+set FNAME=!FO%OLDPOS%!
+set FNAME=!FNAME:^&=^^^&!
 set FNAME=%FNAME:~1,-1%!FT%OLDPOS%!
 set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
 
@@ -339,7 +341,8 @@ set /a NY=(%N% %% %LH%)+1
 
 set FGCOL=%FILECOL%%CURRCOL%&if "!FT%CURRPOS%!"=="/" set FGCOL=%DIRCOL%%CURRCOL%
 set SEL= &if not "!FS%CURRPOS%!"=="" set SEL=!FS%CURRPOS%!
-set FNAME=!F%CURRPOS%!
+set FNAME=!FO%CURRPOS%!
+set FNAME=!FNAME:^&=^^^&!
 set FNAME=%FNAME:~1,-1%!FT%CURRPOS%!
 set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
  
