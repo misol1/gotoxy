@@ -41,7 +41,7 @@ call :COUNTITEMS CNT Y& if !CNT! lss 1 call :SHOWBOTTOMBAR "No items selected." 
 call :GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
 cls
 set ZCMD=zip -r %ANSWER%
-for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " set ZCMD=!ZCMD! !FO%%a!
+for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set ZCMD=!ZCMD! !FO%%a!
 %ZCMD%
 cmdwiz getch
 exit /b 3
@@ -91,7 +91,7 @@ goto :eof
 
 :COUNTITEMS <nof> <allowFolders>
 set CNTI=0
-if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " if not "!FT%%a!"=="/" set /a CNTI+=1
-if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " set /a CNTI+=1
+if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" set /a CNTI+=1
+if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set /a CNTI+=1
 set %1=%CNTI%
 goto :eof

@@ -51,8 +51,8 @@ if %KEY% == 331 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH% & call :UPDATELIST & g
 if %KEY% == 333 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH% & call :UPDATELIST & goto MAINLOOP & rem RIGHT
 if %KEY% == 327 set OLDPOS=%CURRPOS%&set CURRPOS=0& call :UPDATELIST & goto MAINLOOP & rem HOME
 if %KEY% == 335 set OLDPOS=%CURRPOS%&set CURRPOS=%FCOUNT%& call :UPDATELIST & goto MAINLOOP & rem END
-if %KEY% == 337 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH%*3 & call :UPDATELIST & goto MAINLOOP U & rem PAGEDOWN
-if %KEY% == 329 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH%*3 & call :UPDATELIST & goto MAINLOOP U & rem PAGEUP
+if %KEY% == 337 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH%*3 & call :UPDATELIST & goto MAINLOOP & rem PAGEDOWN
+if %KEY% == 329 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH%*3 & call :UPDATELIST & goto MAINLOOP & rem PAGEUP
 if %UPDATEBOTTOM%==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
 
 cmdwiz getkeystate alt
@@ -90,7 +90,7 @@ if %KEY% == 110 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%! & re
 if %KEY% == 78 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER! & rem N
 if %KEY% == 101 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%! & rem e
 if %KEY% == 69 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem E
-if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
+if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C "!FO%CURRPOS%!"|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
 if %KEY% == 102 if "!FT%CURRPOS%!"=="/" set KEY=70& rem f for folder
 if %KEY% == 70 call :SHOWBOTTOMBAR !FO%CURRPOS%! & rem F
 if %KEY% == 100 if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST & rem d
@@ -159,7 +159,7 @@ call :GETANSWER "Action on selected files, # inserts filename:"
 if "!ANSWER!"=="" goto :eof
 call :SPLITANSWER
 cls
-for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " if not "!FT%%a!"=="/" cmd /C !ANSWER! !FO%%a! !ANSWER2!
+for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" cmd /C !ANSWER! !FO%%a! !ANSWER2!
 call :PAUSE \n
 mode con lines=%LINES% cols=%COLS%
 cmdwiz showcursor 0
@@ -181,7 +181,7 @@ goto :eof
 call :COUNTITEMS CNT & if !CNT! lss 1 call :SHOWBOTTOMBAR "No files selected."&goto :eof
 call :YESNO "Really delete ALL selected files?(y/n) " 
 if "!ANSWER!"=="N" goto :eof
-for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " if not "!FT%%a!"=="/" cmd /C del /Q !FO%%a!
+for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" cmd /C del /Q !FO%%a!
 call :MAKEDIRLIST R
 call :SHOWLIST
 goto :eof
@@ -195,8 +195,8 @@ if "%1"=="copy" call :YESNO "Really %1 ALL selected files to second path?(y/n) "
 if "%1"=="move" call :YESNO "Really %1 ALL selected files/folders to second path?(y/n) " 
 if "!ANSWER!"=="N" goto :eof
 :SKIPYN
-if "%1"=="copy" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " if not "!FT%%a!"=="/" call :COPYOP %%a %2 copy Copied "."
-if "%1"=="move" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " call :COPYOP %%a %2 move Moved "."
+if "%1"=="copy" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" call :COPYOP %%a %2 copy Copied "."
+if "%1"=="move" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" call :COPYOP %%a %2 move Moved "."
 if "%1"=="move" call :MAKEDIRLIST R
 if "%1"=="copy" call :CLEARSELECTED
 call :SHOWLIST
@@ -455,7 +455,7 @@ goto :eof
 
 :COUNTITEMS <nof> <allowFolders>
 set CNTI=0
-if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " if not "!FT%%a!"=="/" set /a CNTI+=1
-if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"==" " set /a CNTI+=1
+if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" set /a CNTI+=1
+if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set /a CNTI+=1
 set %1=%CNTI%
 goto :eof
