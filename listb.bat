@@ -4,6 +4,7 @@ setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 set COLS=81&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set LINES=%3&if !LINES! lss 20 set LINES=20
+cls
 mode con lines=%LINES% cols=%COLS%
 set BAR=""
 for /L %%a in (1,1,%COLS%) do set BAR="!BAR:~1,-1! "
@@ -38,7 +39,6 @@ set EDITCMD=b
 set EDITCMD2=npp
 set NEWWINDOWCMD=start dosgo.bat
 
-cls
 call :MAKEDIRLIST
 call :SHOWLIST
 
