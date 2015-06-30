@@ -1,4 +1,6 @@
 @echo off
+if "%1" == "SHOW_EXTENDED_HELP" goto SHOWHELP
+
 if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
 
 if %KEY% == 119 call :GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /-p /b|grep -i -F !ANSWER!|less& exit /b 1 & goto :eof & rem w
@@ -94,4 +96,10 @@ set CNTI=0
 if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" set /a CNTI+=1
 if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set /a CNTI+=1
 set %1=%CNTI%
+goto :eof
+
+
+
+:SHOWHELP
+gotoxy k k "\n%HLPC1%a: %HLPC2%show file based on extension\n%HLPC1%g: %HLPC2%specify go path\n%HLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%HLPC1%J: %HLPC2%invoke file without clearing screen\n%HLPC1%w: %HLPC2%recursively search for file\n%HLPC1%W/^W: %HLPC2%search for specified text in all/specified files"
 goto :eof
