@@ -342,7 +342,7 @@ set SEL= &if not "!FS%CURRPOS%!"=="" set SEL=!FS%CURRPOS%!
 set FNAME=!F%CURRPOS%!
 set FNAME=%FNAME:~1,-1%!FT%CURRPOS%!
 set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
-
+ 
 gotoxy 0 0 %SHOWS% 0 0
 goto :eof
 
