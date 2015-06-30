@@ -71,8 +71,8 @@ goto MAINLOOP
 
 if %KEY% == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN (folder)
 if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" cls&%VIEWCMD% !FO%CURRPOS%!&call :SHOWLIST R & rem RETURN (files)
-if %KEY% == 60 call :GOTOPARENT & rem <
-::if %KEY% == 60 cd ..&call :MAKEDIRLIST&call :SHOWLIST & rem <
+::if %KEY% == 60 call :GOTOPARENT & rem < (instable atm)
+if %KEY% == 60 cd ..&call :MAKEDIRLIST&call :SHOWLIST & rem <
 if %KEY% == 120 goto EXITLIST & rem x
 if %KEY% == 113 goto EXITLIST & rem q
 if %KEY% == 27 goto EXITLIST & rem ESC
