@@ -73,7 +73,6 @@ if %KEY% == 60 cd ..&call :MAKEDIRLIST&call :SHOWLIST & rem <
 if %KEY% == 120 goto EXITLIST & rem x
 if %KEY% == 113 goto EXITLIST & rem q
 if %KEY% == 27 goto EXITLIST & rem ESC
-if %KEY% == 85 call :MAKEDIRLIST&call :SHOWLIST & rem U
 if %KEY% == 121 set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST & rem y
 if %KEY% == 115 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmd /C !ANSWER!&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem s
 if %KEY% == 83 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz showcursor 0&cmd /C !ANSWER!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem S
@@ -112,13 +111,15 @@ if %KEY% == 77 call :COUNTITEMS CNT Y& if !CNT! geq 1 call :GETANSWER "Move sele
 
 if not %EXTEND% == "" if exist %EXTEND% call :EXTENDOP
 
+if %KEY% == 85 call :MAKEDIRLIST&call :SHOWLIST & rem U
+
 goto MAINLOOP
 
 :EXITLIST
 cmdwiz showcursor 1
 set /a LINES-=1
 gotoxy 0 !LINES!
-endlocal&if %KEY%==120 cd %CD%
+endlocal&if %KEY%==120 cd "%CD%"
 goto :eof
 
 
@@ -258,8 +259,8 @@ for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set F%%a=&set FT%%a=&set FC%%a=&se
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 dir /-p /b /ad  >%MYTEMP%folders.dat
 set CNT=0
-call :strlen LEN %CD%
-if %LEN% geq 4 set F!CNT!=".."&set FO!CNT!=".."&set FT!CNT!=/&set FC!CNT!=%DIRCOL%&set FS!CNT!= &set /a CNT+=1
+call :strlenIncludeCitation LEN "%CD%"
+if %LEN% geq 6 set F!CNT!=".."&set FO!CNT!=".."&set FT!CNT!=/&set FC!CNT!=%DIRCOL%&set FS!CNT!= &set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set F!CNT!=!FNAME:^&=^^^&!&set FT!CNT!=/&set FC!CNT!=%DIRCOL%&set FS!CNT!= &set /a CNT+=1
 dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat
 for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set F!CNT!=!FNAME:^&=^^^&!&set FT!CNT!=&set FC!CNT!=%FILECOL%&set FS!CNT!= &set /a CNT+=1
@@ -348,8 +349,8 @@ gotoxy 6 0 "a          \p5;0 %BARINFO:~1,-1%" %BARTEXTCOL% %BARCOL%
 goto :eof
 :NOUPDTB
 set BARINFO="File %CURRTMP%/%FCOUNT%"
-set TCD=%CD:\=/%
-gotoxy 0 0 "%BAR:~1,-1%\p1;0%BARINFO:~1,-1%\p18;0%TCD%" %BARTEXTCOL% %BARCOL%
+set TCD="%CD:\=/%"
+gotoxy 0 0 "%BAR:~1,-1%\p1;0%BARINFO:~1,-1%\p18;0%TCD:~1,-1%" %BARTEXTCOL% %BARCOL%
 set /a TC=%COLS%-1&set /a TDP=%DIRP%+1&gotoxy !TC! 0 "!TDP!" %PATHNOFCOL% %BARCOL%
 goto :eof
 
@@ -394,6 +395,12 @@ goto :eof
   goto :eof
 )
 
+:strlenIncludeCitation <resultVar> <stringVar>
+(
+  echo %2>%MYTEMP%tmpLen.dat
+  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 2
+  goto :eof
+)
 
 :dectohex <result> <value>
 if "%2" == "" goto :eof
