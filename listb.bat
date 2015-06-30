@@ -90,7 +90,7 @@ if %KEY% == 110 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%! & re
 if %KEY% == 78 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER! & rem N
 if %KEY% == 101 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%! & rem e
 if %KEY% == 69 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem E
-if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C "!FO%CURRPOS%!"|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
+if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
 if %KEY% == 102 if "!FT%CURRPOS%!"=="/" set KEY=70& rem f for folder
 if %KEY% == 70 call :SHOWBOTTOMBAR !FO%CURRPOS%! & rem F
 if %KEY% == 100 if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST & rem d
