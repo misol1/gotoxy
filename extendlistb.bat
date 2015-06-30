@@ -1,11 +1,11 @@
 @echo off
-if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C !FO%CURRPOS%!&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
+if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
 
 if %KEY% == 119 call :GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /-p /b|grep -i -F !ANSWER!|less& exit /b 1 & goto :eof & rem w
 if %KEY% == 87 call :GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|less& exit /b 1 & goto :eof & rem W
 if %KEY% == 23 call :GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call :GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|less& exit /b 1 & goto :eof & rem ^W
 
-if %KEY% == 103 call :GETANSWER "Go:"& if not "!ANSWER!"=="" cls&set KEY=85&g !ANSWER!& exit /b 2 & goto :eof & rem g
+if %KEY% == 103 call :GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&g !ANSWER!& exit /b 2 & goto :eof & rem g
 
 if not "%KEY%" == "97" goto NOT_a & rem a
 if "!FT%CURRPOS%!"=="/" goto :eof
