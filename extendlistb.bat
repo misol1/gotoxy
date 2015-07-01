@@ -112,5 +112,5 @@ goto :eof
 :SHOWHELP
 set EXTHLPC1=%HLPC1%
 ::set EXTHLPC1=\A0
-gotoxy k k "\n%EXTHLPC1%a: %HLPC2%show file based on extension\n%EXTHLPC1%p: %HLPC2%launch command prompt\n%EXTHLPC1%n/N: %HLPC2%edit current/specified file (option2)\n%EXTHLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %HLPC2%recursively search for file\n%EXTHLPC1%W/^W: %HLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %HLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %HLPC2%specify go path"
+gotoxy k k "\n%EXTHLPC1%a: %HLPC2%show file based on extension\n%EXTHLPC1%p: %HLPC2%launch command prompt\n%EXTHLPC1%n/N: %HLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %HLPC2%recursively search for file\n%EXTHLPC1%W/^W: %HLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %HLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %HLPC2%specify go path"
 goto :eof
