@@ -112,10 +112,10 @@ echo on
 
 :SELROLL
 if "%saved%" == "" goto :eof
-set TMP=%saved:~-1%
-if "%TMP%" == "" goto :eof
+set SRTMP=%saved:~-1%
+if "%SRTMP%" == "" goto :eof
 set saved=%saved:~0,-1%
-set sel%TMP%=0
+set sel%SRTMP%=0
 goto :eof
 
 

@@ -95,8 +95,8 @@ if %1 geq 14 set TCOL=10
 :CH2
 if not %COL% == c goto CH3
 set TCOL=15
-set /a TMP=%DIVPROG%-0
-if %1 lss %TMP% set TCOL=9
+set /a TMP1=%DIVPROG%-0
+if %1 lss %TMP1% set TCOL=9
 :CH3
 if not %COL% == d goto CH4
 set TCOL=15

@@ -6,8 +6,8 @@ if "%1" == "" echo Usage: animplay [animdata.bat] [delay] [bounce normal bouncef
 if not exist "%1" echo Error: data file does not exist&goto OUT2
 call %1
 if "%FRAMES%" == "" echo Error: invalid data file&goto OUT2
-set /a TMP=%FRAMES%-1
-if "!ANIM%TMP%!" == "" echo Error: invalid data file&goto OUT2
+set /a FTMP=%FRAMES%-1
+if "!ANIM%FTMP%!" == "" echo Error: invalid data file&goto OUT2
 
 set CNT=0
 set CNT2=0
@@ -27,14 +27,14 @@ cmdwiz getconsoledim x
 set SCRW=%ERRORLEVEL%
 
 :REP
-if not "%~8" == "" for /L %%a in (0,1,%TMP%) do set ANIM%%a=!ANIM%%a:%~8!
+if not "%~8" == "" for /L %%a in (0,1,%FTMP%) do set ANIM%%a=!ANIM%%a:%~8!
 shift
 if not "%~8" == "" goto REP
 
 :LOOP
 gotoxy.exe %XP% %YP% \O0;0;%SCRW%;%SCRH%!ANIM%CNT%!%DELAY% %COLOR% %BCOLOR%
-set /a CNT2+=1&set /a TMP=!CNT2! %% 15
-if %TMP% == 0 cmdwiz getch nowait
+set /a CNT2+=1&set /a KTMP=!CNT2! %% 15
+if %KTMP% == 0 cmdwiz getch nowait
 if %ERRORLEVEL% == 27 goto OUT
 set /a CNT+=%DELTA%
 if %BOUNCE% == 0 if %CNT% geq %FRAMES% set CNT=0

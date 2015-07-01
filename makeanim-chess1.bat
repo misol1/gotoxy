@@ -33,10 +33,10 @@ endlocal
 goto :eof
 
 :MAKELINE
-set /a TMP=%1/%SQUARESIZEY%
-set /a TMP=%TMP% %% 2
-if %TMP% == 0 set SCR1="!SCR1:~1,-1!!EXSIDES:~1,-1!!SIDES:~1,-1!\n"
-if %TMP% == 1 set SCR1="!SCR1:~1,-1!!EXSIDES2:~1,-1!!SIDES2:~1,-1!\n"
+set /a LTMP=%1/%SQUARESIZEY%
+set /a LTMP=%LTMP% %% 2
+if %LTMP% == 0 set SCR1="!SCR1:~1,-1!!EXSIDES:~1,-1!!SIDES:~1,-1!\n"
+if %LTMP% == 1 set SCR1="!SCR1:~1,-1!!EXSIDES2:~1,-1!!SIDES2:~1,-1!\n"
 goto :eof
 
 :PREPLINES1

@@ -83,18 +83,18 @@ cmdwiz getch
 set KEY=%ERRORLEVEL%
 if %KEY% == 27 goto GAME_ESCAPED
 if %KEY% == 32 for /L %%a in (1,1,%DEALNOF%) do call :DEALCARD %%a
-if %KEY% geq 49 if %KEY% leq 55 set /a TMP=%KEY%-48& call :MARKSELECTED !TMP!
+if %KEY% geq 49 if %KEY% leq 55 set /a KTMP=%KEY%-48& call :MARKSELECTED !KTMP!
 if %KEY% == 13 call :MARKSELECTED 8
 if %KEY% == 115 if %SELECTED% geq 1 call :MOVETOSTACK %SELECTED%
 if %KEY% == 83 if %SELECTED% geq 1 call :MOVETOSTACK %SELECTED%
 if %KEY% == 65 call :AUTOPLAY
 
-::if %KEY% geq 97 if %KEY% leq 103 set /a TMP=%KEY%-96& call :PRINTCOLUMN !TMP!
+::if %KEY% geq 97 if %KEY% leq 103 set /a KTMP=%KEY%-96& call :PRINTCOLUMN !KTMP!
 
 set GAMEOVER=1
 rem No unflipped left?
-for /L %%a in (1,1,7) do set /A TMP=!COLUMNVISIBLE%%a!+1 & if !TMP! lss !COLUMNCOUNT%%a! set GAMEOVER=0
-set /a TMP=%COLUMNCOUNT8%+%DECKTOE%-%DECKHEAD%+1&if %DEALNOF% == 3 if !TMP! geq 2 set GAMEOVER=0
+for /L %%a in (1,1,7) do set /A KTMP=!COLUMNVISIBLE%%a!+1 & if !KTMP! lss !COLUMNCOUNT%%a! set GAMEOVER=0
+set /a KTMP=%COLUMNCOUNT8%+%DECKTOE%-%DECKHEAD%+1&if %DEALNOF% == 3 if !KTMP! geq 2 set GAMEOVER=0
 rem Everything on stack?
 rem for /L %%a in (1,1,4) do if !STACK%%aVALUE! lss 13 set GAMEOVER=0
 if %GAMEOVER% == 1 goto GAMEOVER
@@ -129,8 +129,8 @@ for /L %%a in (1,1,8) do set SELECTED=%%a&if !COLUMNCOUNT%%a! geq 1 call :MOVETO
 for /L %%a in (1,1,8) do set MADEMOVE%%a=0
 for /L %%a in (1,1,8) do call :REMOVESELECTED&if !MADEMOVE%%a!==0 call :MARKSELECTED %%a&for /L %%b in (1,1,7) do if not %%a==%%b call :MARKSELECTED %%b&if !SELECTED!==0 call :MARKSELECTED %%a&set MADEMOVE%%b=1
 set GAMEOVER=1
-for /L %%a in (1,1,7) do set /A TMP=!COLUMNVISIBLE%%a!+1 & if !TMP! lss !COLUMNCOUNT%%a! set GAMEOVER=0
-set /a TMP=%COLUMNCOUNT8%+%DECKTOE%-%DECKHEAD%+1&if %DEALNOF% == 3 if !TMP! geq 2 set GAMEOVER=0
+for /L %%a in (1,1,7) do set /A ATMP=!COLUMNVISIBLE%%a!+1 & if !ATMP! lss !COLUMNCOUNT%%a! set GAMEOVER=0
+set /a ATMP=%COLUMNCOUNT8%+%DECKTOE%-%DECKHEAD%+1&if %DEALNOF% == 3 if !ATMP! geq 2 set GAMEOVER=0
 for /L %%a in (1,1,%DEALNOF%) do call :DEALCARD %%a
 if %DECKFLIPS% == 3 goto ESCAPE_AUTO
 if %GAMEOVER% == 0 goto AUTOPLAY
@@ -207,8 +207,8 @@ set SRC_SUIT=!COLUMN%SELECTED%_%CARDVIS%_SUIT!
 set SRC_VALUE=!COLUMN%SELECTED%_%CARDVIS%_VALUE!
 
 if !COLUMNCOUNT%1! leq 0 if %SRC_VALUE% == 13 goto OKMOVE
-set /a TMP=%DEST_VALUE%-%SRC_VALUE%
-if not %TMP%==1 goto NEXTTRY
+set /a TTMP=%DEST_VALUE%-%SRC_VALUE%
+if not %TTMP%==1 goto NEXTTRY
 if %DEST_SUIT% leq 2 if %SRC_SUIT% leq 2 goto NEXTTRY
 if %DEST_SUIT% geq 3 if %SRC_SUIT% geq 3 goto NEXTTRY
 goto OKMOVE
@@ -229,9 +229,9 @@ goto :eof
 
 
 :MOVETOSTACK
-set TMP=!COLUMNCOUNT%1!
-set TMP2=!COLUMN%1_%TMP%_SUIT!
-set /a RES=!COLUMN%1_%TMP%_VALUE! - !STACK%TMP2%VALUE!
+set TMP1=!COLUMNCOUNT%1!
+set TMP2=!COLUMN%1_%TMP1%_SUIT!
+set /a RES=!COLUMN%1_%TMP1%_VALUE! - !STACK%TMP2%VALUE!
 if not %RES% == 1 goto :eof
 set /a STACK%TMP2%VALUE+=1
 set /a COLUMNCOUNT%1-=1
@@ -291,15 +291,15 @@ goto :eof
 
 rem <column> <nof new> <start index visible> <0 add/1+ remove> <nof moved from/to>
 :SHOWCOLUMN
-set /a TMP=%1-1
-set /a XPOS=4+11*%TMP%
-set /a TMP=!COLUMNCOUNT%1!-%4
-set /a YPOS=14+2*%TMP%
+set /a SCTMP=%1-1
+set /a XPOS=4+11*%SCTMP%
+set /a SCTMP=!COLUMNCOUNT%1!-%4
+set /a YPOS=14+2*%SCTMP%
 if !COLUMNCOUNT%1! leq 0 if %4 == 1 set /a YPOS+=2 & call playcard %XPOS% !YPOS! %SHADOW% -2 8 1 &goto SKIPPER
 set TB=%3
 for /L %%a in (1,1,%2) do call :SHOWACARD %1 !TB!& set /a TB+=1&set /a YPOS+=2
 :SKIPPER
-set /a YPOS=14+2*%TMP%
+set /a YPOS=14+2*%SCTMP%
 if %4 == 1 for /L %%a in (1,1,%5) do set /a YPOS+=2& call playcard %XPOS% !YPOS! %SHADOW% -2 2 1
 goto :eof
 :SHOWACARD

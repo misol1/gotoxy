@@ -30,8 +30,8 @@ for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p
 gotoxy.exe 0 0 "\O0;0;%XSIZE%;%YSIZE%%FIELD%\p0;0\t20k0%BLOCK:~1,-1%" 7 0
 
 set /a CNT+=1
-set /a TMP=%CNT% %% 30
-if %TMP% == 0 cmdwiz getch nowait
+set /a KTMP=%CNT% %% 30
+if %KTMP% == 0 cmdwiz getch nowait
 if not %ERRORLEVEL% == 27 goto LOOP
 
 gotoxy 0 0 tempblock.gxy

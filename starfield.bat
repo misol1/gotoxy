@@ -25,8 +25,8 @@ for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p
 gotoxy.exe 0 0 "%FIELD%" 7 0
 
 set /a CNT+=1
-set /a TMP=%CNT% %% 100
-if %TMP% == 0 cmdwiz getch nowait
+set /a KTMP=%CNT% %% 100
+if %KTMP% == 0 cmdwiz getch nowait
 if not %ERRORLEVEL% == 27 goto LOOP
 
 mode con lines=50 cols=80

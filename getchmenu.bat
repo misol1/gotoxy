@@ -17,14 +17,14 @@ set SCFG=15
 if not "%5" == "" set SCFG=%5
 set SCBG=12
 if not "%6" == "" set SCBG=%6
-set /a TMP=%SCFG%*16+%SCBG%
-call util dectohex SELCOLS %TMP% 0
+set /a CTMP=%SCFG%*16+%SCBG%
+call util dectohex SELCOLS %CTMP% 0
 set CFG=8
 if not "%7" == "" set CFG=%7
 set CBG=0
 if not "%8" == "" set CBG=%8
-set /a TMP=%CFG%*16+%CBG%
-call util dectohex TCOLS %TMP% 0
+set /a CTMP=%CFG%*16+%CBG%
+call util dectohex TCOLS %CTMP% 0
 set SEL=0
 if not "%9" == "" set SEL=%9
 set NOF=-1

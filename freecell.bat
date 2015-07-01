@@ -74,16 +74,16 @@ cmdwiz getch
 set KEY=%ERRORLEVEL%
 if %KEY% == 27 goto GAME_ESCAPED
 
-if %KEY% geq 49 if %KEY% leq 56 set /a TMP=%KEY%-48& call :MARKSELECTED !TMP!
+if %KEY% geq 49 if %KEY% leq 56 set /a KTMP=%KEY%-48& call :MARKSELECTED !KTMP!
 if %KEY% == 115 if %SELECTED% geq 1 call :MOVETOSTACK %SELECTED%
 if %KEY% == 83 if %SELECTED% geq 1 call :MOVETOSTACK %SELECTED%
 
-if %SELECTED% == 0 if %KEY% geq 97 if %KEY% leq 100 set /a TMP=%KEY%-97+9& call :MARKSELECTED !TMP! &goto SKIP1
-if %SELECTED% geq 9 if %KEY% geq 97 if %KEY% leq 100 set /a TMP=%KEY%-97+9& call :MARKSELECTED !TMP! &goto SKIP1
+if %SELECTED% == 0 if %KEY% geq 97 if %KEY% leq 100 set /a KTMP=%KEY%-97+9& call :MARKSELECTED !KTMP! &goto SKIP1
+if %SELECTED% geq 9 if %KEY% geq 97 if %KEY% leq 100 set /a KTMP=%KEY%-97+9& call :MARKSELECTED !KTMP! &goto SKIP1
 if %SELECTED% geq 1 if %SELECTED% leq 8 if %KEY% == 97 call :MOVETOCELLS %SELECTED%
 :SKIP1
 
-::if %KEY% geq 101 if %KEY% leq 112 set /a TMP=%KEY%-100& call :PRINTCOLUMN !TMP!
+::if %KEY% geq 101 if %KEY% leq 112 set /a KTMP=%KEY%-100& call :PRINTCOLUMN !KTMP!
 
 set GAMEOVER=1
 rem All 8 columns have no "inbetween" cards and are in one series?
@@ -146,8 +146,8 @@ set SRC_SUIT=!COLUMN%SELECTED%_%CARDVIS%_SUIT!
 set SRC_VALUE=!COLUMN%SELECTED%_%CARDVIS%_VALUE!
 
 if !COLUMNCOUNT%1! leq 0 goto OKMOVE
-set /a TMP=%DEST_VALUE%-%SRC_VALUE%
-if not %TMP%==1 goto NEXTTRY
+set /a TTMP=%DEST_VALUE%-%SRC_VALUE%
+if not %TTMP%==1 goto NEXTTRY
 if %DEST_SUIT% leq 2 if %SRC_SUIT% leq 2 goto NEXTTRY
 if %DEST_SUIT% geq 3 if %SRC_SUIT% geq 3 goto NEXTTRY
 goto OKMOVE
@@ -159,8 +159,8 @@ goto FAILMOVE
 
 :OKMOVE
 set ISOK=0
-set /a TMP=!COLUMNCOUNT%SELECTED%!-%SRC_CHECKPOS%
-call :CHECKVALIDROW %TMP% %SELECTED%
+set /a TTMP=!COLUMNCOUNT%SELECTED%!-%SRC_CHECKPOS%
+call :CHECKVALIDROW %TTMP% %SELECTED%
 if %ISOK% == 1 goto REALLYOK
 set /a SRC_CHECKPOS-=1
 if %SRC_CHECKPOS% geq 0 goto TRYLOOP
@@ -210,8 +210,8 @@ if %INDEX% gtr !COLUMNCOUNT%2! set ISOK=1&goto :eof
 
 set NEW_SUIT=!COLUMN%2_%INDEX%_SUIT!
 set NEW_VALUE=!COLUMN%2_%INDEX%_VALUE!
-set /a TMP=%OLD_VALUE%-%NEW_VALUE%
-if not %TMP%==1 goto :eof
+set /a TTMP=%OLD_VALUE%-%NEW_VALUE%
+if not %TTMP%==1 goto :eof
 if %NEW_SUIT% leq 2 if %OLD_SUIT% leq 2 goto :eof
 if %NEW_SUIT% geq 3 if %OLD_SUIT% geq 3 goto :eof
 
@@ -222,9 +222,9 @@ goto :eof
 
 
 :MOVETOSTACK
-set TMP=!COLUMNCOUNT%1!
-set TMP2=!COLUMN%1_%TMP%_SUIT!
-set /a RES=!COLUMN%1_%TMP%_VALUE! - !STACK%TMP2%VALUE!
+set TMP1=!COLUMNCOUNT%1!
+set TMP2=!COLUMN%1_%TMP1%_SUIT!
+set /a RES=!COLUMN%1_%TMP1%_VALUE! - !STACK%TMP2%VALUE!
 if not %RES% == 1 goto :eof
 set /a STACK%TMP2%VALUE+=1
 set /a COLUMNCOUNT%1-=1
@@ -249,9 +249,9 @@ goto :eof
 set SELCOLUMN=0
 for /L %%a in (12,-1,9) do if !COLUMNCOUNT%%a! == 0 set SELCOLUMN=%%a
 if %SELCOLUMN% == 0 goto :eof
-set TMP=!COLUMNCOUNT%SELECTED%!
-set COLUMN%SELCOLUMN%_1_VALUE=!COLUMN%SELECTED%_%TMP%_VALUE!
-set COLUMN%SELCOLUMN%_1_SUIT=!COLUMN%SELECTED%_%TMP%_SUIT!
+set TTMP=!COLUMNCOUNT%SELECTED%!
+set COLUMN%SELCOLUMN%_1_VALUE=!COLUMN%SELECTED%_%TTMP%_VALUE!
+set COLUMN%SELCOLUMN%_1_SUIT=!COLUMN%SELECTED%_%TTMP%_SUIT!
 set /a COLUMNCOUNT%1-=1
 set /a COLUMNVISIBLE%1-=1
 set COLUMNCOUNT%SELCOLUMN%=1
@@ -263,13 +263,13 @@ set /a TA=!COLUMNCOUNT%1!
 call :SHOWCOLUMN %1 1 %TA% 1 1
 goto :eof
 :SHOWCELL
-set /a TMP=%1-9
-set /a XTMP=3+9*%TMP%
+set /a TTMP=%1-9
+set /a XTMP=3+9*%TTMP%
 call playcard %XTMP% 4 0 0 !COLUMN%1_1_VALUE! !COLUMN%1_1_SUIT!
 goto :eof
 :EMPTYCELL
-set /a TMP=%1-9
-set /a XTMP=3+9*%TMP%
+set /a TTMP=%1-9
+set /a XTMP=3+9*%TTMP%
 call playcard %XTMP% 4 0 1 1 1
 goto :eof
 
@@ -312,15 +312,15 @@ goto :eof
 
 rem <column> <nof new> <start index visible> <0 add/1 remove> <nof moved from/to>
 :SHOWCOLUMN
-set /a TMP=%1-1
-set /a XPOS=2+10*%TMP%
-set /a TMP=!COLUMNCOUNT%1!-%4
-set /a YPOS=13+2*%TMP%
+set /a TTMP=%1-1
+set /a XPOS=2+10*%TTMP%
+set /a TTMP=!COLUMNCOUNT%1!-%4
+set /a YPOS=13+2*%TTMP%
 if !COLUMNCOUNT%1! leq 0 if %4==1 set /a YPOS+=2 & call playcard %XPOS% !YPOS! %SHADOW% -2 8 1 &goto SKIPPER
 set TB=%3
 for /L %%a in (1,1,%2) do call :SHOWACARD %1 !TB!& set /a TB+=1&set /a YPOS+=2
 :SKIPPER
-set /a YPOS=13+2*%TMP%
+set /a YPOS=13+2*%TTMP%
 if %4==1 for /L %%a in (1,1,%5) do set /a YPOS+=2& call playcard %XPOS% !YPOS! %SHADOW% -2 2 1
 goto :eof
 :SHOWACARD
