@@ -1,15 +1,25 @@
 @echo off
 if "%~1" == "SHOW_EXTENDED_HELP" goto SHOWHELP
 
+set EDITCMD2=npp
+set NEWWINDOWCMD=start dosgo.bat
+set GCMD=g
+set EXTLESS=less -f
+
 if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
 
-if %KEY% == 119 call :GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /-p /b|grep -i -F !ANSWER!|less& exit /b 1 & goto :eof & rem w
-if %KEY% == 87 call :GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|less& exit /b 1 & goto :eof & rem W
-if %KEY% == 23 call :GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call :GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|less& exit /b 1 & goto :eof & rem ^W
+if %KEY% == 119 call :GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /-p /b|grep -i -F !ANSWER!|%EXTLESS%& exit /b 1 & goto :eof & rem w
+if %KEY% == 87 call :GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|%EXTLESS%& exit /b 1 & goto :eof & rem W
+if %KEY% == 23 call :GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call :GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|%EXTLESS%& exit /b 1 & goto :eof & rem ^W
 
-if %KEY% == 103 call :GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&g !ANSWER!& exit /b 2 & goto :eof & rem g
+if %KEY% == 112 %NEWWINDOWCMD% & rem p
 
-if not "%KEY%" == "97" goto NOT_a & rem a
+if %KEY% == 110 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%! & rem n
+if %KEY% == 78 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER! & rem N
+
+if %KEY% == 103 call :GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&%GCMD% !ANSWER!& exit /b 2 & goto :eof & rem g
+
+if not %KEY% == 97 goto NOT_a & rem a
 if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1
 set XFILE=%~n1
@@ -24,13 +34,13 @@ if "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
 if "%XTENSION%"==".ANS" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
 if "%XTENSION%"==".c" cls&tcc -o "%XFILE%.exe" %1 & exit /b 3
 if "%XTENSION%"==".C" cls&tcc -o "%XFILE%.exe" %1 & exit /b 3
-if "%XTENSION%"==".zip" cls&unzip -l %1|less & exit /b 3
+if "%XTENSION%"==".zip" cls&unzip -l %1|%EXTLESS% & exit /b 3
 cls
-less -f %1
+%EXTLESS% %1
 exit /b 1
 
 :NOT_a
-if not "%KEY%" == "122" goto NOT_z & rem z
+if not %KEY% == 122 goto NOT_z & rem z
 set XTENSION=%~x1
 if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" exit /b 0 & goto :eof
 cls
@@ -38,7 +48,7 @@ unzip %1
 exit /b 3
 
 :NOT_z
-if not "%KEY%" == "90" goto NOT_SHIFTz & rem Z
+if not %KEY% == 90 goto NOT_SHIFTz & rem Z
 call :COUNTITEMS CNT Y& if !CNT! lss 1 call :SHOWBOTTOMBAR "No items selected." & exit /b 0 & goto :eof
 call :GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
 cls
@@ -86,8 +96,8 @@ goto :eof
 
 :strlen <resultVar> <stringVar>
 (
-  echo %~2>%MYTEMP%tmpLen.dat
-  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 2
+  echo "%~2">%MYTEMP%tmpLen.dat
+  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 4
   goto :eof
 )
 
@@ -99,7 +109,8 @@ set %1=%CNTI%
 goto :eof
 
 
-
 :SHOWHELP
-gotoxy k k "\n%HLPC1%a: %HLPC2%show file based on extension\n%HLPC1%g: %HLPC2%specify go path\n%HLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%HLPC1%J: %HLPC2%invoke file without clearing screen\n%HLPC1%w: %HLPC2%recursively search for file\n%HLPC1%W/^W: %HLPC2%search for specified text in all/specified files"
+set EXTHLPC1=%HLPC1%
+::set EXTHLPC1=\A0
+gotoxy k k "\n%EXTHLPC1%a: %HLPC2%show file based on extension\n%EXTHLPC1%p: %HLPC2%launch command prompt\n%EXTHLPC1%n/N: %HLPC2%edit current/specified file (option2)\n%EXTHLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %HLPC2%recursively search for file\n%EXTHLPC1%W/^W: %HLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %HLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %HLPC2%specify go path"
 goto :eof

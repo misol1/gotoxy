@@ -37,8 +37,6 @@ set HLPC2=\70
 
 set VIEWCMD=less -f
 set EDITCMD=b
-set EDITCMD2=npp
-set NEWWINDOWCMD=start dosgo.bat
 
 call :MAKEDIRLIST
 call :SHOWLIST
@@ -71,8 +69,8 @@ goto MAINLOOP
 
 if %KEY% == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN (folder)
 if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" cls&%VIEWCMD% !FO%CURRPOS%!&call :SHOWLIST R & rem RETURN (files)
-if %KEY% == 62 call :GOTOPARENT & rem > (instable atm, this one is experimental/undocumented)
-if %KEY% == 60 cd ..&call :MAKEDIRLIST&call :SHOWLIST & rem <
+if %KEY% == 60 call :GOTOPARENT & rem <
+::if %KEY% == 60 cd ..&call :MAKEDIRLIST&call :SHOWLIST & rem <
 if %KEY% == 120 goto EXITLIST & rem x
 if %KEY% == 113 goto EXITLIST & rem q
 if %KEY% == 27 goto EXITLIST & rem ESC
@@ -83,14 +81,11 @@ if %KEY% == 6 call :GETANSWER "Search for:" STRIPQUOTES& if not "!ANSWER!"=="" c
 if %KEY% == 111 call :SORTOP & rem o
 if %KEY% == 63 call :SHOWHELP & rem ?
 if %KEY% == 571 call :SHOWHELP & rem F1
-if %KEY% == 112 %NEWWINDOWCMD% & rem p
 if %KEY% geq 49 if %KEY% leq 53 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-5
 
 if %KEY% == 105 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST & rem i
 if %KEY% == 106 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C !FO%CURRPOS%!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem j
 if %KEY% == 73 call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!"=="" call :SPLITANSWER &cls&cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem I
-if %KEY% == 110 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%! & rem n
-if %KEY% == 78 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER! & rem N
 if %KEY% == 101 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%! & rem e
 if %KEY% == 69 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem E
 if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
@@ -272,8 +267,8 @@ for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set FT%%a=&set FS%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 dir /-p /b /ad  >%MYTEMP%folders.dat 2>nul
 set CNT=0
-call :strlenIncludeCitation LEN "%CD%"
-if %LEN% geq 6 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
+call :strlen LEN "%CD%"
+if %LEN% geq 4 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=/&set /a CNT+=1
 dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
 for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set /a CNT+=1
@@ -416,15 +411,8 @@ goto :eof
 
 :strlen <resultVar> <stringVar>
 (
-  echo %~2>%MYTEMP%tmpLen.dat
-  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 2
-  goto :eof
-)
-
-:strlenIncludeCitation <resultVar> <stringVar>
-(
-  echo %2>%MYTEMP%tmpLen.dat
-  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 2
+  echo "%~2">%MYTEMP%tmpLen.dat
+  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 4
   goto :eof
 )
 
@@ -460,7 +448,7 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%n/N: %HLPC2%edit current/specified file (option2)\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f: %HLPC2%show file information\n%HLPC1%F: %HLPC2%show full file/folder name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n\n%HLPC1%Space: %HLPC2%select file/folder\n%HLPC1%^Space: %HLPC2%deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n\n%HLPC1%Arguments: %HLPC2%list [path] [columns] [rows] [extend path\\name]\n" 0 0 c
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f: %HLPC2%show file information\n%HLPC1%F: %HLPC2%show full file/folder name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n\n%HLPC1%Arguments: %HLPC2%list [path] [columns] [rows] [extend path\\name]\n" 0 0 c
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% SHOW_EXTENDED_HELP
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP

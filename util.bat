@@ -10,8 +10,8 @@ goto :eof
 
 :strlen <resultVar> <stringVar>
 (
-  echo %~2>tmpLen.dat
-  for %%? in (tmpLen.dat) do set /A %1=%%~z? - 2
+  echo "%~2">tmpLen.dat
+  for %%? in (tmpLen.dat) do set /A %1=%%~z? - 4
   del /Q tmpLen.dat
   goto :eof
 )
