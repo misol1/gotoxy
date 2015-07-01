@@ -1,5 +1,11 @@
 :: LISTb : Mikael Sollenborn 2015
 @echo off
+if "%~1"=="_YESNO" call :YESNO %2&goto :eof
+if "%~1"=="_GETANSWER" call :GETANSWER %2 %3&goto :eof
+if "%~1"=="_SHOWBOTTOMBAR" call :SHOWBOTTOMBAR %2&goto :eof
+if "%~1"=="_COUNTITEMS" call :COUNTITEMS %2 %3&goto :eof
+if "%~1"=="_STRLEN" call :STRLEN %2 %3&goto :eof
+
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 set COLS=81&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
