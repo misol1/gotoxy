@@ -1,5 +1,5 @@
 @echo off
-if "%~1" == "SHOW_EXTENDED_HELP" goto SHOWHELP
+if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP
 
 set EDITCMD2=npp
 set NEWWINDOWCMD=start dosgo.bat
