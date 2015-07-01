@@ -36,8 +36,6 @@ if "%XTENSION%"==".mod" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.ex
 if "%XTENSION%"==".MOD" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
 if "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
 if "%XTENSION%"==".ANS" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
-if "%XTENSION%"==".c" cls&tcc -o "%XFILE%.exe" %1 & exit /b 3
-if "%XTENSION%"==".C" cls&tcc -o "%XFILE%.exe" %1 & exit /b 3
 if "%XTENSION%"==".zip" cls&unzip -l %1|%EXTLESS% & exit /b 3
 cls
 %EXTLESS% %1
