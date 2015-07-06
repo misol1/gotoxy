@@ -23,19 +23,18 @@ if %KEY% == 3 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd 
 
 if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _YESNO "Really wipe out directory?(y/n) " & if "!ANSWER!"=="Y" cmd /C rd /Q /S !FO%CURRPOS%!& exit /b 3 & goto :eof & rem ^D
 
+if %KEY% == 1 call :SET_ATTRIBS & exit /b 0 & goto :eof & rem ^A
+
 if not %KEY% == 97 goto NOT_a & rem a
 if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1
+call :LOCASE XTENSION
 set XFILE=%~n1
 if "%XTENSION%"==".wav" cmdwiz playsound %1 & exit /b 0
-if "%XTENSION%"==".WAV" cmdwiz playsound %1 & exit /b 0
 if "%XTENSION%"==".gxy" cls&gotoxy 0 0 %1 0 0 c & cmdwiz getch & exit /b 1
 if "%XTENSION%"==".mp3" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
-if "%XTENSION%"==".MP3" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
 if "%XTENSION%"==".mod" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
-if "%XTENSION%"==".MOD" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
 if "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
-if "%XTENSION%"==".ANS" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
 if "%XTENSION%"==".zip" cls&unzip -l %1|%EXTVIEW% & exit /b 3
 cls
 %EXTVIEW% %1
@@ -66,8 +65,24 @@ exit /b 0
 goto :eof
 
 
+:SET_ATTRIBS
+cmd /C attrib !FO%CURRPOS%!>%MYTEMP%out.dat
+for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a"
+set INF="!INF:~1,9!"
+set CTMP=!INF:~2,1!& if "!CTMP!"==":" set INF=""
+:NOATTRIBS
+call listb.bat _GETANSWER "(%INF:~1,-1%) Set attributes (or ENTER):"
+if not "!ANSWER!"=="" cmd /C attrib !ANSWER! !FO%CURRPOS%!>nul
+goto :eof
+
+
 :SHOWHELP
 set EXTHLPC1=%HLPC1%
 ::set EXTHLPC1=\A0
-gotoxy k k "\n%EXTHLPC1%a: %HLPC2%show file based on extension\n%EXTHLPC1%p: %HLPC2%launch command prompt\n%EXTHLPC1%n/N: %HLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %HLPC2%recursively search for file\n%EXTHLPC1%W/^W: %HLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %HLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %HLPC2%specify go path\n%EXTHLPC1%^C: %HLPC2%copy specified to current path\n%EXTHLPC1%^D: %HLPC2%recursively delete folder"
+gotoxy k k "\n%EXTHLPC1%a: %HLPC2%show file based on extension\n%EXTHLPC1%p: %HLPC2%launch command prompt\n%EXTHLPC1%n/N: %HLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %HLPC2%recursively search for file\n%EXTHLPC1%W/^W: %HLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %HLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %HLPC2%specify go path\n%EXTHLPC1%^C: %HLPC2%copy specified to current path\n%EXTHLPC1%^D: %HLPC2%recursively delete folder\n%EXTHLPC1%^A: %HLPC2%show/set item attributes"
+goto :eof
+
+
+:LOCASE
+for %%i in ("A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j" "K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t" "U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z") DO CALL SET "%1=%%%1:%%~i%%"
 goto :eof
