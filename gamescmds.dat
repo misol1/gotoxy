@@ -4,5 +4,6 @@ call yatzy.bat&games.bat
 call mastermind.bat&games.bat
 call solitaire&games.bat
 call freecell&games.bat
+call golf&games.bat
 call flappy&games.bat
 call fx.bat 1&games.bat
