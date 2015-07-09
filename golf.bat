@@ -57,7 +57,6 @@ if %KEY% == 32 call :DEALCARD
 if %KEY% geq 49 if %KEY% leq 55 set /a KTMP=%KEY%-48& call :MOVESELECTED !KTMP!
 
 if %DECKEND% == 1 goto GAMEOVER
-
 goto GAMELOOP
 
 :GAMEOVER
@@ -149,6 +148,9 @@ set DEST_VALUE=!COLUMN%1_%CARDVIS%_VALUE!
 
 set /a YPR-=2
 call playcard %XPR% %YPR% %SHADOW% 0 !DEST_VALUE! !DEST_SUIT!
+
+call :CALC_SCORE
+if %SCORE% lss 1 set DECKEND=1
 goto :eof
 
 :FAILMOVE
