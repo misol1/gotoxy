@@ -136,6 +136,8 @@ set COLUMN8_%COLUMNCOUNT8%_SUIT=%DEST_SUIT%
 call playcard 43 23 %SHADOW% 0 !DEST_VALUE! !DEST_SUIT!
 
 set /a COLUMNCOUNT%1-=1
+call :CALC_SCORE
+if %SCORE% lss 1 set DECKEND=1
 
 set /a XPR=4 + (%1-1) * 11
 set /a YPR=5 + !COLUMNCOUNT%1! * 2
@@ -149,8 +151,6 @@ set DEST_VALUE=!COLUMN%1_%CARDVIS%_VALUE!
 set /a YPR-=2
 call playcard %XPR% %YPR% %SHADOW% 0 !DEST_VALUE! !DEST_SUIT!
 
-call :CALC_SCORE
-if %SCORE% lss 1 set DECKEND=1
 goto :eof
 
 :FAILMOVE
