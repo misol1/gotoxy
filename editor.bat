@@ -17,17 +17,17 @@ set INS=
 set INSV=0
 set MFUNC1=1
 set MFUNC2=1
-if not "%1" == "" set LOADNAME=%1
+if not "%~1" == "" set LOADNAME=%~1
 if not "%2" == "" set COLS=%2
 if not "%3" == "" set ROWS=%3
 mode con lines=%ROWS% cols=%COLS%
 set /a YBOUND=%ROWS%-2
 cls
 if "%LOADNAME%" == "" goto NOFILE
-if not exist %LOADNAME% goto NOFILE
-for /F "tokens=*" %%i in (%LOADNAME%) do set inf="%%i"
+if not exist "%LOADNAME%" goto NOFILE
+for /F "tokens=* usebackq" %%i in ("%LOADNAME%") do set inf="%%i"
 set inf=%inf:\-=\A1x\r%
-gotoxy 0 0 %inf%&
+gotoxy 0 0 %inf%
 :NOFILE
 call :PRINTSEPARATOR
 call :PRINTSTATUS
