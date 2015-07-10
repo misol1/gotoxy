@@ -28,6 +28,7 @@ set FCOUNTSUB=0
 set SORT=N
 set COLSPERSCR=3
 set EXTEND=""&if not "%~4" == "" set EXTEND="%~4"
+set CLIPB=
 
 set BARCOL=3
 set BARTEXTCOL=F
@@ -98,10 +99,10 @@ if %KEY% == 102 if "!FT%CURRPOS%!"=="/" set KEY=70& rem f for folder
 if %KEY% == 70 call :SHOWBOTTOMBAR !FO%CURRPOS%! & rem F
 if %KEY% == 100 if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST & rem d
 if %KEY% == 114 call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST & rem r
-if %KEY% == 99 if not "!FT%CURRPOS%!"=="/" call :GETANSWER "Copy file to:" STRIPQUOTES& if not "!ANSWER!"=="" call :COPYOP %CURRPOS% "!ANSWER!" copy Copied " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem c
-if %KEY% == 109 if not !FO%CURRPOS%!==".." call :GETANSWER "Move file/folder to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :COPYOP %CURRPOS% "!ANSWER!" move Moved " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem m
-if %KEY% == 89 if not "!FT%CURRPOS%!"=="/" if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! copy Copied " to alternate path." & rem Y
-if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPYOP %CURRPOS% !DIR%DIROP%! move Moved " to alternate path." & call :MAKEDIRLIST R&call :SHOWLIST & rem ^Y
+if %KEY% == 99 if not "!FT%CURRPOS%!"=="/" call :GETANSWER "Copy file to:" STRIPQUOTES& if not "!ANSWER!"=="" call :COPYOP !FO%CURRPOS%! "!ANSWER!" copy Copied " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem c
+if %KEY% == 109 if not !FO%CURRPOS%!==".." call :GETANSWER "Move file/folder to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :COPYOP !FO%CURRPOS%! "!ANSWER!" move Moved " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem m
+if %KEY% == 89 if not "!FT%CURRPOS%!"=="/" if not !DIR%DIROP%!=="%CD%" call :COPYOP !FO%CURRPOS%! !DIR%DIROP%! copy Copied " to alternate path." & rem Y
+if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPYOP !FO%CURRPOS%! !DIR%DIROP%! move Moved " to alternate path." & call :MAKEDIRLIST R&call :SHOWLIST & rem ^Y
 if %KEY% == 107 call :GETANSWER "New folder:"& if not "!ANSWER!"=="" cmd /C mkdir !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem k
 if %KEY% == 47 call :GETANSWER "Go to path:" STRIPQUOTES& if not "!ANSWER!"=="" call :SETPATHOP "!ANSWER!" & rem /
 
@@ -112,6 +113,13 @@ if %KEY% == 84 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP copy !DIR%DIROP%!& 
 if %KEY% == 20 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP move !DIR%DIROP%!& rem ^T
 if %KEY% == 67 call :COUNTITEMS CNT& if !CNT! geq 1 call :GETANSWER "Copy selected files to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP copy "!ANSWER!" SKIPYN & rem C
 if %KEY% == 77 call :COUNTITEMS CNT Y& if !CNT! geq 1 call :GETANSWER "Move selected files to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP move "!ANSWER!" SKIPYN & rem M
+
+if %KEY% == 118 if not !FO%CURRPOS%!==".." call :PUTINCB 3 &call :SHOWBOTTOMBAR "Cleared clipboard and added item."& rem v
+if %KEY% == 86 if not !FO%CURRPOS%!==".." call :PUTINCB 4 &call :SHOWBOTTOMBAR "Added item to clipboard."& rem V
+if %KEY% == 98 call :COUNTITEMS CNT Y & if !CNT! geq 1 call :PUTINCB 1 &call :SHOWBOTTOMBAR "Cleared clipboard and added item(s)."& rem b
+::if %KEY% == 22 call :COUNTITEMS CNT Y & if !CNT! geq 1 call :PUTINCB 2 &call :SHOWBOTTOMBAR "Added item(s) to clipboard."& rem ^V
+if %KEY% == 66 call :CLIPBOARDCOPYOP copy& rem B
+if %KEY% == 2 call :CLIPBOARDCOPYOP move& rem ^B
 
 if not %EXTEND% == "" if exist %EXTEND% call :EXTENDOP
 
@@ -124,6 +132,29 @@ cmdwiz showcursor 1
 set /a LINES-=1
 gotoxy 0 !LINES!
 endlocal&if %KEY%==120 cd "%CD%"
+goto :eof
+
+
+:CLIPBOARDCOPYOP
+set ALLOWFOLDERS=&if "%1"=="move" set ALLOWFOLDERS=Y
+if "%CLIPB%" == "" call :SHOWBOTTOMBAR "No items in clipboard."&goto :eof
+if "%1"=="copy" call :YESNO "Really %1 ALL selected files from clipboard?(y/n) " 
+if "%1"=="move" call :YESNO "Really %1 ALL selected files/folders from clipboard?(y/n) " 
+if "!ANSWER!"=="N" goto :eof
+if "%1"=="copy" for /D %%a in (%CLIPB%) do if not exist "%%a\" call :COPYOP %%a "." copy Copied "."
+if "%1"=="move" for /D %%a in (%CLIPB%) do call :COPYOP %%a "." move Moved "."
+call :MAKEDIRLIST R
+call :SHOWLIST
+set CLIPB=
+goto :eof
+
+
+:PUTINCB
+if not %1 == 2 if not %1 == 4 set CLIPB=
+if %1 geq 3 set CLIPB=!CLIPB! "%CD%\!FO%CURRPOS%:~1,-1!"&goto :eof
+for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set CLIPB=!CLIPB! "%CD%\!FO%%a:~1,-1!"
+call :CLEARSELECTED
+call :SHOWLIST
 goto :eof
 
 
@@ -208,8 +239,8 @@ if "%1"=="copy" call :YESNO "Really %1 ALL selected files to second path?(y/n) "
 if "%1"=="move" call :YESNO "Really %1 ALL selected files/folders to second path?(y/n) " 
 if "!ANSWER!"=="N" goto :eof
 :SKIPYN
-if "%1"=="copy" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" call :COPYOP %%a %2 copy Copied "."
-if "%1"=="move" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" call :COPYOP %%a %2 move Moved "."
+if "%1"=="copy" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" call :COPYOP !FO%%a! %2 copy Copied "."
+if "%1"=="move" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" call :COPYOP !FO%%a! %2 move Moved "."
 if "%1"=="move" call :MAKEDIRLIST R
 if "%1"=="copy" call :CLEARSELECTED
 call :SHOWLIST
@@ -234,11 +265,11 @@ goto :eof
 :CLEARSELECTED
 for /L %%a in (0,1,%FCOUNTSUB%) do set FS%%a=
 goto :eof
-
+	
 
 :COPYOP
 set FPATH=%2
-set FFILE=!FO%1!
+set FFILE=%1
 if exist "%FPATH:~1,-1%\%FFILE:~1,-1%" call :YESNO "Overwrite?(y/n) (%FFILE:~1,-1%)" & if "!ANSWER!"=="N" goto :eof
 if not exist "%FPATH:~1,-1%\" if exist %FPATH% call :YESNO "Overwrite?(y/n) (%FPATH:~1,-1%)" & if "!ANSWER!"=="N" goto :eof
 %3 /Y %FFILE% %FPATH%>nul
@@ -453,7 +484,7 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f: %HLPC2%show file information\n%HLPC1%F: %HLPC2%show full file/folder name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend path\\name]\n" 0 0 c
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend path\\name]\n" 0 0 c
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SHOW_EXTENDED_HELP
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP

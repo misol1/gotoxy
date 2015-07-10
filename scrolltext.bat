@@ -11,9 +11,12 @@ set COLOR=7&if not "%4" == "" set COLOR=%4
 set SCROLLPOS=80
 call util.bat strlen SCROLL_LEN %SCROLLTEXT%
 set /a SCROLL_LEN=0-SCROLL_LEN
+set CNT=0
 
 :LOOP
-cmdwiz getch nowait
+set /a CNT+=1
+set /a CCNT = %CNT% %% 20
+if %CCNT% == 0 cmdwiz getch nowait
 if %ERRORLEVEL% == 27 goto OUT
 
 gotoxy.exe %SCROLLPOS% %YP% %SCROLLTEXT%%DELAY% %COLOR% 0
