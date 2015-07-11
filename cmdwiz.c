@@ -259,10 +259,10 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
 int main(int argc, char **argv) {
   int delayVal = 0;
 
-  if (argc < 2) { printf("Usage: cmdwiz [getconsoledim setbuffersize getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]\n"); return 0; }
+  if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]\n"); return 0; }
   
   if (stricmp(argv[1],"delay") == 0) {
-	if (argc < 3) { printf("Usage: cmdwiz delay [ms]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
 
 	delayVal=atoi(argv[2]);
 	if (delayVal < 1) return 0;
@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
   }
   else if (stricmp(argv[1],"getconsoledim") == 0) {
 	int dim = BUFW;
-	if (argc < 3) { printf("Usage: cmdwiz getconsoledim [x|y|sx|sy|cx|cy]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz getconsoledim [x|y|sx|sy|cx|cy]\n"); return 0; }
     if (argv[2][0] == 'x') dim = BUFW;
     if (argv[2][0] == 'y') dim = BUFH;
     if (argv[2][0] == 's') if (argv[2][1] == 'x') dim = SCRW;
@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
   else if (stricmp(argv[1],"setbuffersize") == 0) {
     COORD nb;
 
-	if (argc < 4) { printf("Usage: cmdwiz setbuffersize [width height]\n"); return 0; }
+	if (argc < 4) { printf("\nUsage: cmdwiz setbuffersize [width height]\n"); return 0; }
     nb.X = atoi(argv[2]);
     nb.Y = atoi(argv[3]);
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), nb);
@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 	int i, j, k = 0;
 	char buf[128];
-	if (argc < 3) { printf("Usage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|VKEY1[h]] ...\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|VKEY1[h]] ...\n"); return 0; }
 
 	if (stricmp(argv[2],"all") == 0) {
 	  int vKeys[16] = { VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_MENU, VK_LMENU, VK_RMENU }; 
@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
 	return k;
   }
   else if (stricmp(argv[1],"playsound") == 0) {
-	if (argc < 3) { printf("Usage: cmdwiz playsound [filename]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz playsound [filename]\n"); return 0; }
     PlaySound(argv[2], NULL, 0x00020000L|0x0002); // SND_FILENAME | SND_NODEFAULT
     return 0;
   }
@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
 	int x, y;
 	int ox, oy;
 	int i;
-	// printf("Usage: cmdwiz getcharat [x|k] [y|k]");
+	// printf("\nUsage: cmdwiz getcharat [x|k] [y|k]");
 	GetXY(&ox, &oy);
   
 	if (argc > 2) { if (argv[2][0]!='k') x=atoi(argv[2]); else x=ox; } else x=ox;
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
 	int ox, oy;
 	int i;
 	
-	if (argc < 3) { printf("Usage: cmdwiz getcolorat [fg|bg] [x|k] [y|k]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz getcolorat [fg|bg] [x|k] [y|k]\n"); return 0; }
 
 	GetXY(&ox, &oy);
   
@@ -372,7 +372,7 @@ int main(int argc, char **argv) {
   else if (stricmp(argv[1],"getcursorpos") == 0) {
 	int ox, oy;
 
-	if (argc < 3) { printf("Usage: cmdwiz getcursorpos [x|y]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz getcursorpos [x|y]\n"); return 0; }
 	GetXY(&ox, &oy);
 
 	return argv[2][0]=='x'? ox : oy;
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
   else if (stricmp(argv[1],"quickedit") == 0) {
     DWORD fdwMode;
 	int i;
-	if (argc < 3) { printf("Usage: cmdwiz quickedit [0|1]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz quickedit [0|1]\n"); return 0; }
 	i = atoi(argv[2]);
 	
     GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &fdwMode);
@@ -406,7 +406,7 @@ int main(int argc, char **argv) {
     if (stricmp(argv[1],"getch_and_mouse") == 0)
 	  bKeyAndMouse = 1;
 	
-	// if (argc < 3) { printf("Usage: cmdwiz getmouse [maxWait]\n"); return -1; }
+	// if (argc < 3) { printf("\nUsage: cmdwiz getmouse [maxWait]\n"); return -1; }
 	if (argc > 2) wtime = atoi(argv[2]);
 	
     GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &oldfdwMode);
@@ -469,7 +469,7 @@ int main(int argc, char **argv) {
     CHAR_INFO chiFill;
 	int w, h;
 
-	if (argc < 8) { printf("Usage: cmdwiz moveblock [x y width height newX newY]\n"); return 0; }
+	if (argc < 8) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY]\n"); return 0; }
 	r.Left = atoi(argv[2]);
 	r.Top = atoi(argv[3]);
 	w = atoi(argv[4]);
@@ -486,13 +486,13 @@ int main(int argc, char **argv) {
 	return 0;
   }
   else if (stricmp(argv[1],"copyblock") == 0) {
-	if (argc < 8) { printf("Usage: cmdwiz copyblock [x y width height newX newY]\n"); return 0; }
+	if (argc < 8) { printf("\nUsage: cmdwiz copyblock [x y width height newX newY]\n"); return 0; }
 	CopyBlock(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),atoi(argv[6]),atoi(argv[7]));
 	return 0;
   }
   else if (stricmp(argv[1],"await") == 0) {
 	int startT, waitT;
-	if (argc < 4) { printf("Usage: cmdwiz await [oldtime] [waittime]\n"); return 0; }
+	if (argc < 4) { printf("\nUsage: cmdwiz await [oldtime] [waittime]\n"); return 0; }
 	startT = atoi(argv[2]);
 	waitT = atoi(argv[3]);
     
@@ -503,7 +503,7 @@ int main(int argc, char **argv) {
   else if (stricmp(argv[1],"showcursor") == 0) {
 	CONSOLE_CURSOR_INFO c;
 
-	if (argc < 3) { printf("Usage: cmdwiz showcursor [0|1] [show percentage 0-100 (default 25)]\n"); return 0; }
+	if (argc < 3) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 0-100 (default 25)]\n"); return 0; }
 
 	c.bVisible = argv[2][0] == '0'? FALSE : TRUE;
 	c.dwSize = 25;
@@ -516,7 +516,7 @@ int main(int argc, char **argv) {
 	int encodeMode = 1;
     int transpChar = -1, transpFg = -1, transpBg = -1;
 	
-	if (argc < 7) { printf("Usage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode] [transparent char] [transparent bgcolor] [transparent fgcolor]\n"); return 0; }
+	if (argc < 7) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode] [transparent char] [transparent bgcolor] [transparent fgcolor]\n"); return 0; }
     if (argc>7) {
 	  if (argv[7][0]=='n') encodeMode = 0;
 	  if (argv[7][0]=='f') encodeMode = 2;

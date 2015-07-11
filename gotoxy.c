@@ -86,7 +86,7 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
   free(str);
 }
 
-void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos) {
+void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos, int bAllowCodes) {
     int i = 0, j, inlen;
     COORD a, b;
     SMALL_RECT r;
@@ -98,6 +98,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 	HANDLE hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
 	int transpChar = -1, transpFg = -1, transpBg = -1, fgBgCol;
+	int bForceFg = 0, bForceBg = 0;
 	char ch;
 	unsigned int startT = GetTickCount();
      
@@ -105,6 +106,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 	if (!str)
 	  return;
 
+	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15) fgCol=0; }
+	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15) bgCol=0; }
 	fgBgCol = fgCol | (bgCol<<4);
 	inlen = strlen(text);
 
@@ -112,7 +115,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 		j = 0;
 		for(; i < inlen; i++) {
 		    ch = text[i];
-			if (ch == '\\') {
+			if (ch == '\\' && bAllowCodes) {
 				i++;
 		        ch = text[i];
 				if (i < inlen) {
@@ -190,8 +193,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					  int tmp1, tmp2;
 					  tmp1 = oldfc;
 					  tmp2 = oldbc;
-					  fgCol = oldfc;
-					  bgCol = oldbc;
+					  if (!bForceFg) fgCol = oldfc;
+					  if (!bForceBg) bgCol = oldbc;
 					  oldfc = tmp1;
 					  oldbc = tmp2;
 					  fgBgCol = fgCol | (bgCol<<4);
@@ -293,10 +296,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					else {
 						oldfc = fgCol;
 						oldbc = bgCol;
-						fgCol = GetCol(text[i], fgCol);
+						if (!bForceFg) fgCol = GetCol(text[i], fgCol);
 						i++;
 						if (i < inlen) {
-							bgCol = GetCol(text[i], bgCol);
+							if (!bForceBg) bgCol = GetCol(text[i], bgCol);
 						}
 						fgBgCol = fgCol | (bgCol<<4);
 					}
@@ -407,11 +410,11 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 int main(int argc, char **argv) {
   int ox, oy;
   int x, y;
-  int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0;
+  int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
   unsigned char *u8buf = NULL;
 		  
   if (argc < 3 || argc > 9) {
-    printf("Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
+    printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
     // Info from "color /?" in dos prompt (but not using hex)
     printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
     printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n");
@@ -438,6 +441,7 @@ int main(int argc, char **argv) {
     } 
 #ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE	
 	else { // ASCII characters over 127 (exteded Ascii) come as wrong values. Get/convert Unicode to IBM437 code page if such characters exist in string.
+	       // Downside: exe files become slower (why?), even if not using Extended Ascii.
       int i, bExt = 0;
 
 	  for (i=0; i < al; i++)
@@ -504,10 +508,12 @@ int main(int argc, char **argv) {
 
   if (argc > 5)
     bgCol = argv[5][1]==0? GetCol(argv[5][0], 0) : atoi(argv[5]);
-  if (argc > 4)
+  if (argc > 4) {
+    if (argv[4][0]=='+') bAllowCodes = 0;
     fgCol = argv[4][1]==0? GetCol(argv[4][0], 7) : atoi(argv[4]);
+  }
   if (argc > 3)
-		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos);
+		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes);
 	
   if (argc > 6) {
     if (argv[6][0] == 'c')
