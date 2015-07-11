@@ -59,7 +59,7 @@ cmdwiz getch_and_mouse
 set MR=%ERRORLEVEL%
 if %MR% == -1 goto MAINLOOP
 set /a KEY=(%MR%^>^>21)
-if %MOUSESUPPORT%==1 set /a MT=%MR% ^& 1 &if !MT! == 1 call :PROCESS_MOUSE & if !DBLCL!==0 goto MAINLOOP
+if %MOUSESUPPORT%==1 set /a MT=%MR% ^& 1 &if !MT! == 1 call :PROCESS_MOUSE & if !DBLCL!==0 if !KEY!==0 goto MAINLOOP
 
 if %KEY% == 336 set OLDPOS=%CURRPOS%&set /a CURRPOS+=1 & call :UPDATELIST & goto MAINLOOP & rem DOWN
 if %KEY% == 328 set OLDPOS=%CURRPOS%&set /a CURRPOS-=1 & call :UPDATELIST & goto MAINLOOP & rem UP
