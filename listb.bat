@@ -8,10 +8,12 @@ if "%~1"=="_STRLEN" call :STRLEN %2 %3&goto :eof
 
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
+cmdwiz getconsoledim y&set OLDH=!ERRORLEVEL!
 set COLS=81&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set LINES=%3&if !LINES! lss 20 set LINES=20
 cls
 mode con lines=%LINES% cols=%COLS%
+set OLDCOLS=%COLS%
 set BAR=""
 for /L %%a in (1,1,%COLS%) do set BAR="!BAR:~1,-1! "
 set /a BARPOS=%LINES%-1
@@ -129,6 +131,7 @@ goto MAINLOOP
 
 :EXITLIST
 cmdwiz showcursor 1
+cmdwiz setbuffersize %OLDCOLS% %OLDH%
 set /a LINES-=1
 gotoxy 0 !LINES!
 endlocal&if %KEY%==120 cd "%CD%"
