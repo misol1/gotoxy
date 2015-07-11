@@ -63,7 +63,7 @@ exit /b 3
 
 :NOT_SHIFTz
 
-exit /b 0
+exit /b -1
 goto :eof
 
 

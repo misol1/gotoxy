@@ -44,6 +44,10 @@ set SELCHAR=\g07
 set HLPC1=\B0
 set HLPC2=\70
 
+set MOUSESUPPORT=0
+if not "%~5" == "" set MOUSESUPPORT=1
+if %MOUSESUPPORT%==1 cmdwiz quickedit 0
+
 set VIEWCMD=less -f
 set EDITCMD=b
 
@@ -51,8 +55,12 @@ call :MAKEDIRLIST
 call :SHOWLIST
 
 :MAINLOOP
-cmdwiz getch
-set KEY=%ERRORLEVEL%
+cmdwiz getch_and_mouse
+set MR=%ERRORLEVEL%
+if %MR% == -1 goto MAINLOOP
+set /a KEY=(%MR%^>^>21)
+if %MOUSESUPPORT%==1 set /a MT=%MR% ^& 1 &if !MT! == 1 call :PROCESS_MOUSE & if !DBLCL!==0 goto MAINLOOP
+
 if %KEY% == 336 set OLDPOS=%CURRPOS%&set /a CURRPOS+=1 & call :UPDATELIST & goto MAINLOOP & rem DOWN
 if %KEY% == 328 set OLDPOS=%CURRPOS%&set /a CURRPOS-=1 & call :UPDATELIST & goto MAINLOOP & rem UP
 if %KEY% == 331 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH% & call :UPDATELIST & goto MAINLOOP & rem LEFT
@@ -132,6 +140,7 @@ goto MAINLOOP
 :EXITLIST
 cmdwiz showcursor 1
 cmdwiz setbuffersize %OLDCOLS% %OLDH%
+if %MOUSESUPPORT%==1 cmdwiz quickedit 1
 set /a LINES-=1
 gotoxy 0 !LINES!
 endlocal&if %KEY%==120 cd "%CD%"
@@ -176,7 +185,7 @@ set RESULT=%ERRORLEVEL%
 if %RESULT% equ 1 call :SHOWLIST
 if %RESULT% equ 2 call :MAKEDIRLIST&call :SHOWLIST
 if %RESULT% equ 3 call :MAKEDIRLIST R&call :SHOWLIST
-call :SHOWTOPBAR
+if %RESULT% equ 0 call :SHOWTOPBAR
 goto :eof
 
 
@@ -486,7 +495,7 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend path\\name]\n" 0 0 c
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend path\\name] [mouse]\n" 0 0 c
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SHOW_EXTENDED_HELP
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP
@@ -501,4 +510,39 @@ set CNTI=0
 if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" set /a CNTI+=1
 if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set /a CNTI+=1
 set %1=%CNTI%
+goto :eof
+
+
+:PROCESS_MOUSE
+set OLDCP=%CURRPOS%
+set DBLCL=0
+
+set /a MT=%MR% ^& 2 &if !MT! geq 1 set DL=1
+set /a MT=%MR% ^& 2 &if !MT! equ 0 set DL=0
+set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1
+set /a MT=%MR% ^& 4 &if !MT! equ 0 set DR=0
+set /a MT=%MR% ^& 8 &if !MT! geq 1 set DL=2
+set /a MT=%MR% ^& 16 &if !MT! geq 1 set DR=2
+set /a MT=%MR% ^& 32 &if !MT! geq 1 set /a CURRPOS+=%LH%*3
+set /a MT=%MR% ^& 64 &if !MT! geq 1 set /a CURRPOS-=%LH%*3
+set /a MX=(%MR%^>^>7) ^& 127
+set /a MY=(%MR%^>^>14) ^& 127
+
+if %DL% == 0 if %DR% == 0 goto NOPRESS
+set /a PAGE=%CURRPOS%/(%COLSPERSCR%*%LH%)
+set /a CPT=%LINES%-1
+if %MY% geq %CPT% goto NOPRESS
+if %MY% leq 0 goto NOPRESS
+set /a CURRPOS=(%COLSPERSCR%*%LH%)*%PAGE%
+set /a CPX=%MY%-1
+set /a CURRPOS+=%CPX%
+set /a CPT=%OLDCOLS%/%COLSPERSCR%
+set /a CPT=%MX%/%CPT%
+set /a CURRPOS+=%CPT%*%LH%
+if %DL%==2 set KEY=13&set DBLCL=1
+if %DR%==2 set KEY=105&set DBLCL=1
+:NOPRESS
+
+if not %OLDCP% == %CURRPOS% set OLDPOS=%OLDCP%& call :UPDATELIST
+
 goto :eof
