@@ -25,6 +25,8 @@ if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat 
 
 if %KEY% == 1 call :SET_ATTRIBS & exit /b 0 & goto :eof & rem ^A
 
+if %KEY% == 24 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _GETANSWER "Copy to (# for swap folder):"& if not "!ANSWER!"=="" call :XCOPY "!ANSWER!"& exit /b 3 & goto :eof & rem ^X
+
 if not %KEY% == 97 goto NOT_a & rem a
 if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1
@@ -76,13 +78,22 @@ if not "!ANSWER!"=="" cmd /C attrib !ANSWER! !FO%CURRPOS%!>nul
 goto :eof
 
 
+:XCOPY
+if not %~1 == # set ANSWER="%~1"
+if %~1 == # set ANSWER=!DIR%DIROP%!
+if exist "%ANSWER:~1,-1%" if not exist "%ANSWER:~1,-1%\" goto :eof
+if not exist "%ANSWER:~1,-1%\" xcopy /Y /I /E "!FO%CURRPOS%:~1,-1!\*.*" "%ANSWER:~1,-1%" >nul & goto :eof
+xcopy /Y /I /E !FO%CURRPOS%! "%ANSWER:~1,-1%\!FO%CURRPOS%:~1,-1!" >nul
+goto :eof
+
+
 :SHOWHELP
 set EXTHLPC1=%HLPC1%
-::set EXTHLPC1=\A0
-gotoxy k k "\n%EXTHLPC1%a: %HLPC2%show file based on extension\n%EXTHLPC1%p: %HLPC2%launch command prompt\n%EXTHLPC1%n/N: %HLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %HLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %HLPC2%recursively search for file\n%EXTHLPC1%W/^W: %HLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %HLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %HLPC2%specify go path\n%EXTHLPC1%^C: %HLPC2%copy specified to current path\n%EXTHLPC1%^D: %HLPC2%recursively delete folder\n%EXTHLPC1%^A: %HLPC2%show/set item attributes"
+set EXTHLPC2=%HLPC2%
+gotoxy k k "\n%EXTHLPC1%a: %EXTHLPC2%show file based on extension\n%EXTHLPC1%p: %EXTHLPC2%launch command prompt\n%EXTHLPC1%n/N: %EXTHLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %EXTHLPC2%unzip/zip file/selected files\n%EXTHLPC1%w: %EXTHLPC2%recursively search for file\n%EXTHLPC1%W/^W: %EXTHLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %EXTHLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %EXTHLPC2%specify go path\n%EXTHLPC1%^C: %EXTHLPC2%copy specified to current path\n%EXTHLPC1%^D: %EXTHLPC2%recursively delete folder\n%EXTHLPC1%^A: %EXTHLPC2%show/set item attributes\n%EXTHLPC1%^X: %EXTHLPC2%copy (recursively) folder to specified place"
 goto :eof
 
 
 :LOCASE
-for %%i in ("A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j" "K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t" "U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z") DO CALL SET "%1=%%%1:%%~i%%"
+for %%i in ("A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j" "K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t" "U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z") do call set "%1=%%%1:%%~i%%"
 goto :eof
