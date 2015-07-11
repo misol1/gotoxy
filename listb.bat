@@ -538,6 +538,7 @@ set /a CPX=%MY%-1
 set /a CURRPOS+=%CPX%
 set /a CPT=%OLDCOLS%/%COLSPERSCR%
 set /a CPT=%MX%/%CPT%
+if %CPT% geq %COLSPERSCR% set /a CPT-=1
 set /a CURRPOS+=%CPT%*%LH%
 if %DL%==2 set KEY=13&set DBLCL=1
 if %DR%==2 set KEY=105&set DBLCL=1
