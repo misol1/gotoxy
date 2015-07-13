@@ -71,6 +71,8 @@ if %KEY% == 337 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH%*3 & call :UPDATELIST &
 if %KEY% == 329 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH%*3 & call :UPDATELIST & goto MAINLOOP & rem PAGEUP
 if %UPDATEBOTTOM%==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
 
+if %KEY% == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
+
 cmdwiz getkeystate alt
 set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOALTPRESSED
 if %KEY% gtr 255 goto NOALTPRESSED
@@ -116,7 +118,6 @@ if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPY
 if %KEY% == 107 call :GETANSWER "New folder:"& if not "!ANSWER!"=="" cmd /C mkdir !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem k
 if %KEY% == 47 call :GETANSWER "Go to path:" STRIPQUOTES& if not "!ANSWER!"=="" call :SETPATHOP "!ANSWER!" & rem /
 
-if %KEY% == 32 call :MARKITEM & rem SPACE
 if %KEY% == 9 call :MULTIOP & rem ^I
 if %KEY% == 68 call :MULTIDELOP & rem D
 if %KEY% == 84 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP copy !DIR%DIROP%!& rem T
