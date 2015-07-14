@@ -1,10 +1,16 @@
 @echo off
-if "%~1" == "" echo Error: No operation& goto :EOF
-if "%~1" == "strlen" call :strlen %2 %3& goto OPFIN
-if "%~1" == "setprogress" call :setprogress %2& goto OPFIN
-if "%~1" == "dectohex" call :dectohex_simple %2 %3 %4& goto OPFIN
+set UTILOP="%~1"
+call :LoCase UTILOP
+if %UTILOP% == "" echo Error: No operation& goto :EOF
+if %UTILOP% == "strlen" call :strlen %2 %3& goto OPFIN
+if %UTILOP% == "setprogress" call :setprogress %2& goto OPFIN
+if %UTILOP% == "dectohex" call :dectohex_simple %2 %3 %4& goto OPFIN
+if %UTILOP% == "locase" call :LoCase %2& goto OPFIN
+if %UTILOP% == "upcase" call :UpCase %2& goto OPFIN
+if %UTILOP% == "tcase" call :TCase %2& goto OPFIN
 echo Error: Unknown operation
 :OPFIN
+set UTILOP=
 goto :eof
 
 
@@ -53,4 +59,17 @@ if %1 == 12 set P=C&goto :eof
 if %1 == 13 set P=D&goto :eof
 if %1 == 14 set P=E&goto :eof
 if %1 == 15 set P=F&goto :eof
+goto :eof
+
+
+:LoCase
+for %%i in ("A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j" "K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t" "U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z") do call set "%1=%%%1:%%~i%%"
+goto :eof
+
+:UpCase
+for %%i in ("a=A" "b=B" "c=C" "d=D" "e=E" "f=F" "g=G" "h=H" "i=I" "j=J" "k=K" "l=L" "m=M" "n=N" "o=O" "p=P" "q=Q" "r=R" "s=S" "t=T" "u=U" "v=V" "w=W" "x=X" "y=Y" "z=Z") do call set "%1=%%%1:%%~i%%"
+goto :eof
+
+:TCase
+for %%i in (" a= A" " b= B" " c= C" " d= D" " e= E" " f= F" " g= G" " h= H" " i= I" " j= J" " k= K" " l= L" " m= M" " n= N" " o= O" " p= P" " q= Q" " r= R" " s= S" " t= T" " u= U" " v= V" " w= W" " x= X" " y= Y" " z= Z") do call set "%1=%%%1:%%~i%%"
 goto :eof
