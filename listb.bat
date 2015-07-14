@@ -107,7 +107,7 @@ if %KEY% == 73 call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!"=
 if %KEY% == 101 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%! & rem e
 if %KEY% == 69 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem E
 if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
-if %KEY% == 102 if "!FT%CURRPOS%!"=="/" set KEY=70& rem f for folder
+if %KEY% == 102 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." cmd /C dir  /-C>%MYTEMP%out.dat&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (bit of a hack)
 if %KEY% == 70 call :SHOWBOTTOMBAR !FO%CURRPOS%! & rem F
 if %KEY% == 100 if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST & rem d
 if %KEY% == 114 call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST & rem r
