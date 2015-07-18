@@ -1,3 +1,4 @@
+call moving.bat&fx.bat
 call starfield.bat&fx.bat
 call starfield2.bat&fx.bat
 call sprite3.bat 14 5&fx.bat
