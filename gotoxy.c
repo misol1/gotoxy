@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <ctype.h>
 
-// Compilation with tcc: tcc -lshell32 -o gotoxy.exe gotoxy.c
+// Compilation with tcc(32 bit version) : tcc -lshell32 -o gotoxy.exe gotoxy.c
 
 //#define SUPPORT_EXTENDED_ASCII_ON_CMD_LINE 1
 

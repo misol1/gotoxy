@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <conio.h>
 
-// Compilation with tcc: tcc -lwinmm -luser32 -o cmdwiz.exe cmdwiz.c
+// Compilation with tcc (32 bit version): tcc -lwinmm -luser32 -o cmdwiz.exe cmdwiz.c
 
 #define BUFW 0
 #define BUFH 1

@@ -1,3 +1,4 @@
+::Please use tcc 32 bit version, currently not compatible with 64 bit
 tcc -lwinmm -luser32 -o cmdwiz.exe cmdwiz.c
 @echo.
 tcc -o gotoxy.exe gotoxy.c
