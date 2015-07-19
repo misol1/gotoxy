@@ -1,6 +1,5 @@
 @echo off
 mode con lines=50 cols=80
-cls
 call sintable.bat
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
@@ -55,7 +54,6 @@ set /a YPOS3=%YMID%-4+(!SIN%SC3%!*18^>^>14)
 set FIELD=
 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!   .&set /a STARX%%b+=!STARS%%b!&if !STARX%%b! geq %XMAX% set /a STARX%%b=-3-(!RANDOM! %% %XM%)&set /a STARY%%b=!RANDOM! %% %YM%
 gotoxy.exe 0 0 "\O0;0;80;%YM%%FIELD%\p%XPOS2%;%YPOS2%!spi%TOGG%!\p%XPOS3%;%YPOS3%%spi2%\p%XPOS%;%YPOS%%gom%%DELAY%"
-set /a XP+=1
 set /a SC+=6 & if !SC! geq 720 set /A SC=!SC!-720
 set /a CC+=6 & if !CC! geq 720 set /A CC=!CC!-720
 set /a SC2+=5 & if !SC2! geq 720 set /A SC2=!SC2!-720
