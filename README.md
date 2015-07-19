@@ -1,7 +1,7 @@
 # gotoxy
 Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015)
 
-Sorry about the current lack of documentation; have a look at the example files and all will be clear...
+Sorry about the current lack of documentation; have a look at the example files and all will be (kind of) clear...
 
 Notable examples: Listb(file manager), Editor, Snake, Flappy, Freecell, Solitaire, Yahtzee
 
@@ -9,7 +9,7 @@ Notable examples: Listb(file manager), Editor, Snake, Flappy, Freecell, Solitair
 gotoxy.exe
 ----------
 ```
-Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol]
+Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)]
               [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]
 
 Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
@@ -17,10 +17,10 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 
 [text] supports control codes:
      \px;y: cursor position x y
-       \xx: fgcol and bgcol in hex, eg \A0
+       \xx: fgcol and bgcol in hex, eg \A0 (*)
         \r: restore old color
       \gxx: ascii character in hex
-    \txxXX: set character xx with col XX as transparent
+    \txxXX: set character xx with col XX as transparent (*)
         \n: newline
         \N: clear screen
         \-: skip character (transparent)
@@ -29,6 +29,10 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
        \Wx: delay up to x ms
  \ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \o
  \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \O
+
+(*)  Use 'k' for current color, 'u/U' for console fgcol/bgcol (e.g. \kU)
+(**) Same as (*), but precede with '-' to force color and ignore color control
+     codes (-16 to force black). Precede with '+' to ignore all control codes. 
 ```
 
 cmdwiz.exe

@@ -37,7 +37,7 @@ void GetXY(int *x, int *y) {
   *y = csbInfo.dwCursorPosition.Y;
 }
 
-int GetCol(char c, int oldc) {
+int GetCol(char c, int oldc, int orgConsoleCol) {
 	int pc = c -'0';
 	if (pc > 9 || pc < 0) pc=oldc;
 	switch(c) {
@@ -47,6 +47,8 @@ int GetCol(char c, int oldc) {
 	case 'd':case 'D': pc=13; break;
 	case 'e':case 'E': pc=14; break;
 	case 'f':case 'F': pc=15; break;
+	case 'u': pc=orgConsoleCol & 0xf; break;
+	case 'U': pc=(orgConsoleCol>>4) & 0xf; break;
 	}
 	return pc;
 }
@@ -86,7 +88,7 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
   free(str);
 }
 
-void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos, int bAllowCodes) {
+void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos, int bAllowCodes, int orgConsoleCol) {
     int i = 0, j, inlen;
     COORD a, b;
     SMALL_RECT r;
@@ -132,10 +134,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					else if (ch == 'g') {
 					    int v = 0, v16 = 0;
 						i++;
-						v16 = GetCol(text[i], 0);
+						v16 = GetCol(text[i], 0, orgConsoleCol);
 						i++;
 						if (i < inlen) {
-							v = GetCol(text[i], 0);
+							v = GetCol(text[i], 0, orgConsoleCol);
 						}
 						v16 = (v16*16) + v;
 				        str[j].Char.AsciiChar = v16;
@@ -269,18 +271,18 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					else if (ch == 't') {
 					    int v = 0, v16 = 0;
 						i++;
-						v16 = GetCol(text[i], 0);
+						v16 = GetCol(text[i], 0, orgConsoleCol);
 						i++;
 						if (i < inlen) {
-							v = GetCol(text[i], 0);
+							v = GetCol(text[i], 0, orgConsoleCol);
 						}
 						i++;
 						if (i < inlen) {
-							transpFg = GetCol(text[i], -1);
+							transpFg = GetCol(text[i], -1, orgConsoleCol);
 						}
 						i++;
 						if (i < inlen) {
-							transpBg = GetCol(text[i], -1);
+							transpBg = GetCol(text[i], -1, orgConsoleCol);
 						}
 						v16 = (v16*16) + v;
 						transpChar = v16;
@@ -296,10 +298,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					else {
 						oldfc = fgCol;
 						oldbc = bgCol;
-						if (!bForceFg) fgCol = GetCol(text[i], fgCol);
+						if (!bForceFg) fgCol = GetCol(text[i], fgCol, orgConsoleCol);
 						i++;
 						if (i < inlen) {
-							if (!bForceBg) bgCol = GetCol(text[i], bgCol);
+							if (!bForceBg) bgCol = GetCol(text[i], bgCol, orgConsoleCol);
 						}
 						fgBgCol = fgCol | (bgCol<<4);
 					}
@@ -405,19 +407,27 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 	if (*x!=orgx) (*x)--;
 }
 
+int GetConsoleColor(){
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
+		return 7;
+    return info.wAttributes;
+}
+
 #define MAX_BUF_SIZE 64000
 
 int main(int argc, char **argv) {
   int ox, oy;
   int x, y;
+  int orgConsoleCol = 7;
   int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
   unsigned char *u8buf = NULL;
 		  
   if (argc < 3 || argc > 9) {
-    printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol] [bgcol] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
+    printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
     // Info from "color /?" in dos prompt (but not using hex)
     printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n");
+    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n       \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' for current color, 'u/U' for console fgcol/bgcol (e.g. \\kU)\n(**) Same as (*), but precede with '-' to force color and ignore color control codes (-16 to force black). Precede with '+' to ignore all control codes.\n");
     return 0;
   }
 
@@ -506,14 +516,26 @@ int main(int argc, char **argv) {
 	}
   }
 
-  if (argc > 5)
-    bgCol = argv[5][1]==0? GetCol(argv[5][0], 0) : atoi(argv[5]);
+  orgConsoleCol = GetConsoleColor();
+  fgCol = orgConsoleCol & 0xf;
+  bgCol = (orgConsoleCol>>4) & 0xf;
+  
+  if (argc > 5) {
+    int mul = 1;
+    char *pfg = argv[5];
+    if (*pfg=='+') { bAllowCodes = 0; pfg++; }
+    if (*pfg=='-') { mul = -1; pfg++; }
+    bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol) : atoi(pfg)) * mul;
+  }
   if (argc > 4) {
-    if (argv[4][0]=='+') bAllowCodes = 0;
-    fgCol = argv[4][1]==0? GetCol(argv[4][0], 7) : atoi(argv[4]);
+    int mul = 1;
+    char *pfg = argv[4];
+    if (*pfg=='+') { bAllowCodes = 0; pfg++; }
+    if (*pfg=='-') { mul = -1; pfg++; }
+    fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol) : atoi(pfg)) * mul;
   }
   if (argc > 3)
-		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes);
+		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes, orgConsoleCol);
 	
   if (argc > 6) {
     if (argv[6][0] == 'c')
