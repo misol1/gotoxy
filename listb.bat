@@ -173,7 +173,7 @@ goto :eof
 :GOTOPARENT
 echo "%CD%">%MYTEMP%out.dat
 set ANSWER=
-for /F "delims=\ tokens=*" %%a in (%MYTEMP%out.dat) do set ANSWER=%%~na
+for /F "delims=\ tokens=*" %%a in (%MYTEMP%out.dat) do set ANSWER=%%~nxa
 cd ..&call :MAKEDIRLIST
 if not "%ANSWER%" == "" call :FINDOP SKIPSHOW
 call :SHOWLIST
