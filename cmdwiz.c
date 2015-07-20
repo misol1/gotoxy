@@ -259,7 +259,7 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
 int main(int argc, char **argv) {
   int delayVal = 0;
 
-  if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]\n"); return 0; }
+  if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]\n"); return 0; }
   
   if (stricmp(argv[1],"delay") == 0) {
 	if (argc < 3) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
@@ -503,6 +503,16 @@ int main(int argc, char **argv) {
 	while (GetTickCount() < startT+waitT) {
 		Sleep(1);
 	}
+  }
+  else if (stricmp(argv[1],"getconsolecolor") == 0) {
+	CONSOLE_SCREEN_BUFFER_INFO info;
+
+	if (argc < 3) { printf("\nUsage: cmdwiz getconsolecolor [fg|bg]\n"); return 0; }
+
+	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
+		return -1;
+
+	return argv[2][0]=='f'? info.wAttributes & 0xf : (info.wAttributes >> 4) & 0xf;
   }
   else if (stricmp(argv[1],"showcursor") == 0) {
 	CONSOLE_CURSOR_INFO c;
