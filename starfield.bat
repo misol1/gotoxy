@@ -1,6 +1,7 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
+color 07
 cls
 set NOF=20
 set XSIZE=140

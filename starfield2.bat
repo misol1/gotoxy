@@ -33,7 +33,7 @@ if %DIR%==1 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIE
 if %DIR%==2 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!.&set /a STARX%%b-=!STARS%%b!&if !STARX%%b! lss -4 set /a STARX%%b=%XMAX%+3+(!RANDOM! %% %XSIZE%)&set /a STARY%%b=!RANDOM! %% %YSIZE%
 if %DIR%==3 for /L %%b in (0,1,%NOF%) do set /a YTMP=!STARY%%b!/%XDELAY%&set FIELD=!FIELD!\p!STARX%%b!;!YTMP!!STARC%%b!.&set /a STARY%%b+=!STARS%%b!&if !STARY%%b! geq %YMAX% set /a STARY%%b=-3-(!RANDOM! %% %YSIZE%)&set /a STARX%%b=!RANDOM! %% %XMAX%
 if %DIR%==4 for /L %%b in (0,1,%NOF%) do set /a YTMP=!STARY%%b!/%XDELAY%&set FIELD=!FIELD!\p!STARX%%b!;!YTMP!!STARC%%b!.&set /a STARY%%b-=!STARS%%b!&if !STARY%%b! lss -4 set /a STARY%%b=%YMAX%+3+(!RANDOM! %% %YSIZE%)&set /a STARX%%b=!RANDOM! %% %XMAX%
-gotoxy.exe 0 0 "\O0;0;%XSIZE%;%YSIZE%%FIELD%\p0;0\t20k0%BLOCK:~1,-1%" 7 0
+gotoxy.exe 0 0 "\O0;0;%XSIZE%;%YSIZE%%FIELD%\p0;0\t20kU%BLOCK:~1,-1%" 7 0
 
 set /a CNT+=1
 set /a KTMP=%CNT% %% 30
@@ -51,6 +51,6 @@ set /a STARY%1=%RANDOM% %% %YSIZE%
 set /a STARX%1=%RANDOM% %% %XSIZE%
 if not "%2" == "" set STARX%1=%2
 set /a STARS%1=%RANDOM% %% 3 + 1
-if !STARS%1! == 1 set STARC%1=\80
-if !STARS%1! == 2 set STARC%1=\70
-if !STARS%1! == 3 set STARC%1=\F0
+if !STARS%1! == 1 set STARC%1=\8U
+if !STARS%1! == 2 set STARC%1=\7U
+if !STARS%1! == 3 set STARC%1=\FU

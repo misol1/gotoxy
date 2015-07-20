@@ -1,6 +1,7 @@
 :: Mastermind : Mikael Sollenborn 2015
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
+color 07
 cls
 mode con lines=50
 cmdwiz showcursor 0

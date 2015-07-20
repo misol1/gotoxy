@@ -8,9 +8,9 @@ set EXTVIEW=less -f
 
 if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
 
-if %KEY% == 119 call listb.bat _GETANSWER "Search for file:"& if not "!ANSWER!"=="" call :CLRSCR&dir /s /-p /b|grep -i -F !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem w
-if %KEY% == 87 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" call :CLRSCR&grep -n -i "!ANSWER!" *.*|%EXTVIEW%& exit /b 1 & goto :eof & rem W
-if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call listb.bat _GETANSWER "File types:"& if not "!ANSWER!"=="" call :CLRSCR&grep -n -i "!FANSW!" !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem ^W
+if %KEY% == 119 call listb.bat _GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /-p /b|grep -i -F !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem w
+if %KEY% == 87 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|%EXTVIEW%& exit /b 1 & goto :eof & rem W
+if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call listb.bat _GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem ^W
 
 if %KEY% == 112 %NEWWINDOWCMD% & rem p
 
@@ -33,12 +33,12 @@ set XTENSION=%~x1
 call :LOCASE XTENSION
 set XFILE=%~n1
 if "%XTENSION%"==".wav" cmdwiz playsound %1 & exit /b 0
-if "%XTENSION%"==".gxy" call :CLRSCR&gotoxy 0 0 %1 0 0 c & cmdwiz getch & exit /b 1
+if "%XTENSION%"==".gxy" cls&gotoxy 0 0 %1 0 0 c & cmdwiz getch & exit /b 1
 if "%XTENSION%"==".mp3" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
 if "%XTENSION%"==".mod" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
-if "%XTENSION%"==".ans" call :CLRSCR&ansicon -t %1 & cmdwiz getch & exit /b 1
-if "%XTENSION%"==".zip" call :CLRSCR&unzip -l %1|%EXTVIEW% & exit /b 3
-call :CLRSCR
+if "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
+if "%XTENSION%"==".zip" cls&unzip -l %1|%EXTVIEW% & exit /b 3
+cls
 %EXTVIEW% %1
 exit /b 1
 
@@ -46,7 +46,7 @@ exit /b 1
 if not %KEY% == 122 goto NOT_z & rem z
 set XTENSION=%~x1
 if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" exit /b 0 & goto :eof
-call :CLRSCR
+cls
 unzip %1
 exit /b 3
 
@@ -54,7 +54,7 @@ exit /b 3
 if not %KEY% == 90 goto NOT_SHIFTz & rem Z
 call listb.bat _COUNTITEMS CNT Y& if !CNT! lss 1 call listb.bat _SHOWBOTTOMBAR "No items selected." & exit /b 0 & goto :eof
 call listb.bat _GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
-call :CLRSCR
+cls
 set ZCMD=zip -r %ANSWER%
 for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set ZCMD=!ZCMD! !FO%%a!
 %ZCMD%
@@ -96,8 +96,4 @@ goto :eof
 
 :LOCASE
 for %%i in ("A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j" "K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t" "U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z") do call set "%1=%%%1:%%~i%%"
-goto :eof
-
-:CLRSCR
-gotoxy 0 0 "\N" 7 0
 goto :eof

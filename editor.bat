@@ -22,6 +22,7 @@ if not "%2" == "" set COLS=%2
 if not "%3" == "" set ROWS=%3
 mode con lines=%ROWS% cols=%COLS%
 set /a YBOUND=%ROWS%-2
+color 07
 cls
 if "%LOADNAME%" == "" goto NOFILE
 if not exist "%LOADNAME%" goto NOFILE

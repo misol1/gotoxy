@@ -2,6 +2,7 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 mode con lines=50 cols=80
+color 07
 cls
 if "%PRESEL%" == "" set PRESEL=0
 set FRAMECOL=1&set SELBGCOL=9&set UNSELFGCOL=3&set FRAMETEXTCOL=7&set SHADOWCOL=8&set SELFGCOL=15&set UNSELBGCOL=0

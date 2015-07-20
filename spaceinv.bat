@@ -2,6 +2,7 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 mode con lines=25
+color 07
 cls
 cmdwiz showcursor 0
 call hiscore.bat spacescore.dat create "Invader" 50

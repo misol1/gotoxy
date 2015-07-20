@@ -1,6 +1,7 @@
 :: Snake : Mikael Sollenborn 2015
 @echo off
 mode con lines=50
+color 07
 cls
 cmdwiz showcursor 0
 setlocal ENABLEDELAYEDEXPANSION

@@ -4,6 +4,7 @@ setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 call hiscore.bat flappyscore.dat create "Birdman" 1
 mode con lines=52 cols=120
+color 07
 cls
 set DDY=10
 set DY=0

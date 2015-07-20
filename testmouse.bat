@@ -1,6 +1,7 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 mode con lines=50 cols=80
+color 07
 cls
 cmdwiz quickedit 0
 

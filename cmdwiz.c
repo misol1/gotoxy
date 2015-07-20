@@ -468,7 +468,8 @@ int main(int argc, char **argv) {
 	SMALL_RECT cl;
     CHAR_INFO chiFill;
 	int w, h;
-
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	
 	if (argc < 8) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY]\n"); return 0; }
 	r.Left = atoi(argv[2]);
 	r.Top = atoi(argv[3]);
@@ -479,7 +480,10 @@ int main(int argc, char **argv) {
 	r.Bottom = r.Top + h-1;
     np.X = atoi(argv[6]);
     np.Y = atoi(argv[7]);
-    chiFill.Attributes = FOREGROUND_RED; chiFill.Char.AsciiChar = ' ';
+    chiFill.Attributes = FOREGROUND_RED;
+	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
+		chiFill.Attributes = info.wAttributes;
+	chiFill.Char.AsciiChar = ' ';
 	cl.Left=np.X; cl.Top=np.Y; cl.Right=np.X+w; cl.Bottom=np.Y+h; //not working (tried to copy instead of moving). Hence the NULL below.
 	
     ScrollConsoleScreenBuffer(GetStdHandle(STD_OUTPUT_HANDLE), &r, NULL, np, &chiFill);

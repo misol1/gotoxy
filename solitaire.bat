@@ -1,6 +1,7 @@
 :: Solitaire : Mikael Sollenborn 2015
 @echo off
 cmdwiz showcursor 0
+color 07
 cls
 mode con lines=54 cols=80
 setlocal ENABLEDELAYEDEXPANSION

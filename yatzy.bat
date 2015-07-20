@@ -2,6 +2,7 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 mode con lines=50
+color 07
 cls
 cmdwiz showcursor 0
 call hiscore.bat yatzyscore.dat create "HighRoller" 100
