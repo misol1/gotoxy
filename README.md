@@ -32,7 +32,7 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 
 (*)  Use 'k' for current color, 'u/U' for console fgcol/bgcol (e.g. \kU)
 (**) Same as (*), but precede with '-' to force color and ignore color control
-     codes (-16 to force black). Precede with '+' to ignore all control codes. 
+     codes. Precede with '+' to ignore all control codes. 
 ```
 
 cmdwiz.exe

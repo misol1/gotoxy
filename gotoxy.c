@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
     printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
     // Info from "color /?" in dos prompt (but not using hex)
     printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n       \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol (e.g. \\kU)\n(**) Same as (*), but precede with '-' to force color and ignore color control codes (-16 to force black). Precede with '+' to ignore all control codes.\n");
+    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n       \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol (e.g. \\kU)\n(**) Same as (*), but precede with '-' to force color and ignore color control codes. Precede with '+' to ignore all control codes.\n");
     return 0;
   }
 
@@ -526,6 +526,7 @@ int main(int argc, char **argv) {
     if (*pfg=='+') { bAllowCodes = 0; pfg++; }
     if (*pfg=='-') { mul = -1; pfg++; }
     bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol) : atoi(pfg)) * mul;
+	if (bgCol == 0 && mul < 1) bgCol = -16;
   }
   if (argc > 4) {
     int mul = 1;
@@ -533,6 +534,7 @@ int main(int argc, char **argv) {
     if (*pfg=='+') { bAllowCodes = 0; pfg++; }
     if (*pfg=='-') { mul = -1; pfg++; }
     fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol) : atoi(pfg)) * mul;
+	if (fgCol == 0 && mul < 1) fgCol = -16;
   }
   if (argc > 3)
 		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes, orgConsoleCol);
