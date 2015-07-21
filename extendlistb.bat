@@ -8,7 +8,7 @@ set EXTVIEW=less -f
 
 if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
 
-if %KEY% == 119 call listb.bat _GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /-p /b|grep -i -F !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem w
+if %KEY% == 119 call listb.bat _GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /a /-p /b|grep -i -F !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem w
 if %KEY% == 87 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|%EXTVIEW%& exit /b 1 & goto :eof & rem W
 if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call listb.bat _GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem ^W
 
