@@ -36,7 +36,7 @@ set BARCOL=3
 set BARTEXTCOL=F
 set BARINFOCOL=0
 set CURRCOL=1
-set FILECOL=7
+set FILECOL=u
 set DIRCOL=B
 set SELCOL=4
 set PATHNOFCOL=B
@@ -411,7 +411,7 @@ set BARINFO="%CURRTMP%/%FCOUNT%"
 gotoxy 6 0 "a          \p5;0 %BARINFO:~1,-1%" %BARTEXTCOL% %BARCOL%
 goto :eof
 :NOUPDTB
-set BARINFO="File %CURRTMP%/%FCOUNT%"
+set BARINFO="Item %CURRTMP%/%FCOUNT%"
 set TCD="%CD:\=/%"
 gotoxy 0 0 "%BAR:~1,-1%\p1;0%BARINFO:~1,-1%\p18;0%TCD:~1,-1%" %BARTEXTCOL% %BARCOL%
 set /a TC=%COLS%-1&set /a TDP=%DIRP%+1&gotoxy !TC! 0 "!TDP!" %PATHNOFCOL% %BARCOL%
