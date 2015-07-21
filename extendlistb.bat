@@ -19,7 +19,7 @@ if %KEY% == 78 call listb.bat _GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd
 
 if %KEY% == 103 call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&%GCMD% !ANSWER!& exit /b 2 & goto :eof & rem g
 
-if %KEY% == 3 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof & rem ^C
+if %KEY% == 8 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof & rem ^H
 
 if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _YESNO "Really wipe out directory?(y/n) " & if "!ANSWER!"=="Y" cmd /C rd /Q /S !FO%CURRPOS%!& exit /b 3 & goto :eof & rem ^D
 
@@ -90,7 +90,7 @@ goto :eof
 :SHOWHELP
 set EXTHLPC1=%HLPC1%
 set EXTHLPC2=%HLPC2%
-gotoxy k k "\n%EXTHLPC1%a: %EXTHLPC2%show file based on extension\n%EXTHLPC1%p: %EXTHLPC2%launch command prompt\n%EXTHLPC1%n/N: %EXTHLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %EXTHLPC2%zip selected items / unzip file\n%EXTHLPC1%w: %EXTHLPC2%recursively search for file\n%EXTHLPC1%W/^W: %EXTHLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %EXTHLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %EXTHLPC2%specify go path\n%EXTHLPC1%^C: %EXTHLPC2%copy specified to current path\n%EXTHLPC1%^D: %EXTHLPC2%recursively delete folder\n%EXTHLPC1%^A: %EXTHLPC2%show/set item attributes\n%EXTHLPC1%^X: %EXTHLPC2%copy (recursively) folder to specified place"
+gotoxy k k "\n%EXTHLPC1%a: %EXTHLPC2%show file based on extension\n%EXTHLPC1%p: %EXTHLPC2%launch command prompt\n%EXTHLPC1%n/N: %EXTHLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %EXTHLPC2%zip selected items / unzip file\n%EXTHLPC1%w: %EXTHLPC2%recursively search for file\n%EXTHLPC1%W/^W: %EXTHLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %EXTHLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %EXTHLPC2%specify go path\n%EXTHLPC1%^H: %EXTHLPC2%copy specified to current path\n%EXTHLPC1%^D: %EXTHLPC2%recursively delete folder\n%EXTHLPC1%^A: %EXTHLPC2%show/set item attributes\n%EXTHLPC1%^X: %EXTHLPC2%copy (recursively) folder to specified place"
 goto :eof
 
 
