@@ -527,6 +527,7 @@ int main(int argc, char **argv) {
     if (*pfg=='-') { mul = -1; pfg++; }
     bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol) : atoi(pfg)) * mul;
 	if (bgCol == 0 && mul < 1) bgCol = -16;
+	if (bgCol > 15) bgCol = 0;
   }
   if (argc > 4) {
     int mul = 1;
@@ -535,6 +536,7 @@ int main(int argc, char **argv) {
     if (*pfg=='-') { mul = -1; pfg++; }
     fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol) : atoi(pfg)) * mul;
 	if (fgCol == 0 && mul < 1) fgCol = -16;
+	if (fgCol > 15) fgCol = 0;
   }
   if (argc > 3)
 		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes, orgConsoleCol);
