@@ -8,7 +8,7 @@ cls
 gotoxy 0 0 %ANIM0%
 
 set COLOR=E
-set SCROLLTEXT="Trying out the \bVtransparent\%COLOR%V color effect...                                                                                       "
+set SCROLLTEXT="Trying out the \bVtransparent\r color effect...                                                                                       "
 set DELAY=\W20
 set YP=19
 
@@ -23,7 +23,7 @@ set /a CCNT = %CNT% %% 20
 if %CCNT% == 0 cmdwiz getch nowait
 if %ERRORLEVEL% == 27 goto OUT
 
-gotoxy.exe %SCROLLPOS% %YP% "\%COLOR%V%SCROLLTEXT:~1,-1%%DELAY%" %COLOR% U
+gotoxy.exe %SCROLLPOS% %YP% "%SCROLLTEXT:~1,-1%%DELAY%" %COLOR% V
 set /a SCROLLPOS-=1
 if %SCROLLPOS% == %SCROLL_LEN% set SCROLLPOS=81 & set /a YP = 5 + %RANDOM% %% 30
 
