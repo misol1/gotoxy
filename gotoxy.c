@@ -90,7 +90,7 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
 	r.Right = ox + w;
 	r.Bottom = oy + h;
 	ReadConsoleOutput(hSrc, str, a, b, &r);
-	
+
 	r.Left = nx;
 	r.Top = ny;
 	r.Right = nx + w;
@@ -124,14 +124,14 @@ void ScrollUp(HANDLE h, int maxY, int orgConsoleCol) {
 	COORD np = {0,0};
 	SMALL_RECT r;
 	CHAR_INFO chiFill;
-		
+
 	r.Left = 0;
 	r.Top = 1;
 	r.Right = GetDim(0)-1;
 	r.Bottom = maxY;
 	chiFill.Attributes = orgConsoleCol;
 	chiFill.Char.AsciiChar = ' ';
-		
+
 	ScrollConsoleScreenBuffer(h, &r, NULL, np, &chiFill);
 }
 
@@ -154,7 +154,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 	oldfc = orgConsoleCol & 0xf;
 	oldbc = (orgConsoleCol>>4) & 0xf;
 	orgx = *x;
-		
+
 	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * MAX_STR_SIZE);
 	if (!str)
 		return;
@@ -163,14 +163,14 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 		maxY = GetDim(1) - 1;
 		if (*y > maxY) *y=maxY;
 	}
-		
+
 	if (flags & F_IGNORECODES) {
 		bAllowCodes = 0;
 	}
 
 	if (flags & F_WRAP) wrap = F_WRAP;
 	if (flags & F_WRAPSPRITE) wrap = F_WRAPSPRITE;
-		
+
 	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol != USE_EXISTING_FG && fgCol != USE_EXISTING_BG) fgCol=0; }
 	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol != USE_EXISTING_FG && bgCol != USE_EXISTING_BG) bgCol=0; }
 	fgBgCol = fgCol | (bgCol<<4);
@@ -297,14 +297,14 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						else if (ch == 'o' || ch == 'O') {
 							int dI = 0, k = 0;
 							char number[1024], oldC = text[i];
-												
+
 							if (i+1 >= inlen || !(text[i+1]>='0' && text[i+1]<='9') ) {
 								if (hNewScreenBuffer != INVALID_HANDLE_VALUE)
 									bCopyback = 1;
 								i++;
 								break;
 							}
-												
+
 							i++;
 							yp = 0;
 							while(i < inlen) {
@@ -394,7 +394,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
 					str[j].Attributes = fgBgCol;
 					j++;
-								
+
 					if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
 						yp = 0; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; i++; break;
 					}
@@ -423,7 +423,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 		} else {
 			*x += j + ((waitValue >= 0 || awaitValue >= 0 || bNewHandle > 0)? 0 : 1);
 		}
-				
+
 		if (newX!=UNKNOWN || newY!=UNKNOWN) {
 			if (newX!=UNKNOWN && newY!=UNKNOWN) {
 				*x = newX;
@@ -434,13 +434,13 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 			}
 			newX = newY = UNKNOWN;
 		}
-				
+
 		if (waitValue >= 0) {
 			if (waitValue > 0)
 				Sleep(waitValue);
 			waitValue = -1;
 		}
-				
+
 		if (awaitValue >= 0) {
 			if (awaitValue > 0) {
 				while (GetTickCount() < startT+awaitValue)
@@ -464,7 +464,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 			}
 			bNewHandle = 0;
 		}
-				
+
 		if (bCopyback > 0) {
 			hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 			CopyBuffer(hNewScreenBuffer, hCurrHandle, 0, 0, bufdims[2], bufdims[3], bufdims[0], bufdims[1]);
@@ -472,7 +472,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 			hNewScreenBuffer = INVALID_HANDLE_VALUE;
 			bCopyback = 0;
 		}
-				
+
 		if (bScrollNow && bDoScroll && (flags & F_YSCROLL)) { 
 			ScrollUp(hCurrHandle, maxY, orgConsoleCol);
 			bScrollNow = 0;
@@ -486,7 +486,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 		(*y)++;
 		if (*y > maxY) *y=maxY;
 	}
-		
+
 	if (hNewScreenBuffer != INVALID_HANDLE_VALUE){
 		CopyBuffer(hNewScreenBuffer, GetStdHandle(STD_OUTPUT_HANDLE), 0, 0, bufdims[2], bufdims[3], bufdims[0], bufdims[1]);
 		CloseHandle(hNewScreenBuffer);
@@ -499,23 +499,22 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 int GetConsoleColor(){
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
-		return 7;
+		return 0x7;
 	return info.wAttributes;
 }
 
 int main(int argc, char **argv) {
 	int ox, oy;
 	int x, y;
-	int orgConsoleCol = 7;
+	int orgConsoleCol = 0x7;
 	int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
 	int flags = 0;
 	unsigned char *u8buf = NULL;
-					
+
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]\n");
-		// Info from "color /?" in dos prompt (but not using hex)
-		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n			8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n		 \\px;y: cursor position x y ('k' keeps current)\n			 \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n				\\r: restore old color\n			\\gxx: ascii character in hex\n		 \\txxXX: set character xx with col XX as transparent (*)\n				 \\n: newline\n				 \\N: clear screen\n				\\-: skip character (transparent)\n				 \\\\: print \\\n				\\wx: delay x ms\n			 \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n(**) Same as (*), but precede with '-' to force color and ignore color control codes\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore control codes, 's' to scroll up when below buffer\n");
+		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
+		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
 		return 0;
 	}
 
@@ -537,9 +536,9 @@ int main(int argc, char **argv) {
 				fclose(ifp);
 			}
 		} 
-#ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE		
+#ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE
 		else { // ASCII characters over 127 (exteded Ascii) come as wrong values. Get/convert Unicode to IBM437 code page if such characters exist in string.
-					 // Downside: exe files become slower (why?), even if not using Extended Ascii characters in the string.
+		       // Downside: exe files become slower (why?), even if not using Extended Ascii characters in the string.
 			int i, bExt = 0;
 
 			for (i=0; i < al; i++)
@@ -562,12 +561,12 @@ int main(int argc, char **argv) {
 					u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
 					if (u8buf)
 						result = WideCharToMultiByte(
-						437,									// convert to IBM437 ("extended AscII")
-						0,										// conversion behavior
-						szArglist[3],					// source UTF-16 string
-						wlen+1,								// total source string length, in WCHAR’s, including end-of-string
-						u8buf,								// destination buffer
-						MAX_BUF_SIZE,					// destination buffer size, in bytes
+						437,          // convert to IBM437 ("extended AscII")
+						0,            // conversion behavior
+						szArglist[3], // source UTF-16 string
+						wlen+1,       // total source string length, in WCHAR’s, including end-of-string
+						u8buf,        // destination buffer
+						MAX_BUF_SIZE, // destination buffer size, in bytes
 						NULL, NULL
 						);
 					if (result == 0 && u8buf) {
@@ -586,7 +585,7 @@ int main(int argc, char **argv) {
 
 	x = argv[1][0] == 'k'? ox : atoi(argv[1]);
 	y = argv[2][0] == 'k'? oy : atoi(argv[2]);
-	
+
 	if (argc > 6) {
 		int wxp, i;
 		for (i=0; i < strlen(argv[6]); i++) {
@@ -613,7 +612,7 @@ int main(int argc, char **argv) {
 	orgConsoleCol = GetConsoleColor();
 	fgCol = orgConsoleCol & 0xf;
 	bgCol = (orgConsoleCol>>4) & 0xf;
-	
+
 	if (argc > 5) {
 		int mul = 1;
 		char *pfg = argv[5];
@@ -639,6 +638,6 @@ int main(int argc, char **argv) {
 
 	if (u8buf)
 		free(u8buf);
-		
+
 	return 0;
 }

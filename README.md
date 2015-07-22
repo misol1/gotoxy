@@ -31,9 +31,9 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 
 (*)   Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use
       existing fgcol/bgcol at position where text is put
-(**)  Same as (*), but precede with '-' to force color and ignore color control codes.
+(**)  Same as (*), precede with '-' to force color and ignore color control codes
 (***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap
-      text, 'i' to ignore control codes, 's' to scroll up when writing below buffer
+      text, 'i' to ignore all control codes, 's' to enable scrolling
 ```
 
 cmdwiz.exe
