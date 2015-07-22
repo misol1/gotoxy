@@ -282,9 +282,11 @@ int main(int argc, char **argv) {
   else if (stricmp(argv[1],"setbuffersize") == 0) {
     COORD nb;
 
-	if (argc < 4) { printf("\nUsage: cmdwiz setbuffersize [width height]\n"); return 0; }
+	if (argc < 4) { printf("\nUsage: cmdwiz setbuffersize [width|keep height|keep]\n"); return 0; }
     nb.X = atoi(argv[2]);
     nb.Y = atoi(argv[3]);
+	if (argv[2][0] == 'k') nb.X = GetDim(BUFW);
+	if (argv[3][0] == 'k') nb.Y = GetDim(BUFH);
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), nb);
 	return 0;
   }
