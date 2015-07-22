@@ -207,177 +207,177 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						str[j].Char.AsciiChar = v16;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
-							str[j].Attributes = fgBgCol;
-							j++;
-						}
-						else if (ch == 'p') {
-							int bY = 0, k = 0;
-							char number[1024];
-							i++;
-							yp = 0;
-							while(i < inlen) {
-								if (text[i] == '-' || (text[i]>='0' && text[i]<='9')) {
-									number[k++]=text[i];
-									if (!(i+1 < inlen)) {
-										number[k] = 0;
-										if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
-									}
+						str[j].Attributes = fgBgCol;
+						j++;
+					}
+					else if (ch == 'p') {
+						int bY = 0, k = 0;
+						char number[1024];
+						i++;
+						yp = 0;
+						while(i < inlen) {
+							if (text[i] == '-' || (text[i]>='0' && text[i]<='9')) {
+								number[k++]=text[i];
+								if (!(i+1 < inlen)) {
+									number[k] = 0;
+									if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
 								}
-								else if (text[i] == ';') {
-									if (k > 0) {
-										number[k] = 0;
-										if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
-										k=0;
-									}
-									bY++;
-								} else if (text[i] == 'k' && k == 0) {
-									if (bY == 0) newX=*x+j; else if (bY == 1) newY=*y;
-								} else {
-									if (k > 0) {
-										number[k] = 0;
-										if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
-									}
-									break;
-								}
-								i++;
 							}
-							if (newX!=UNKNOWN && newY!=UNKNOWN) {
-								bDoScroll = 0;
+							else if (text[i] == ';') {
+								if (k > 0) {
+									number[k] = 0;
+									if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
+									k=0;
+								}
+								bY++;
+							} else if (text[i] == 'k' && k == 0) {
+								if (bY == 0) newX=*x+j; else if (bY == 1) newY=*y;
+							} else {
+								if (k > 0) {
+									number[k] = 0;
+									if (bY == 0) newX=atoi(number); else if (bY == 1) newY=atoi(number);
+								}
 								break;
 							}
-							else
-								i--;
-						}
-						else if (ch == '\\') {
-							str[j].Char.AsciiChar = text[i];
-							if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
-								fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
-							str[j].Attributes = fgBgCol;
-							j++;
-							if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
-								yp = 0; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; i++; break;
-							}
-						}
-						else if (ch == 'n') {
 							i++;
-							yp = 1;
+						}
+						if (newX!=UNKNOWN && newY!=UNKNOWN) {
+							bDoScroll = 0;
 							break;
 						}
-						else if (ch == 'r') {
-							int tmp1, tmp2;
-							tmp1 = oldfc;
-							tmp2 = oldbc;
-							if (!bForceFg) fgCol = oldfc;
-							if (!bForceBg) bgCol = oldbc;
-							oldfc = tmp1;
-							oldbc = tmp2;
-							fgBgCol = fgCol | (bgCol<<4);
-						}
-						else if (ch == 'w' || ch == 'W') {
-							char number[1024], oldC = text[i];
-							int k = 0;
-							i++;
-							yp = 0;
-							while(i < inlen) {
-								if (text[i]>='0' && text[i]<='9') {
-									number[k++]=text[i];
-									if (!(i+1 < inlen)) {
-										number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
-									}
-								} else {
-									if (k > 0) {
-										number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
-									}
-									break;
-								}
-								i++;
-							}
-							break;
-						}
-						else if (ch == 'o' || ch == 'O') {
-							int dI = 0, k = 0;
-							char number[1024], oldC = text[i];
-
-							if (i+1 >= inlen || !(text[i+1]>='0' && text[i+1]<='9') ) {
-								if (hNewScreenBuffer != INVALID_HANDLE_VALUE)
-									bCopyback = 1;
-								i++;
-								break;
-							}
-
-							i++;
-							yp = 0;
-							while(i < inlen) {
-								if (text[i]>='0' && text[i]<='9') {
-									number[k++]=text[i];
-									if (!(i+1 < inlen)) {
-										number[k] = 0;
-										bufdims[dI++] = atoi(number);
-										if (dI > 3) dI = 3;
-									}
-								}
-								else if (text[i] == ';') {
-									if (k > 0) {
-										number[k] = 0;
-										bufdims[dI++] = atoi(number);
-										if (dI > 3) dI = 3;
-										k=0;
-									}
-								} else {
-									if (k > 0) {
-										number[k] = 0;
-										bufdims[dI++] = atoi(number);
-										if (dI > 3) dI = 3;
-									}
-									break;
-								}
-								i++;
-							}
-							if (dI == 3 && hNewScreenBuffer == INVALID_HANDLE_VALUE) {
-								bNewHandle = oldC=='o'? 1 : 2;
-								break;
-							}
-							else
-								i--;
-						}
-						else if (ch == 't') {
-							int v = 0, v16 = 0;
-							i++;
-							v16 = GetCol(text[i], 0, orgConsoleCol);
-							i++;
-							if (i < inlen) {
-								v = GetCol(text[i], 0, orgConsoleCol);
-							}
-							i++;
-							if (i < inlen) {
-								transpFg = GetCol(text[i], -1, orgConsoleCol);
-							}
-							i++;
-							if (i < inlen) {
-								transpBg = GetCol(text[i], -1, orgConsoleCol);
-							}
-							v16 = (v16*16) + v;
-							transpChar = v16;
-						}
-						else if (ch == 'N') {
-							ClrScr(hCurrHandle, fgBgCol);
-							newX = newY = 0;
-							j = 0;
-							yp = 0;
-							i++;
-							break;
-						}
-						else {
-							oldfc = fgCol;
-							oldbc = bgCol;
-							if (!bForceFg) fgCol = GetCol(ch, fgCol, orgConsoleCol);
-								i++;
-							if (i < inlen) {
-								if (!bForceBg) bgCol = GetCol(text[i], bgCol, orgConsoleCol);
-							}
-							fgBgCol = fgCol | (bgCol<<4);
+						else
+							i--;
+					}
+					else if (ch == '\\') {
+						str[j].Char.AsciiChar = text[i];
+						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
+						str[j].Attributes = fgBgCol;
+						j++;
+						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
+							yp = 0; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; i++; break;
 						}
 					}
+					else if (ch == 'n') {
+						i++;
+						yp = 1;
+						break;
+					}
+					else if (ch == 'r') {
+						int tmp1, tmp2;
+						tmp1 = oldfc;
+						tmp2 = oldbc;
+						if (!bForceFg) fgCol = oldfc;
+						if (!bForceBg) bgCol = oldbc;
+						oldfc = tmp1;
+						oldbc = tmp2;
+						fgBgCol = fgCol | (bgCol<<4);
+					}
+					else if (ch == 'w' || ch == 'W') {
+						char number[1024], oldC = text[i];
+						int k = 0;
+						i++;
+						yp = 0;
+						while(i < inlen) {
+							if (text[i]>='0' && text[i]<='9') {
+								number[k++]=text[i];
+								if (!(i+1 < inlen)) {
+									number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
+								}
+							} else {
+								if (k > 0) {
+									number[k] = 0; if (oldC=='w') waitValue = atoi(number); else awaitValue = atoi(number);
+								}
+								break;
+							}
+							i++;
+						}
+						break;
+					}
+					else if (ch == 'o' || ch == 'O') {
+						int dI = 0, k = 0;
+						char number[1024], oldC = text[i];
+
+						if (i+1 >= inlen || !(text[i+1]>='0' && text[i+1]<='9') ) {
+							if (hNewScreenBuffer != INVALID_HANDLE_VALUE)
+								bCopyback = 1;
+							i++;
+							break;
+						}
+
+						i++;
+						yp = 0;
+						while(i < inlen) {
+							if (text[i]>='0' && text[i]<='9') {
+								number[k++]=text[i];
+								if (!(i+1 < inlen)) {
+									number[k] = 0;
+									bufdims[dI++] = atoi(number);
+									if (dI > 3) dI = 3;
+								}
+							}
+							else if (text[i] == ';') {
+								if (k > 0) {
+									number[k] = 0;
+									bufdims[dI++] = atoi(number);
+									if (dI > 3) dI = 3;
+									k=0;
+								}
+							} else {
+								if (k > 0) {
+									number[k] = 0;
+									bufdims[dI++] = atoi(number);
+									if (dI > 3) dI = 3;
+								}
+								break;
+							}
+							i++;
+						}
+						if (dI == 3 && hNewScreenBuffer == INVALID_HANDLE_VALUE) {
+							bNewHandle = oldC=='o'? 1 : 2;
+							break;
+						}
+						else
+							i--;
+					}
+					else if (ch == 't') {
+						int v = 0, v16 = 0;
+						i++;
+						v16 = GetCol(text[i], 0, orgConsoleCol);
+						i++;
+						if (i < inlen) {
+							v = GetCol(text[i], 0, orgConsoleCol);
+						}
+						i++;
+						if (i < inlen) {
+							transpFg = GetCol(text[i], -1, orgConsoleCol);
+						}
+						i++;
+						if (i < inlen) {
+							transpBg = GetCol(text[i], -1, orgConsoleCol);
+						}
+						v16 = (v16*16) + v;
+						transpChar = v16;
+					}
+					else if (ch == 'N') {
+						ClrScr(hCurrHandle, fgBgCol);
+						newX = newY = 0;
+						j = 0;
+						yp = 0;
+						i++;
+						break;
+					}
+					else {
+						oldfc = fgCol;
+						oldbc = bgCol;
+						if (!bForceFg) fgCol = GetCol(ch, fgCol, orgConsoleCol);
+							i++;
+						if (i < inlen) {
+							if (!bForceBg) bgCol = GetCol(text[i], bgCol, orgConsoleCol);
+						}
+						fgBgCol = fgCol | (bgCol<<4);
+					}
+				}
 			} else {
 				if (ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
 					if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
