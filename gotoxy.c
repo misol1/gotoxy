@@ -183,8 +183,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 			ch = text[i];
 			if (ch == '\\' && bAllowCodes) {
 				i++;
-				ch = text[i];
 				if (i < inlen) {
+					ch = text[i];
 					if (ch == '-') {
 						if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
 							yp = 0; i++; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; break;
@@ -249,7 +249,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 							i--;
 					}
 					else if (ch == '\\') {
-						str[j].Char.AsciiChar = text[i];
+						str[j].Char.AsciiChar = ch;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
 						str[j].Attributes = fgBgCol;
@@ -274,7 +274,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						fgBgCol = fgCol | (bgCol<<4);
 					}
 					else if (ch == 'w' || ch == 'W') {
-						char number[1024], oldC = text[i];
+						char number[1024], oldC = ch;
 						int k = 0;
 						i++;
 						yp = 0;
@@ -296,7 +296,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 					}
 					else if (ch == 'o' || ch == 'O') {
 						int dI = 0, k = 0;
-						char number[1024], oldC = text[i];
+						char number[1024], oldC = ch;
 
 						if (i+1 >= inlen || !(text[i+1]>='0' && text[i+1]<='9') ) {
 							if (hNewScreenBuffer != INVALID_HANDLE_VALUE)
