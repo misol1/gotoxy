@@ -15,8 +15,11 @@ set /a H1=%H%/2
 set /a H1C=%H1%+%YCURR%
 cmdwiz saveblock tempblock 0 %YCURR% %W% %H%
 
-if "%1" == "" for /L %%i in (0,-1,%WF2%) do cmdwiz moveblock 0 %YCURR% %WF% %H% -1 %YCURR% & cmdwiz moveblock %WF% %YCURR% %WF% %H% %WF3% %YCURR%
-if "%1" == "1" for /L %%i in (0,-1,%WB%) do cmdwiz moveblock 0 %YCURR% %W% %H1% -1 %YCURR% & cmdwiz moveblock 0 %H1C% %W% %H1% 1 %H1C%
+set FX=1
+if "%~1" == "2" set FX=2
+
+if "%FX%" == "1" for /L %%i in (0,-1,%WF2%) do cmdwiz moveblock 0 %YCURR% %WF% %H% -1 %YCURR% & cmdwiz moveblock %WF% %YCURR% %WF% %H% %WF3% %YCURR%
+if "%FX%" == "2" for /L %%i in (0,-1,%WB%) do cmdwiz moveblock 0 %YCURR% %W% %H1% -1 %YCURR% & cmdwiz moveblock 0 %H1C% %W% %H1% 1 %H1C%
 cmdwiz delay 500
 cmdwiz showcursor 1
 if not "%2" == "" cls

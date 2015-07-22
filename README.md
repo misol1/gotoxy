@@ -9,14 +9,13 @@ Notable examples: Listb(file manager), Editor, Snake, Flappy, Freecell, Solitair
 gotoxy.exe
 ----------
 ```
-Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)]
-              [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]
+Usage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]
 
 Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
       8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White
 
 [text] supports control codes:
-     \px;y: cursor position x y
+     \px;y: cursor position x y ('k' keeps current)
        \xx: fgcol and bgcol in hex, eg \A0 (*)
         \r: restore old color
       \gxx: ascii character in hex
@@ -30,10 +29,11 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
  \ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \o
  \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \O
 
-(*)  Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use
-     existing fgcol/bgcol at position where text is put (e.g. \kU)
-(**) Same as (*), but precede with '-' to force color and ignore color control
-     codes. Precede with '+' to ignore all control codes. 
+(*)   Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use
+      existing fgcol/bgcol at position where text is put
+(**)  Same as (*), but precede with '-' to force color and ignore color control codes.
+(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap
+      text, 'i' to ignore control codes, 's' to scroll up when writing below buffer
 ```
 
 cmdwiz.exe

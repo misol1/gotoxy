@@ -2,9 +2,9 @@ call moving.bat&fx.bat
 call starfield.bat&fx.bat
 call starfield2.bat&fx.bat
 call sprite3.bat 14 5&fx.bat
-call slidescreen.bat r 0&fx.bat
+call splitscreen.bat 1 0&fx.bat
 call random.bat 0&fx.bat
-call scrolltext.bat What\g20a\g20\A0marvelous\E0\g20scrolling\g20text...\g20\C0Now\g20repeat... 20 1 14&fx.bat
+call transpscroll.bat&fx.bat
 call animplay.bat animdata-chess1.bat 0 reverse&fx.bat
 call animplay.bat animdata-chess2.bat 20&fx.bat
 call animplay.bat animdata-grow.bat 20 bounce&fx.bat

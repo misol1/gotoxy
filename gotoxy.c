@@ -57,8 +57,14 @@ int GetCol(char c, int oldc, int orgConsoleCol) {
 
 #define UNKNOWN -999999
 #define MAX_STR_SIZE 16000
-#define WRAP 1
-#define WRAPSPRITE 2
+
+// Flags
+#define F_WRAP 1
+#define F_WRAPSPRITE 2
+#define F_IGNORECODES 4
+#define F_YSCROLL 8
+#define F_RESTORECURSOR 16
+#define F_FOLLOWCURSOR 32
 
 void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx, int ny) {
   COORD a, b;
@@ -111,7 +117,22 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y) {
 }
 
 
-void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos, int bAllowCodes, int orgConsoleCol) {
+void ScrollUp(HANDLE h, int maxY, int orgConsoleCol) {
+  COORD np = {0,0};
+  SMALL_RECT r;
+  CHAR_INFO chiFill;
+	
+  r.Left = 0;
+  r.Top = 1;
+  r.Right = GetDim(0)-1;
+  r.Bottom = maxY;
+  chiFill.Attributes = orgConsoleCol;
+  chiFill.Char.AsciiChar = ' ';
+	
+  ScrollConsoleScreenBuffer(h, &r, NULL, np, &chiFill);
+}
+
+void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int flags, int wrapxpos, int orgConsoleCol) {
     int i = 0, j, inlen;
     COORD a, b;
     SMALL_RECT r;
@@ -124,13 +145,25 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
 	int transpChar = -1, transpFg = -1, transpBg = -1, fgBgCol;
 	int bForceFg = 0, bForceBg = 0;
+	int maxY = 1000000, bDoScroll = 1, bScrollNow = 0, wrap = 0, bAllowCodes = 1;
 	char ch;
 	unsigned int startT = GetTickCount();
-     
+	
     str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * MAX_STR_SIZE);
 	if (!str)
 	  return;
 
+	if (flags & F_YSCROLL) {
+   	  maxY = GetDim(1) - 1;
+	  if (*y > maxY) *y=maxY;
+	}
+	if (flags & F_IGNORECODES) {
+	  bAllowCodes = 0;
+	}
+
+    if (flags & F_WRAP) wrap = F_WRAP;
+    if (flags & F_WRAPSPRITE) wrap = F_WRAPSPRITE;
+	
 	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol != 32 && fgCol != 64) fgCol=0; }
 	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol != 32 && bgCol != 64) bgCol=0; }
 	fgBgCol = fgCol | (bgCol<<4);
@@ -146,7 +179,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 				if (i < inlen) {
 					if (ch == '-') {
 						if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
-							yp = 0; i++; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
+							yp = 0; i++; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; break;
 						}
 					    if (j == 0)
 					      *x += 1;
@@ -189,6 +222,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 								k=0;
 							  }
 							  bY++;
+							} else if (text[i] == 'k' && k == 0) {
+							  if (bY == 0) newX=*x+j; else if (bY == 1) newY=*y;
 							} else {
 							  if (k > 0) {
 							    number[k] = 0;
@@ -198,8 +233,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 							}
 						    i++;
 						}
-						if (newX!=UNKNOWN && newY!=UNKNOWN)
+						if (newX!=UNKNOWN && newY!=UNKNOWN) {
+						  bDoScroll = 0;
 						  break;
+						}
 						else
 						  i--;
 					}
@@ -210,7 +247,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						str[j].Attributes = fgBgCol;
 						j++;
 						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
-							yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
+							yp = 0; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; i++; break;
 						}
 					}
 					else if (ch == 'n') {
@@ -336,7 +373,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 			} else {
 			    if (ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
 					if (wrap && *x+j+1 > wrapxpos && orgx <= wrapxpos) {
-						yp = 0; i++; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; break;
+						yp = 0; i++; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; break;
 					}
 					if (j == 0)
 					  *x += 1;
@@ -351,7 +388,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 				  j++;
 				
 				  if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
-				    yp = 0; newY = *y+1; newX = (wrap == WRAP)? 0 : orgx; i++; break;
+				    yp = 0; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; i++; break;
 				  }
 				}
 			}
@@ -372,6 +409,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 		}
         if (yp == 1) {
 			(*y)++;
+			if (*y > maxY) { *y=maxY; bScrollNow = 1; }
 			*x = orgx;
 			yp = 0;
 		} else {
@@ -382,6 +420,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 		  if (newX!=UNKNOWN && newY!=UNKNOWN) {
 			*x = newX;
 			*y = newY;
+			if (*y > maxY) { *y=maxY; bScrollNow = 1; }
 			orgx = *x;
 			yp = 0;
 		  }
@@ -425,8 +464,21 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 		  hNewScreenBuffer = INVALID_HANDLE_VALUE;
 		  bCopyback = 0;
 		}
+		
+		if (bScrollNow && bDoScroll && (flags & F_YSCROLL)) { 
+          ScrollUp(hCurrHandle, maxY, orgConsoleCol);
+		  bScrollNow = 0;
+		}
+		bDoScroll = 1;
 	}
 
+	if (flags & F_YSCROLL) {
+	  if (*y >= maxY)
+	    ScrollUp(hCurrHandle, maxY, orgConsoleCol);
+	  (*y)++;
+	  if (*y > maxY) *y=maxY;
+	}
+	
     if (hNewScreenBuffer != INVALID_HANDLE_VALUE){
 	  CopyBuffer(hNewScreenBuffer, GetStdHandle(STD_OUTPUT_HANDLE), 0, 0, bufdims[2], bufdims[3], bufdims[0], bufdims[1]);
       CloseHandle(hNewScreenBuffer);
@@ -450,13 +502,14 @@ int main(int argc, char **argv) {
   int x, y;
   int orgConsoleCol = 7;
   int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
+  int flags = 0;
   unsigned char *u8buf = NULL;
 		  
   if (argc < 3 || argc > 9) {
-    printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
+    printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]\n");
     // Info from "color /?" in dos prompt (but not using hex)
     printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put (e.g. \\kU)\n(**) Same as (*), but precede with '-' to force color and ignore color control codes. Precede with '+' to ignore all control codes.\n");
+    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n(**) Same as (*), but precede with '-' to force color and ignore color control codes\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore control codes, 's' to scroll up when below buffer\n");
     return 0;
   }
 
@@ -480,7 +533,7 @@ int main(int argc, char **argv) {
     } 
 #ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE	
 	else { // ASCII characters over 127 (exteded Ascii) come as wrong values. Get/convert Unicode to IBM437 code page if such characters exist in string.
-	       // Downside: exe files become slower (why?), even if not using Extended Ascii.
+	       // Downside: exe files become slower (why?), even if not using Extended Ascii characters in the string.
       int i, bExt = 0;
 
 	  for (i=0; i < al; i++)
@@ -528,22 +581,28 @@ int main(int argc, char **argv) {
   x = argv[1][0] == 'k'? ox : atoi(argv[1]);
   y = argv[2][0] == 'k'? oy : atoi(argv[2]);
   
-  if (!(argc > 6) || (argc > 6 && argv[6][0] == 'd'))
-    GotoXY(x, y);
-
-  if (argc > 7) {
-    int wxp;
-    if (argv[7][0] == 'w')
-      wrap = WRAP;
-    else if (argv[7][0] == 's')
-      wrap = WRAPSPRITE;
+  if (argc > 6) {
+    int wxp, i;
+	for (i=0; i < strlen(argv[6]); i++) {
+	  switch(argv[6][i]) {
+      case 'w': flags |= F_WRAP; break;
+      case 'W': flags |= F_WRAPSPRITE; break;
+      case 's': flags |= F_YSCROLL; break;
+      case 'i': flags |= F_IGNORECODES; break;
+      case 'c': flags |= F_FOLLOWCURSOR; break;
+      case 'r': flags |= F_RESTORECURSOR; break;
+	  }
+	}
 	wrapxpos = GetDim(0) - 1;
-    if (argc > 8) {
-		wxp = atoi(argv[8]);
+    if (argc > 7) {
+		wxp = atoi(argv[7]);
 		if (wxp >= x)
 		  wrapxpos = wxp;
 	}
   }
+
+  if (!(flags & F_FOLLOWCURSOR) && !(flags & F_RESTORECURSOR))
+    GotoXY(x, y);
 
   orgConsoleCol = GetConsoleColor();
   fgCol = orgConsoleCol & 0xf;
@@ -552,7 +611,6 @@ int main(int argc, char **argv) {
   if (argc > 5) {
     int mul = 1;
     char *pfg = argv[5];
-    if (*pfg=='+') { bAllowCodes = 0; pfg++; }
     if (*pfg=='-') { mul = -1; pfg++; }
     bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol) : atoi(pfg)) * mul;
 	if (bgCol == 0 && mul < 1) bgCol = -16;
@@ -561,18 +619,16 @@ int main(int argc, char **argv) {
   if (argc > 4) {
     int mul = 1;
     char *pfg = argv[4];
-    if (*pfg=='+') { bAllowCodes = 0; pfg++; }
     if (*pfg=='-') { mul = -1; pfg++; }
     fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol) : atoi(pfg)) * mul;
 	if (fgCol == 0 && mul < 1) fgCol = -16;
 	if (fgCol > 15 && fgCol != 32 && fgCol != 64) fgCol = 0;
   }
   if (argc > 3)
-		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes, orgConsoleCol);
+		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol);
 	
-  if (argc > 6) {
-    if (argv[6][0] == 'c')
-      GotoXY(x, y);
+  if (flags & F_FOLLOWCURSOR) {
+    GotoXY(x, y);
   }
 
   if (u8buf)

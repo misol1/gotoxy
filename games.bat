@@ -32,9 +32,9 @@ gotoxy %XT% %YT% %SHADE% %SHADOWCOL% 0 1
 set /a YT=%YPOS%+1
 set /a COUNT=%COUNT%*2+1
 set SIDE=""& for /L %%a in (1,1,%COUNT%) do set SIDE="!SIDE:~1,-1! "
-gotoxy %XPOS% %YT% %SIDE% 7 %FRAMECOL% default spritewrap %XPOS%
+gotoxy %XPOS% %YT% %SIDE% 7 %FRAMECOL% W %XPOS%
 set /a XT=%XPOS%+%WIDTH%-1
-gotoxy %XT% %YT% %SIDE% 7 %FRAMECOL% default spritewrap %XT%
+gotoxy %XT% %YT% %SIDE% 7 %FRAMECOL% W %XT%
 set /a YT=%YPOS%+2
 set /a XT=%XPOS%+2
 call getchmenu %MENUTEXT% %MENUCMDS% %XT% %YT% %SELFGCOL% %SELBGCOL% %UNSELFGCOL% %UNSELBGCOL% %PRESEL% 1
