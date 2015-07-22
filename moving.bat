@@ -1,8 +1,8 @@
 @echo off
 mode con lines=50 cols=80
 color 07
-call sintable.bat
 setlocal ENABLEDELAYEDEXPANSION
+call sintable.bat
 cmdwiz showcursor 0
 cmdwiz getcursorpos x&set X=!ERRORLEVEL!
 cmdwiz getcursorpos y&set Y=!ERRORLEVEL!

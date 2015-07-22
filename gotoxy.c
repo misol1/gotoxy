@@ -49,6 +49,8 @@ int GetCol(char c, int oldc, int orgConsoleCol) {
 	case 'f':case 'F': pc=15; break;
 	case 'u': pc=orgConsoleCol & 0xf; break;
 	case 'U': pc=(orgConsoleCol>>4) & 0xf; break;
+	case 'v': pc=32; break;
+	case 'V': pc=64; break;
 	}
 	return pc;
 }
@@ -88,6 +90,27 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
   free(str);
 }
 
+int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y) {
+  COORD b = { 0, 0 };
+  COORD a = { 1, 1 };
+  CHAR_INFO str[4];
+  SMALL_RECT r;
+
+  r.Left = x;
+  r.Top = y;
+  r.Right = x + 1;
+  r.Bottom = y + 1;
+  ReadConsoleOutput(h, str, a, b, &r);
+
+  if (fgCol == 32) fgCol = str[0].Attributes & 0xf;
+  if (fgCol == 64) fgCol = (str[0].Attributes>>4) & 0xf;
+  if (bgCol == 32) bgCol = str[0].Attributes & 0xf;
+  if (bgCol == 64) bgCol = (str[0].Attributes>>4) & 0xf;
+
+  return fgCol | (bgCol<<4);
+}
+
+
 void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wrap, int wrapxpos, int bAllowCodes, int orgConsoleCol) {
     int i = 0, j, inlen;
     COORD a, b;
@@ -108,8 +131,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 	if (!str)
 	  return;
 
-	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15) fgCol=0; }
-	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15) bgCol=0; }
+	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol != 32 && fgCol != 64) fgCol=0; }
+	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol != 32 && bgCol != 64) bgCol=0; }
 	fgBgCol = fgCol | (bgCol<<4);
 	inlen = strlen(text);
 
@@ -141,6 +164,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 						}
 						v16 = (v16*16) + v;
 				        str[j].Char.AsciiChar = v16;
+						if (fgCol > 30 || bgCol > 30)
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
 						str[j].Attributes = fgBgCol;
 						j++;
 					}
@@ -180,6 +205,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					}
 					else if (ch == '\\') {
 						str[j].Char.AsciiChar = text[i];
+						if (fgCol > 30 || bgCol > 30)
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
 						str[j].Attributes = fgBgCol;
 						j++;
 						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
@@ -298,7 +325,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					else {
 						oldfc = fgCol;
 						oldbc = bgCol;
-						if (!bForceFg) fgCol = GetCol(text[i], fgCol, orgConsoleCol);
+						if (!bForceFg) fgCol = GetCol(ch, fgCol, orgConsoleCol);
 						i++;
 						if (i < inlen) {
 							if (!bForceBg) bgCol = GetCol(text[i], bgCol, orgConsoleCol);
@@ -318,6 +345,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 					}
 				} else {
 				  str[j].Char.AsciiChar = ch;
+				  if (fgCol > 30 || bgCol > 30)
+				    fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
 				  str[j].Attributes = fgBgCol;
 				  j++;
 				
@@ -368,7 +397,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int wr
 		if (awaitValue >= 0) {
 			if (awaitValue > 0) {
 		      while (GetTickCount() < startT+awaitValue)
-		        Sleep(1);
+		        ; // Sleep(1); inconsistent/unsmooth results with Sleep
 			}
 			awaitValue = -1;
           	startT = GetTickCount();
@@ -427,7 +456,7 @@ int main(int argc, char **argv) {
     printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [resetCursor|cursorFollow|default] [wrap|spritewrap] [wrapxpos]\n");
     // Info from "color /?" in dos prompt (but not using hex)
     printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol (e.g. \\kU)\n(**) Same as (*), but precede with '-' to force color and ignore color control codes. Precede with '+' to ignore all control codes.\n");
+    printf("\n[text] supports control codes:\n     \\px;y: cursor position x y\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put (e.g. \\kU)\n(**) Same as (*), but precede with '-' to force color and ignore color control codes. Precede with '+' to ignore all control codes.\n");
     return 0;
   }
 
@@ -527,7 +556,7 @@ int main(int argc, char **argv) {
     if (*pfg=='-') { mul = -1; pfg++; }
     bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol) : atoi(pfg)) * mul;
 	if (bgCol == 0 && mul < 1) bgCol = -16;
-	if (bgCol > 15) bgCol = 0;
+	if (bgCol > 15 && bgCol != 32 && bgCol != 64) bgCol = 0;
   }
   if (argc > 4) {
     int mul = 1;
@@ -536,7 +565,7 @@ int main(int argc, char **argv) {
     if (*pfg=='-') { mul = -1; pfg++; }
     fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol) : atoi(pfg)) * mul;
 	if (fgCol == 0 && mul < 1) fgCol = -16;
-	if (fgCol > 15) fgCol = 0;
+	if (fgCol > 15 && fgCol != 32 && fgCol != 64) fgCol = 0;
   }
   if (argc > 3)
 		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, wrap, wrapxpos, bAllowCodes, orgConsoleCol);

@@ -30,7 +30,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
  \ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \o
  \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \O
 
-(*)  Use 'k' for current color, 'u/U' for console fgcol/bgcol (e.g. \kU)
+(*)  Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use
+     existing fgcol/bgcol at position where text is put (e.g. \kU)
 (**) Same as (*), but precede with '-' to force color and ignore color control
      codes. Precede with '+' to ignore all control codes. 
 ```
