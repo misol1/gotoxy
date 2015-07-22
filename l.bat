@@ -7,5 +7,5 @@ set L_H=50
 if not "%~3" == "" set L_H=%~3
 set L_MOUSE=Y
 if not "%~4" == "" set L_MOUSE=
-listb.bat %L_PATH% %L_W% %L_H% C:\Dos\DJGPP\github\gotoxy\extendlistb.bat %L_MOUSE%
-set L_PATH=&set L_W=&set L_H=
+call listb.bat %L_PATH% %L_W% %L_H% C:\Dos\DJGPP\github\gotoxy\extendlistb.bat %L_MOUSE%
+set L_PATH=&set L_W=&set L_H=&set L_MOUSE=
