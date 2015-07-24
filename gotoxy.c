@@ -27,31 +27,31 @@
 #define USE_EXISTING_FG 32
 #define USE_EXISTING_BG 64
 
-void GotoXY(int x, int y) {
+void GotoXY(HANDLE h, int x, int y) {
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+	SetConsoleCursorPosition(h, coord);
 }
 
-void GetXY(int *x, int *y) {
+void GetXY(HANDLE h, int *x, int *y) {
 	CONSOLE_SCREEN_BUFFER_INFO	csbInfo;
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbInfo);
+	GetConsoleScreenBufferInfo(h, &csbInfo);
 	*x = csbInfo.dwCursorPosition.X;
 	*y = csbInfo.dwCursorPosition.Y;
 }
 
-int GetDim(int bY) {
+int GetDim(HANDLE h, int bY) {
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &screenBufferInfo);
+	GetConsoleScreenBufferInfo(h, &screenBufferInfo);
 	return bY? screenBufferInfo.dwSize.Y : screenBufferInfo.dwSize.X;
 }
 
 void ClrScr(HANDLE h, int attrib) {
 	COORD a = {0,0};
 	DWORD nwrite;
-	FillConsoleOutputAttribute(h, attrib, GetDim(0)*GetDim(1), a, &nwrite);
-	FillConsoleOutputCharacter(h, 0x20, GetDim(0)*GetDim(1), a, &nwrite);
+	FillConsoleOutputAttribute(h, attrib, GetDim(h,0)*GetDim(h,1), a, &nwrite);
+	FillConsoleOutputCharacter(h, 0x20, GetDim(h,0)*GetDim(h,1), a, &nwrite);
 }
 
 int GetCol(char c, int oldc, int orgConsoleCol) {
@@ -104,17 +104,26 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y) {
 	COORD a = { 1, 1 };
 	CHAR_INFO str[4];
 	SMALL_RECT r;
+	static HANDLE hOldHandle = INVALID_HANDLE_VALUE;
+	static height;
+
+	if (hOldHandle != h) {
+		hOldHandle = h;
+		height = GetDim(h, 1);
+	}
 
 	r.Left = x;
 	r.Top = y;
 	r.Right = x + 1;
 	r.Bottom = y + 1;
-	ReadConsoleOutput(h, str, a, b, &r);
 
-	if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
-	if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
-	if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
-	if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
+	if (y >= 0 && y <= height) {
+		ReadConsoleOutput(h, str, a, b, &r);
+		if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
+		if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
+		if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
+		if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
+	}
 
 	return fgCol | (bgCol<<4);
 }
@@ -127,7 +136,7 @@ void ScrollUp(HANDLE h, int maxY, int orgConsoleCol) {
 
 	r.Left = 0;
 	r.Top = 1;
-	r.Right = GetDim(0)-1;
+	r.Right = GetDim(h,0)-1;
 	r.Bottom = maxY;
 	chiFill.Attributes = orgConsoleCol;
 	chiFill.Char.AsciiChar = ' ';
@@ -160,7 +169,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 		return;
 
 	if (flags & F_YSCROLL) {
-		maxY = GetDim(1) - 1;
+		maxY = GetDim(hCurrHandle, 1) - 1;
 		if (*y > maxY) *y=maxY;
 	}
 
@@ -510,6 +519,7 @@ int main(int argc, char **argv) {
 	int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
 	int flags = 0;
 	unsigned char *u8buf = NULL;
+	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]\n");
@@ -581,7 +591,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (argv[1][0]=='k' || argv[2][0]=='k')
-		GetXY(&ox, &oy);
+		GetXY(h, &ox, &oy);
 
 	x = argv[1][0] == 'k'? ox : atoi(argv[1]);
 	y = argv[2][0] == 'k'? oy : atoi(argv[2]);
@@ -598,7 +608,7 @@ int main(int argc, char **argv) {
 			case 'r': flags |= F_RESTORECURSOR; break;
 			}
 		}
-		wrapxpos = GetDim(0) - 1;
+		wrapxpos = GetDim(h, 0) - 1;
 		if (argc > 7) {
 			wxp = atoi(argv[7]);
 			if (wxp >= x)
@@ -607,7 +617,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!(flags & F_FOLLOWCURSOR) && !(flags & F_RESTORECURSOR))
-		GotoXY(x, y);
+		GotoXY(h, x, y);
 
 	orgConsoleCol = GetConsoleColor();
 	fgCol = orgConsoleCol & 0xf;
@@ -633,7 +643,7 @@ int main(int argc, char **argv) {
 		WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol);
 		
 	if (flags & F_FOLLOWCURSOR) {
-		GotoXY(x, y);
+		GotoXY(h, x, y);
 	}
 
 	if (u8buf)

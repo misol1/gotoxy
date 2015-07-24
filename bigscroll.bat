@@ -13,7 +13,7 @@ cls
 call font3.bat
 
 set /a YB=2
-set /a YB2=%YH%-%CHARH%-2
+set /a YB2=%YH%-%CHARH%-2-2
 
 set SCROLLTEXT="Trying out a big font for the scroller..."
 set SCROLLTEXT="         %SCROLLTEXT:~1,-1%      "
@@ -61,8 +61,8 @@ set /a PREPC+=1
 if %PREPC% lss %PSCR_LEN% goto PREPLOOP
 :BIGSKIP
 
-::gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\vV%OUT:~1,-1%\p0;0\70%DELAY%"
-gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\t20kk\f0%OUT:~1,-1%%DELAY%"
+gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\vV%OUT:~1,-1%%DELAY%"
+::gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\t20kk\f0%OUT:~1,-1%%DELAY%"
 
 set /a XPROG+=1
 if %XPROG% gtr %XMAX% set XPROG=%XW%
