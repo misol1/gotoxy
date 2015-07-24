@@ -16,7 +16,7 @@ set /a YB=2
 set /a YB2=%YH%-%CHARH%-2-2
 
 set SCROLLTEXT="Trying out a big font for the scroller..."
-set SCROLLTEXT="         %SCROLLTEXT:~1,-1%      "
+set SCROLLTEXT="      %SCROLLTEXT:~1,-1%      "
 set DELAY=
 ::\W10
 set YP=1
