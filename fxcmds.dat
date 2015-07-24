@@ -4,7 +4,7 @@ call starfield2.bat&fx.bat
 call sprite3.bat 14 5&fx.bat
 call splitscreen.bat 1 0&fx.bat
 call random.bat 0&fx.bat
-call transpscroll.bat&fx.bat
+call bigscroll.bat&fx.bat
 call animplay.bat animdata-chess1.bat 0 reverse&fx.bat
 call animplay.bat animdata-chess2.bat 20&fx.bat
 call animplay.bat animdata-grow.bat 20 bounce&fx.bat
