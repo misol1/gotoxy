@@ -18,15 +18,9 @@ set CNT=0&for /L %%a in (0,12,359) do set MSIN!CNT!=!SIN%%a!&set /A CNT+=1
 for /L %%a in (0,1,360) do set SIN%%a=
 set SC=0
 
-set /a YB=2
-set /a YB2=%YH%-%CHARH%-2-2
-
 set SCROLLTEXT="Trying out a big font for the scroller..."
 set SCROLLTEXT="      %SCROLLTEXT:~1,-1%      "
 set DELAY=
-::\W10
-set YP=1
-set YD=1
 
 set BXP=-20
 
@@ -47,8 +41,6 @@ call util.bat strlen SCROLL_LEN %SCROLLTEXT%
 set /a SCROLL_LEN=0-(SCROLL_LEN-%XW%)
 
 set XPROG=%XW%
-
-set /a XLEFT=-%CHARW%
 set /a XMAX=%CHARW%*(%PSCR_LEN%-6)+%CHARW%*(%XW%/%CHARW%+1)
 
 
@@ -74,10 +66,6 @@ gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\vV%OUT:~1,-1%%DELAY%"
 
 set /a XPROG+=1
 if %XPROG% gtr %XMAX% set XPROG=%XW%
-
-::set /a YP+=%YD%
-::if %YP% lss %YB% set YD=1
-::if %YP% gtr %YB2% set YD=-1
 
 set /a SC+=1 & if !SC! geq 30 set /A SC=0
 
