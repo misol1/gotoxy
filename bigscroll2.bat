@@ -61,13 +61,15 @@ set OUT=""
 set /a PREPC=(%XPROG%-%XW%-%CHARW%)/%CHARW%
 if %PREPC% lss 1 set PREPC=0
 
-set /a YP=28-(!MSIN%SC%!*25^>^>14)
+set OSC=%SC%
 
 :PREPLOOP
 set /a XP=%XW%+%PREPC%*(%CHARW%-0)-%XPROG%
 if %XP% geq %XW% goto BIGSKIP
 set SCI=!T%PREPC%!
 set CHAR=!CS%SCI%!
+set /a YP=28-(!MSIN%SC%!*25^>^>14)
+set /a SC+=1 & if !SC! geq 30 set /A SC=0
 set OUT="%OUT:~1,-1%\p%XP%;%YP%%CHAR:~1,-1%"
 set /a PREPC+=1
 if %PREPC% lss %PSCR_LEN% goto PREPLOOP
@@ -83,6 +85,7 @@ if %XPROG% gtr %XMAX% set XPROG=%XW%
 	::if %YP% lss %YB% set YD=1
 ::if %YP% gtr %YB2% set YD=-1
 
+set SC=%OSC%
 set /a SC+=1 & if !SC! geq 30 set /A SC=0
 
 set /a BXP-=1
