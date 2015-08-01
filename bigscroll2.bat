@@ -32,9 +32,8 @@ set CNT=0
 for /L %%a in (1,1,%SCROLL_LEN%) do set SCT=!SCROLLTEXT:~%%a,1!& for /L %%b in (1,1,%CHARS_LEN%) do set CST=!CHARSET:~%%b,1!&if "!SCT!"=="!CST!" set /a INDEX=%%b-1 & set T!CNT!=!INDEX!& set /a CNT+=1 & set USED!INDEX!=1
 set PSCR_LEN=%CNT%
 
-::for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=:!
-::for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=\gb0!
-for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=\gdb!
+if "%1" == "2" for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=:!
+if "%1" == "" for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=\gdb!
 
 for /L %%a in (0,1,%NOFCHARS%) do if "!USED%%a!" == "" set CS%%a=
 for /L %%a in (0,1,%NOFCHARS%) do set USED%%a=

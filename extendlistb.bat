@@ -1,7 +1,7 @@
 @echo off
 if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP
 
-set EDITCMD2=start /MIN npp
+set EDITCMD2=npp.bat
 set NEWWINDOWCMD=start dosgo.bat
 set GCMD=g
 set EXTVIEW=less -f
