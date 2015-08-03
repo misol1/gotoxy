@@ -69,6 +69,7 @@ if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\t20kk\f0%OUT:~1,-1%\o0;0%DELA
 
 set /a XPROG+=%XPD%
 if %XPROG% gtr %XMAX% set XPROG=%XW%
+if %XPROG% lss %XW% set XPROG=%XMAX%
 
 set SC=%OSC%
 set /a SC+=1 & if !SC! geq 30 set /A SC=0
@@ -82,7 +83,7 @@ set /a CCNT = %XPROG% %% 20
 if %CCNT% == 0 cmdwiz getch nowait & set KEY=!ERRORLEVEL!
 if %KEY% == 333 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
 if %KEY% == 331 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
-if %KEY% == 336 set /a XPD-=1&if !XPD! lss 0 set XPD=0
+if %KEY% == 336 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
 if %KEY% == 328 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
 if %KEY% == 32 set /A DMODE=1-%DMODE%
 if %KEY% == 13 set /A SYD=1-%SYD%
