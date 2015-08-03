@@ -15,15 +15,20 @@ set ANIM0=
 
 call font3.bat
 
+set YM=28
+if %CHARH% gtr 8 set /a YM-=(%CHARH%-9)/2
+
 call sintable.bat
 for /L %%a in (361,1,720) do set SIN%%a=
 set CNT=0&for /L %%a in (0,12,359) do set MSIN!CNT!=!SIN%%a!&set /A CNT+=1
-for /L %%a in (0,12,159) do set MSIN!CNT!=!SIN%%a!&set /A CNT+=1
+for /L %%a in (0,12,359) do set MSIN!CNT!=!SIN%%a!&set /A CNT+=1
 for /L %%a in (0,1,360) do set SIN%%a=
 set SC=0
 
 set SCROLLTEXT="Trying out a big font for the scroller..."
-set SCROLLTEXT="      %SCROLLTEXT:~1,-1%      "
+set /a BEGC=%XW%/%CHARW%+1
+for /L %%a in (1,1,%BEGC%) do set SCROLLTEXT=" !SCROLLTEXT:~1,-1!"
+set SCROLLTEXT="%SCROLLTEXT:~1,-1%      "
 set DELAY=
 set BXP=20
 
@@ -56,7 +61,7 @@ set /a PREPC=(%XPROG%-%XW%-%CHARW%)/%CHARW%
 if %PREPC% lss 1 set PREPC=0
 
 set OSC=%SC%
-for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=28-(!MSIN%%c!*25^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
+for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*25^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 
 if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\vV%OUT:~1,-1%\o0;0%DELAY%"
