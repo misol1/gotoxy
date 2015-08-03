@@ -86,6 +86,7 @@ if %KEY% == 336 set /a XPD-=1&if !XPD! lss 0 set XPD=0
 if %KEY% == 328 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
 if %KEY% == 32 set /A DMODE=1-%DMODE%
 if %KEY% == 13 set /A SYD=1-%SYD%
+if %KEY% == 112 cmdwiz getch
 if %KEY% == 49 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=:!&set CS%%a=!CS%%a:\g01=:!
 if %KEY% == 50 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=\g01!&set CS%%a=!CS%%a::=\g01!
 if %KEY% == 51 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\g01=\gdb!&set CS%%a=!CS%%a::=\gdb!
