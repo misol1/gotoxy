@@ -307,13 +307,6 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						int dI = 0, k = 0;
 						char number[1024], oldC = ch;
 
-						if (i+1 >= inlen || !(text[i+1]>='0' && text[i+1]<='9') ) {
-							if (hNewScreenBuffer != INVALID_HANDLE_VALUE)
-								bCopyback = 1;
-							i++;
-							break;
-						}
-
 						i++;
 						yp = 0;
 						while(i < inlen) {
@@ -344,6 +337,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						}
 						if (dI == 3 && hNewScreenBuffer == INVALID_HANDLE_VALUE) {
 							bNewHandle = oldC=='o'? 1 : 2;
+							break;
+						}
+						else if (hNewScreenBuffer != INVALID_HANDLE_VALUE) {
+							bCopyback = 1;
 							break;
 						}
 						else
