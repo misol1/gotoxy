@@ -51,14 +51,7 @@ if %PREPC% lss 1 set PREPC=0
 
 set /a YP=28-(!MSIN%SC%!*25^>^>14)
 
-:PREPLOOP
-set /a XP=%XW%+%PREPC%*%CHARW%-%XPROG%
-if %XP% geq %XW% goto BIGSKIP
-set SCI=!T%PREPC%!
-set CHAR=!CS%SCI%!
-set OUT="%OUT:~1,-1%\p%XP%;%YP%%CHAR:~1,-1%"
-set /a PREPC+=1
-if %PREPC% lss %PSCR_LEN% goto PREPLOOP
+for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 
 gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\R\vV%OUT:~1,-1%%DELAY%"
