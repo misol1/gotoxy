@@ -61,7 +61,7 @@ set /a PREPC+=1
 if %PREPC% lss %PSCR_LEN% goto PREPLOOP
 :BIGSKIP
 
-gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\vV%OUT:~1,-1%%DELAY%"
+gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\R\vV%OUT:~1,-1%%DELAY%"
 ::gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\t20kk\f0%OUT:~1,-1%%DELAY%"
 
 set /a XPROG+=1
