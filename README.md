@@ -26,8 +26,9 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
         \\: print \
        \wx: delay x ms
        \Wx: delay up to x ms
- \ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \o
- \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \O
+        \R: read/refresh buffer for v/V colors (fast but less accurate)
+ \ox;y;w;h: copy/write to offscreen buffer, copy back at end or at next \o
+ \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at next \O
 
 (*)   Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use
       existing fgcol/bgcol at position where text is put

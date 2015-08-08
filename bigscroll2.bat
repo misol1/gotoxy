@@ -29,7 +29,7 @@ set SCROLLTEXT="Trying out a big font for the scroller..."
 set /a BEGC=%XW%/%CHARW%+1
 for /L %%a in (1,1,%BEGC%) do set SCROLLTEXT=" !SCROLLTEXT:~1,-1!"
 set SCROLLTEXT="%SCROLLTEXT:~1,-1%      "
-set DELAY=
+set DELAY=0
 set BXP=20
 
 call util.bat strlen SCROLL_LEN %SCROLLTEXT%
@@ -52,6 +52,7 @@ set BGD=-1
 set SYD=1
 set DMODE=1
 set XPD=1
+set CNT=0
 
 
 :LOOP
@@ -64,8 +65,8 @@ set OSC=%SC%
 for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*25^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 
-if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\vV%OUT:~1,-1%\o0;0%DELAY%"
-if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\t20kk\f0%OUT:~1,-1%\o0;0%DELAY%" r
+if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\vV%OUT:~1,-1%\o0;0\W%DELAY%"
+if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\t20kk\f0%OUT:~1,-1%\o0;0\W%DELAY%" r
 
 set /a XPROG+=%XPD%
 if %XPROG% gtr %XMAX% set XPROG=%XW%
@@ -79,18 +80,21 @@ if %BXP% leq 0 set BXP=20&goto SKIP
 if %BXP% geq 20 set BXP=0
 :SKIP
 
-set /a CCNT = %XPROG% %% 20
+set /a CCNT = %CNT% %% 20
+set /A CNT+=1
 if %CCNT% == 0 cmdwiz getch nowait & set KEY=!ERRORLEVEL!
-if %KEY% == 333 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
-if %KEY% == 331 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
-if %KEY% == 336 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
-if %KEY% == 328 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
+if %KEY% == 336 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
+if %KEY% == 328 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
+if %KEY% == 333 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
+if %KEY% == 331 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
 if %KEY% == 32 set /A DMODE=1-%DMODE%
 if %KEY% == 13 set /A SYD=1-%SYD%
 if %KEY% == 112 cmdwiz getch
 if %KEY% == 49 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=:!&set CS%%a=!CS%%a:\g01=:!
 if %KEY% == 50 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=\g01!&set CS%%a=!CS%%a::=\g01!
 if %KEY% == 51 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\g01=\gdb!&set CS%%a=!CS%%a::=\gdb!
+if %KEY% == 43 set /a DELAY+=5
+if %KEY% == 45 set /a DELAY-=5&if !DELAY! lss 0 set DELAY=0
 if %KEY% == 27 goto OUT
 
 goto LOOP

@@ -99,30 +99,59 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
 	free(str);
 }
 
-int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y) {
+
+int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreateBuffer, CHAR_INFO **currentConsoleOutput) {
+	static HANDLE hOldHandle = INVALID_HANDLE_VALUE;
+	static int height = 0, width = 0;
+	SMALL_RECT r;
 	COORD b = { 0, 0 };
 	COORD a = { 1, 1 };
-	CHAR_INFO str[4];
-	SMALL_RECT r;
-	static HANDLE hOldHandle = INVALID_HANDLE_VALUE;
-	static height;
 
 	if (hOldHandle != h) {
 		hOldHandle = h;
 		height = GetDim(h, 1);
+		width = GetDim(h, 0);
+		if (*currentConsoleOutput != NULL) {
+			free(*currentConsoleOutput);
+			*currentConsoleOutput = NULL;
+		}		
 	}
 
-	r.Left = x;
-	r.Top = y;
-	r.Right = x + 1;
-	r.Bottom = y + 1;
-
+	if (*bCreateBuffer) {
+		if (*currentConsoleOutput != NULL)
+			free(*currentConsoleOutput);
+		*currentConsoleOutput = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * width*height);
+		if (*currentConsoleOutput != NULL) {
+			r.Left = 0;
+			r.Top = 0;
+			r.Right = width;
+			r.Bottom = height;
+			a.X = r.Right;
+			a.Y = r.Bottom;
+			ReadConsoleOutput(h, *currentConsoleOutput, a, b, &r);			
+		}
+		*bCreateBuffer = 0;
+	}
+	
 	if (y >= 0 && y <= height) {
-		ReadConsoleOutput(h, str, a, b, &r);
-		if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
-		if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
-		if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
-		if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
+	   if (*currentConsoleOutput != NULL) {
+			int arrayPos = y	* width + x;
+			if (fgCol == USE_EXISTING_FG) fgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
+			if (fgCol == USE_EXISTING_BG) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
+			if (bgCol == USE_EXISTING_FG) bgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
+			if (bgCol == USE_EXISTING_BG) bgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
+		} else {
+			static CHAR_INFO str[4];
+			r.Left = x;
+			r.Top = y;
+			r.Right = x + 1;
+			r.Bottom = y + 1;			
+			ReadConsoleOutput(h, str, a, b, &r);
+			if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
+			if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
+			if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
+			if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
+		}
 	}
 
 	return fgCol | (bgCol<<4);
@@ -151,6 +180,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 	int transpChar = -1, transpFg = -1, transpBg = -1, fgBgCol;
 	int bForceFg = 0, bForceBg = 0, oldfc, oldbc;
 	int maxY = HIGH_NUMBER, bDoScroll = 1, bScrollNow = 0, wrap = 0, bAllowCodes = 1;
+	CHAR_INFO *currentConsoleOutput = NULL;
+	int bUseCurrentConsoleOutput = 0;
 	int i, j, inlen, orgx, yp = 0;
 	unsigned int startT;
 	SMALL_RECT r;
@@ -180,9 +211,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 	if (flags & F_WRAP) wrap = F_WRAP;
 	if (flags & F_WRAPSPRITE) wrap = F_WRAPSPRITE;
 
-	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol != USE_EXISTING_FG && fgCol != USE_EXISTING_BG) fgCol=0; }
-	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol != USE_EXISTING_FG && bgCol != USE_EXISTING_BG) bgCol=0; }
+	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol < USE_EXISTING_FG) fgCol=0; }
+	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol < USE_EXISTING_FG) bgCol=0; }
 	fgBgCol = fgCol | (bgCol<<4);
+	if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG) fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 	inlen = strlen(text);
 
 	i = 0;
@@ -215,7 +247,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						v16 = (v16*16) + v;
 						str[j].Char.AsciiChar = v16;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
-							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = fgBgCol;
 						j++;
 					}
@@ -260,7 +292,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 					else if (ch == '\\') {
 						str[j].Char.AsciiChar = ch;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
-							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = fgBgCol;
 						j++;
 						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
@@ -373,6 +405,9 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						i++;
 						break;
 					}
+					else if (ch == 'R') {
+						bUseCurrentConsoleOutput = 1;
+					}
 					else {
 						oldfc = fgCol;
 						oldbc = bgCol;
@@ -397,7 +432,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 				} else {
 					str[j].Char.AsciiChar = ch;
 					if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
-						fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y);
+						fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 					str[j].Attributes = fgBgCol;
 					j++;
 
@@ -498,6 +533,8 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 		CloseHandle(hNewScreenBuffer);
 	}
 
+	if (currentConsoleOutput != NULL)
+		free(currentConsoleOutput);
 	free(str);
 	if (*x!=orgx) (*x)--;
 }
@@ -521,7 +558,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
+		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V colors (fast but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
 		return 0;
 	}
 
