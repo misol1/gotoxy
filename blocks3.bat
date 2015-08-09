@@ -7,17 +7,21 @@ cmdwiz getconsoledim sy
 set YSIZE=%ERRORLEVEL%
 cmdwiz getconsoledim cy
 set YCURRENT=%ERRORLEVEL%
+set FX=fz
+if not "%1" == "" set FX=%1
 call :MAKE_SQ
 call :MAKE_SQ2
 set CNT=0
 set /a YMAX=%YSIZE%
 set /a XMAX=%XSIZE%
+set MODE=1
 
-cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE%
+cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE% encode -1 0
 for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
 
 :LOOP
-gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%%BLOCK:~1,-1%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\O0;%YCURRENT%" 0 0 r
+if %MODE%==0 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R%BLOCK:~1,-1%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\O0;%YCURRENT%" 0 0 r
+if %MODE%==1 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\p0;0\R%BLOCK:~1,-1%\O0;%YCURRENT%" 0 0 r
 
 set /a YP += 1
 if %YP% gtr %YMAX% call :MAKE_SQ
@@ -45,7 +49,7 @@ set /a SC=9+%RANDOM% %% 6
 call :DECTOHEX %SC%
 
 set SQ=""
-set SQ="!SQ:~1,-1!\f%P%\fX"
+set SQ="!SQ:~1,-1!\f%P%\%FX%"
 for /L %%b in (1,1,%YS%) do set SQ="!SQ:~1,-1!\n"& for /L %%a in (1,1,%XS%) do set SQ="!SQ:~1,-1!\G"
 goto :eof
 
@@ -58,7 +62,7 @@ set /a SC2=9+%RANDOM% %% 6
 call :DECTOHEX %SC2%
 
 set SQ2=""
-set SQ2="!SQ2:~1,-1!\f%P%\fX"
+set SQ2="!SQ2:~1,-1!\f%P%\%FX%"
 for /L %%b in (1,1,%YS2%) do set SQ2="!SQ2:~1,-1!\n"& for /L %%a in (1,1,%XS2%) do set SQ2="!SQ2:~1,-1!\G"
 goto :eof
 

@@ -81,10 +81,11 @@ char DecToHex(int i) {
 	return i;
 }
 
-char *GetAttribs(WORD attributes, char *utp) {
+char *GetAttribs(WORD attributes, char *utp, int transpChar, int transpBg, int transpFg) {
+	int i;
 	utp[0] = '\\';
-	utp[1] = DecToHex(attributes & 0xf);
-	utp[2] = DecToHex((attributes >> 4) & 0xf);
+	utp[1] = DecToHex(attributes & 0xf); if ((attributes & 0xf)==transpFg && transpChar < 0) utp[1]='v';
+	utp[2] = DecToHex((attributes >> 4) & 0xf); if (((attributes>>4) & 0xf)==transpBg && transpChar < 0) utp[2]='V';
 	utp[3] = 0;
 	return utp;
 }
@@ -157,7 +158,7 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 			if (oldAttrib == str[i + j*w].Attributes)
 				sprintf(output, "%s%s", output, charS);
 			else
-				sprintf(output, "%s%s%s", output, GetAttribs(str[i + j*w].Attributes, attribS), charS);
+				sprintf(output, "%s%s%s", output, GetAttribs(str[i + j*w].Attributes, attribS, transpChar, transpBg, transpFg), charS);
 			oldAttrib = str[i + j*w].Attributes;
 		}
 		fprintf(ofp, "%s\\n", output);
