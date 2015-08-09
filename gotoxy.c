@@ -26,6 +26,10 @@
 
 #define USE_EXISTING_FG 32
 #define USE_EXISTING_BG 64
+#define XOR_EXISTING_COL 128
+#define AND_EXISTING_COL 512
+#define OR_EXISTING_COL 2048
+#define ADD_EXISTING_COL 8192
 
 void GotoXY(HANDLE h, int x, int y) {
 	COORD coord;
@@ -68,6 +72,10 @@ int GetCol(char c, int oldc, int orgConsoleCol) {
 	case 'U': pc=(orgConsoleCol>>4) & 0xf; break;
 	case 'v': pc=USE_EXISTING_FG; break;
 	case 'V': pc=USE_EXISTING_BG; break;
+	case 'X': pc=XOR_EXISTING_COL+oldc; break;
+	case 'Y': pc=AND_EXISTING_COL+oldc; break;
+	case 'Z': pc=OR_EXISTING_COL+oldc; break;
+	case 'z': pc=ADD_EXISTING_COL+oldc; break;
 	}
 	return pc;
 }
@@ -144,11 +152,21 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreate
 	if (y >= 0 && y <= height) {
 	   if (*currentConsoleOutput != NULL) {
 			int arrayPos = y	* width + x;
-			if (fgCol == USE_EXISTING_FG) fgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
-			if (fgCol == USE_EXISTING_BG) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
-			if (bgCol == USE_EXISTING_FG) bgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
-			if (bgCol == USE_EXISTING_BG) bgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
 			if (fgCol < 0) retChar = (*currentConsoleOutput)[arrayPos].Char.AsciiChar;
+			else if (fgCol < USE_EXISTING_FG) ;
+			else if (fgCol == USE_EXISTING_FG) fgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
+			else if (fgCol == USE_EXISTING_BG) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
+			else if (fgCol >= XOR_EXISTING_COL && fgCol < AND_EXISTING_COL) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes & 0xf) ^ (fgCol-XOR_EXISTING_COL);
+			else if (fgCol >= AND_EXISTING_COL && fgCol < OR_EXISTING_COL) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes & 0xf) & (fgCol-AND_EXISTING_COL);
+			else if (fgCol >= OR_EXISTING_COL && fgCol < ADD_EXISTING_COL) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes & 0xf) | (fgCol-OR_EXISTING_COL);
+			else if (fgCol >= ADD_EXISTING_COL) { fgCol = ((*currentConsoleOutput)[arrayPos].Attributes & 0xf) + (fgCol-ADD_EXISTING_COL); if (fgCol > 15) fgCol=15; }
+			if (bgCol < USE_EXISTING_FG) ;
+			else if (bgCol == USE_EXISTING_FG) bgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
+			else if (bgCol == USE_EXISTING_BG) bgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
+			else if (bgCol >= XOR_EXISTING_COL && bgCol < AND_EXISTING_COL) bgCol = (((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf) ^ (bgCol-XOR_EXISTING_COL);
+			else if (bgCol >= AND_EXISTING_COL && bgCol < OR_EXISTING_COL) bgCol = (((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf) & (bgCol-AND_EXISTING_COL);
+			else if (bgCol >= OR_EXISTING_COL && bgCol < ADD_EXISTING_COL) bgCol = (((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf) | (bgCol-OR_EXISTING_COL);
+			else if (bgCol >= ADD_EXISTING_COL) { bgCol = (((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf) + (bgCol-ADD_EXISTING_COL); if (bgCol > 15) bgCol=15; }
 		} else {
 			static CHAR_INFO str[4];
 			r.Left = x;
@@ -156,11 +174,21 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreate
 			r.Right = x + 1;
 			r.Bottom = y + 1;
 			ReadConsoleOutput(h, str, a, b, &r);
-			if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
-			if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
-			if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
-			if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
 			if (fgCol < 0) retChar = str[0].Char.AsciiChar;
+			else if (fgCol < USE_EXISTING_FG) ;
+			else if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
+			else if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
+			else if (fgCol >= XOR_EXISTING_COL && fgCol < AND_EXISTING_COL) fgCol = (str[0].Attributes & 0xf) ^ (fgCol-XOR_EXISTING_COL);
+			else if (fgCol >= AND_EXISTING_COL && fgCol < OR_EXISTING_COL) fgCol = (str[0].Attributes & 0xf) & (fgCol-AND_EXISTING_COL);
+			else if (fgCol >= OR_EXISTING_COL && fgCol < ADD_EXISTING_COL) fgCol = (str[0].Attributes & 0xf) | (fgCol-OR_EXISTING_COL);
+			else if (fgCol >= ADD_EXISTING_COL) { fgCol = (str[0].Attributes & 0xf) + (fgCol-ADD_EXISTING_COL); if (fgCol > 15) fgCol=15; }
+			if (bgCol < USE_EXISTING_FG) ;
+			else if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
+			else if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
+			else if (bgCol >= XOR_EXISTING_COL && bgCol < AND_EXISTING_COL) bgCol = ((str[0].Attributes>>4) & 0xf) ^ (bgCol-XOR_EXISTING_COL);
+			else if (bgCol >= AND_EXISTING_COL && bgCol < OR_EXISTING_COL) bgCol = ((str[0].Attributes>>4) & 0xf) & (bgCol-AND_EXISTING_COL);
+			else if (bgCol >= OR_EXISTING_COL && bgCol < ADD_EXISTING_COL) bgCol = ((str[0].Attributes>>4) & 0xf) | (bgCol-OR_EXISTING_COL);
+			else if (bgCol >= ADD_EXISTING_COL) { bgCol = ((str[0].Attributes>>4) & 0xf) + (bgCol-ADD_EXISTING_COL); if (bgCol > 15) bgCol=15; }
 		}
 	}
 
@@ -435,7 +463,7 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 						oldfc = fgCol;
 						oldbc = bgCol;
 						if (!bForceFg) fgCol = GetCol(ch, fgCol, orgConsoleCol);
-							i++;
+						i++;
 						if (i < inlen) {
 							if (!bForceBg) bgCol = GetCol(text[i], bgCol, orgConsoleCol);
 						}
@@ -581,7 +609,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V colors (fast but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
+		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V colors (fast but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put, 'Z/z/Y/X' to or/add/and/xor current color with color at position\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
 		return 0;
 	}
 

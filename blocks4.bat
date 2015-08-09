@@ -1,0 +1,91 @@
+@echo off
+setlocal ENABLEDELAYEDEXPANSION
+cmdwiz showcursor 0
+cmdwiz getconsoledim sx
+set XSIZE=%ERRORLEVEL%
+cmdwiz getconsoledim sy
+set YSIZE=%ERRORLEVEL%
+cmdwiz getconsoledim y
+set YORG=%ERRORLEVEL%
+cmdwiz getconsoledim cy
+set YCURRENT=%ERRORLEVEL%
+set CNT=0
+set /a YMAX=%YSIZE%
+set /a XMAX=%XSIZE%
+
+cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE%
+for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
+gotoxy 0 0 %BLOCK% 0 0 c
+mode con lines=%YSIZE% cols=%XSIZE%
+set /a YDUBL=%YSIZE%*2
+cmdwiz setbuffersize k %YDUBL%
+gotoxy 0 %YSIZE% %BLOCK% 
+set BLOCK=
+set DELAY=5
+set FX=fX
+if not "%1" == "" set FX=%1
+
+for /L %%a in (1,1,50) do set BL=!BL!\G
+call :MAKE_SQ
+call :MAKE_SQ2
+
+
+:LOOP
+gotoxy 0 0 "\o0;%YSIZE%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\o0;0\w%DELAY%" 0 0
+
+set /a YP += 1
+if %YP% gtr %YMAX% call :MAKE_SQ
+
+set /a XP2 += 1
+if %XP2% gtr %XMAX% call :MAKE_SQ2
+
+set /a CNT+=1
+set /a KTMP=%CNT% %% 30
+if %KTMP% == 0 cmdwiz getch nowait
+if not %ERRORLEVEL% == 27 goto LOOP
+
+cmdwiz showcursor 1
+mode con lines=%YSIZE%
+if %YORG% gtr %YSIZE% cmdwiz setbuffersize k %YORG%
+del /Q tempblock.gxy
+endlocal
+goto :eof
+
+
+:MAKE_SQ
+set /a YS=16+%RANDOM% %% 25
+set /a XS=16+%RANDOM% %% 25
+set /a YP=0-%YS%
+set /a XP=%RANDOM% %% (%XSIZE% - %XS% + 6) - 3
+set /a SC=9+%RANDOM% %% 6
+call :DECTOHEX %SC%
+
+set SQ="\f%P%\%FX%"
+set /a XW=%XS%*2
+for /L %%b in (1,1,%YS%) do set SQ="!SQ:~1,-1!!BL:~0,%XW%!\n"
+goto :eof
+
+:MAKE_SQ2
+set /a YS2=16+%RANDOM% %% 25
+set /a XS2=16+%RANDOM% %% 25
+set /a XP2=-1-%XS2%
+set /a YP2=%RANDOM% %% (%YSIZE% - %YS2% + 6) - 3
+set /a SC2=9+%RANDOM% %% 6
+call :DECTOHEX %SC2%
+
+set SQ2="\f%P%\%FX%"
+set /a XW=%XS2%*2
+for /L %%b in (1,1,%YS2%) do set SQ2="!SQ2:~1,-1!!BL:~0,%XW%!\n"
+goto :eof
+
+:DECTOHEX
+if %1 geq 16 set P=0&goto :eof
+if %1 lss 0 set P=0&goto :eof
+if %1 leq 9 set P=%1&goto :eof
+if %1 == 10 set P=A&goto :eof
+if %1 == 11 set P=B&goto :eof
+if %1 == 12 set P=C&goto :eof
+if %1 == 13 set P=D&goto :eof
+if %1 == 14 set P=E&goto :eof
+if %1 == 15 set P=F&goto :eof
+goto :eof

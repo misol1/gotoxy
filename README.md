@@ -32,7 +32,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
  \Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at next \O
 
 (*)   Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use
-      existing fgcol/bgcol at position where text is put
+      existing fgcol/bgcol at position where text is put, 'Z/z/Y/X' to or/add/and/xor
+      current color with color at position
 (**)  Same as (*), precede with '-' to force color and ignore color control codes
 (***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap
       text, 'i' to ignore all control codes, 's' to enable scrolling
