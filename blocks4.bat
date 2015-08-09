@@ -15,8 +15,8 @@ set /a XMAX=%XSIZE%
 
 cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE%
 for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
-gotoxy 0 0 %BLOCK% 0 0 c
-mode con lines=%YSIZE% cols=%XSIZE%
+gotoxy 0 0 %BLOCK% 0 0 r
+if %YORG% gtr %YSIZE% mode con lines=%YSIZE% cols=%XSIZE%
 set /a YDUBL=%YSIZE%*2
 cmdwiz setbuffersize k %YDUBL%
 gotoxy 0 %YSIZE% %BLOCK% 
