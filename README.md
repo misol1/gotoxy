@@ -24,6 +24,7 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
         \N: clear screen
         \-: skip character (transparent)
         \\: print \
+        \G: print existing character at position
        \wx: delay x ms
        \Wx: delay up to x ms
         \R: read/refresh buffer for v/V colors (fast but less accurate)

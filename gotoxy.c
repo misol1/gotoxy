@@ -106,6 +106,7 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreate
 	SMALL_RECT r;
 	COORD b = { 0, 0 };
 	COORD a = { 1, 1 };
+	int retChar = 0;
 
 	if (hOldHandle != h) {
 		hOldHandle = h;
@@ -122,13 +123,20 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreate
 			free(*currentConsoleOutput);
 		*currentConsoleOutput = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * width*height);
 		if (*currentConsoleOutput != NULL) {
-			r.Left = 0;
-			r.Top = 0;
-			r.Right = width;
-			r.Bottom = height;
-			a.X = r.Right;
-			a.Y = r.Bottom;
-			ReadConsoleOutput(h, *currentConsoleOutput, a, b, &r);			
+			// Stupid bug in ReadConsoleOutput doesn't seem to read more than ~15680 chars, then it's all garbled characters!! Have to read in smaller blocks
+			int i, j, k, l;
+			l = 15000 / width;
+			i = height / l;
+			for (j = 0; j <= i; j++) {
+				r.Left = 0;
+				r.Top = j*l;
+				r.Right = width;
+				if (i == j) k = height % l; else k = l;
+				r.Bottom = j*l+k;
+				a.X = r.Right;
+				a.Y = k;
+				ReadConsoleOutput(h, *currentConsoleOutput+j*l*width, a, b, &r);			
+			}
 		}
 		*bCreateBuffer = 0;
 	}
@@ -140,21 +148,26 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreate
 			if (fgCol == USE_EXISTING_BG) fgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
 			if (bgCol == USE_EXISTING_FG) bgCol = (*currentConsoleOutput)[arrayPos].Attributes & 0xf;
 			if (bgCol == USE_EXISTING_BG) bgCol = ((*currentConsoleOutput)[arrayPos].Attributes>>4) & 0xf;
+			if (fgCol < 0) retChar = (*currentConsoleOutput)[arrayPos].Char.AsciiChar;
 		} else {
 			static CHAR_INFO str[4];
 			r.Left = x;
 			r.Top = y;
 			r.Right = x + 1;
-			r.Bottom = y + 1;			
+			r.Bottom = y + 1;
 			ReadConsoleOutput(h, str, a, b, &r);
 			if (fgCol == USE_EXISTING_FG) fgCol = str[0].Attributes & 0xf;
 			if (fgCol == USE_EXISTING_BG) fgCol = (str[0].Attributes>>4) & 0xf;
 			if (bgCol == USE_EXISTING_FG) bgCol = str[0].Attributes & 0xf;
 			if (bgCol == USE_EXISTING_BG) bgCol = (str[0].Attributes>>4) & 0xf;
+			if (fgCol < 0) retChar = str[0].Char.AsciiChar;
 		}
 	}
 
-	return fgCol | (bgCol<<4);
+	if (fgCol < 0)
+		return retChar;
+	else
+		return fgCol | (bgCol<<4);
 }
 
 
@@ -291,6 +304,16 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 					}
 					else if (ch == '\\') {
 						str[j].Char.AsciiChar = ch;
+						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Attributes = fgBgCol;
+						j++;
+						if (wrap && *x+j > wrapxpos && orgx <= wrapxpos) {
+							yp = 0; newY = *y+1; newX = (wrap == F_WRAP)? 0 : orgx; i++; break;
+						}
+					}
+					else if (ch == 'G') {
+						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = fgBgCol;
@@ -558,7 +581,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(**)] [bgcol(**)] [flags(***)] [wrapxpos]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V colors (fast but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
+		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (*)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (*)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V colors (fast but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or at \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or at \\O\n\n(*) Use 'k' to keep current color, 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put\n\n(**) Same as (*), precede with '-' to force color and ignore color codes\n\n(***) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable scrolling\n");
 		return 0;
 	}
 
