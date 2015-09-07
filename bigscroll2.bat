@@ -53,7 +53,7 @@ set SYD=1
 set DMODE=0
 set XPD=1
 set CNT=0
-
+set BORD=0
 
 :LOOP
 set OUT=""
@@ -64,10 +64,11 @@ if %PREPC% lss 1 set PREPC=0
 set OSC=%SC%
 for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*25^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
+if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
 if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\vV%OUT:~1,-1%\o0;0\W%DELAY%"
 if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\t20kk\f0%OUT:~1,-1%\o0;0\W%DELAY%"
-if %DMODE%==2 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\f4%OUT:~1,-1%\o0;0\W%DELAY%"		
+if %DMODE%==2 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\f4%OUT:~1,-1%\o0;0\W%DELAY%"
 if %DMODE%==3 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\04\Xz%OUT:~1,-1%\o0;0\W%DELAY%"		
 if %DMODE%==4 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\82\zz%OUT:~1,-1%\o0;0\W%DELAY%"		
 
@@ -92,6 +93,7 @@ if %KEY% == 333 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
 if %KEY% == 331 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
 if %KEY% == 32 set /A DMODE+=1&if !DMODE! gtr 4 set DMODE=0
 if %KEY% == 13 set /A SYD=1-%SYD%
+if %KEY% == 98 set /A BORD=1-%BORD%
 if %KEY% == 112 cmdwiz getch
 if %KEY% == 49 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=:!&set CS%%a=!CS%%a:\g01=:!
 if %KEY% == 50 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=\g01!&set CS%%a=!CS%%a::=\g01!
