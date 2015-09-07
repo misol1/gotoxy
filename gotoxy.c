@@ -10,6 +10,10 @@
 
 //#define SUPPORT_EXTENDED_ASCII_ON_CMD_LINE 1
 
+// Possible To-Do's:
+// 1. Support "regular expressions", e.g. \x10(APA) to write 'APA' 10 times after each other
+// 2. Support writing only on specified character (opt. w colors)
+
 // Constants
 #define UNKNOWN -999999
 #define HIGH_NUMBER 1000000

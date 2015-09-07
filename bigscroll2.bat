@@ -68,6 +68,8 @@ for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% &
 if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\vV%OUT:~1,-1%\o0;0\W%DELAY%"
 if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\t20kk\f0%OUT:~1,-1%\o0;0\W%DELAY%"
 if %DMODE%==2 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\f4%OUT:~1,-1%\o0;0\W%DELAY%"		
+if %DMODE%==3 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\04\Xz%OUT:~1,-1%\o0;0\W%DELAY%"		
+if %DMODE%==4 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\82\zz%OUT:~1,-1%\o0;0\W%DELAY%"		
 
 set /a XPROG+=%XPD%
 if %XPROG% gtr %XMAX% set XPROG=%XW%
@@ -88,7 +90,7 @@ if %KEY% == 336 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
 if %KEY% == 328 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
 if %KEY% == 333 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
 if %KEY% == 331 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
-if %KEY% == 32 set /A DMODE+=1&if !DMODE! gtr 2 set DMODE=0
+if %KEY% == 32 set /A DMODE+=1&if !DMODE! gtr 4 set DMODE=0
 if %KEY% == 13 set /A SYD=1-%SYD%
 if %KEY% == 112 cmdwiz getch
 if %KEY% == 49 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=:!&set CS%%a=!CS%%a:\g01=:!
