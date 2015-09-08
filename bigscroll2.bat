@@ -16,6 +16,7 @@ set ANIM0=
 call font3.bat
 
 set YM=28
+set YMUL=25
 if %CHARH% gtr 8 set /a YM-=(%CHARH%-9)/2
 
 call sintable.bat
@@ -62,7 +63,7 @@ set /a PREPC=(%XPROG%-%XW%-%CHARW%)/%CHARW%
 if %PREPC% lss 1 set PREPC=0
 
 set OSC=%SC%
-for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*25^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
+for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
@@ -84,9 +85,10 @@ if %BXP% leq 0 set BXP=20&goto SKIP
 if %BXP% geq 20 set BXP=0
 :SKIP
 
-set /a CCNT = %CNT% %% 20
+set /a CCNT = %CNT% %% 10
 set /A CNT+=1
-if %CCNT% == 0 cmdwiz getch nowait & set KEY=!ERRORLEVEL!
+if not %CCNT% == 0 goto LOOP
+cmdwiz getch nowait & set KEY=!ERRORLEVEL!
 if %KEY% == 336 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
 if %KEY% == 328 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
 if %KEY% == 333 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
@@ -95,6 +97,8 @@ if %KEY% == 32 set /A DMODE+=1&if !DMODE! gtr 4 set DMODE=0
 if %KEY% == 13 set /A SYD=1-%SYD%
 if %KEY% == 98 set /A BORD=1-%BORD%
 if %KEY% == 112 cmdwiz getch
+if %KEY% == 72 set /a YMUL+=2&set /a YM+=1
+if %KEY% == 104 set /a YMUL-=2&set /a YM-=1&if !YMUL! lss 0 set YMUL=0&set /a YM+=1
 if %KEY% == 49 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=:!&set CS%%a=!CS%%a:\g01=:!
 if %KEY% == 50 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\gdb=\g01!&set CS%%a=!CS%%a::=\g01!
 if %KEY% == 51 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\g01=\gdb!&set CS%%a=!CS%%a::=\gdb!
