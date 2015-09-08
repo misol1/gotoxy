@@ -58,7 +58,6 @@ set BORD=0
 
 :LOOP
 set OUT=""
-set KEY=0
 set /a PREPC=(%XPROG%-%XW%-%CHARW%)/%CHARW%
 if %PREPC% lss 1 set PREPC=0
 
