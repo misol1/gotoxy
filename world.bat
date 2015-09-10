@@ -40,7 +40,6 @@ set /a YL3 = %YH% + 1
 :LOOP
 gotoxy.exe 0 0 "\o%XP%;%YP%;%XW%;%YH%\p%HXP%;%HYP%%HERO%\o0;0"
 
-set COLL=0
 ::LEFT RIGHT UP DOWN ESCAPE
 cmdwiz getkeystate 25h 27h 26h 28h 27
 set VKEYS=%ERRORLEVEL%
