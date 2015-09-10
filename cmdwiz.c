@@ -72,6 +72,70 @@ int ReadCharProperty(int x, int y, int eProperty) {
 	}
 }
 
+int InspectBuffer(HANDLE hSrc, int x, int y, int w, int h, int bExclusive, unsigned char *glyphs) {
+	COORD a, b = {0,0};
+	SMALL_RECT r;
+	CHAR_INFO *str;
+	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+   int retVal = 0, i, j, k, l;
+	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+
+	GetConsoleScreenBufferInfo(hSrc, &screenBufferInfo);
+	if (y > screenBufferInfo.dwSize.Y || y < 0) return 0;
+	if (x > screenBufferInfo.dwSize.X || x < 0) return 0;
+	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return 0;
+	if (x+w > screenBufferInfo.dwSize.X || w < 1) return 0;
+	
+	if (w == 0 || h == 0)
+		return 0;
+	
+	if (bExclusive)
+		retVal = 1;
+	
+	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * w*h);
+	if (!str)
+		return;
+
+	a.X = w;
+	a.Y = h;
+
+	r.Left = x;
+	r.Top = y;
+	r.Right = x + w;
+	r.Bottom = y + h;
+	ReadConsoleOutput(hSrc, str, a, b, &r);
+
+	for (i = 0; i < h; i++)
+		for (j = 0; j < w; j++) {
+			if (bExclusive) {
+				l = 0; k = 0;
+				while(glyphs[k] != 0) {
+					if (glyphs[k] == str[i*w+j].Char.AsciiChar) {
+						l = 1;
+						break;
+					}
+					k++;
+				}
+				if (l==0) {
+					free(str);
+					return 0;
+				}
+			} else {
+				k = 0; l = 1;
+				while(glyphs[k] != 0) {
+					if (glyphs[k] == str[i*w+j].Char.AsciiChar) {
+						retVal |= l;
+					}
+					l = l << 1;
+					k++;
+				}
+			}
+		}	
+	
+	free(str);
+	return retVal;
+}
+
 char DecToHex(int i) {
 	switch(i) {
 	case 0:case 1:case 2:case 3:case 4:case 5:case 6:case 7:case 8:case 9: i=i+'0'; break;
@@ -254,7 +318,7 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
 int main(int argc, char **argv) {
 	int delayVal = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock playsound delay gettime await] [params]\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay gettime await] [params]\n"); return 0; }
 
 	if (stricmp(argv[1],"delay") == 0) {
 		if (argc < 3) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
@@ -521,6 +585,18 @@ int main(int argc, char **argv) {
 		if (argc > 3)
 			c.dwSize = atoi(argv[3]);
 		SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+	}
+	else if (stricmp(argv[1],"inspectblock") == 0) {
+		char glyphs[128];
+		int i;
+		
+		if (argc < 8) { printf("\nUsage: cmdwiz inspectblock [x y width height inclusive|exclusive char1] [char2 ...]\n"); return 0; }
+		for (i = 7; i < argc; i++) {
+			glyphs[i-7] = atoi(argv[i]);
+		}
+		glyphs[i-7] = 0;
+		
+		return InspectBuffer(GetStdHandle(STD_OUTPUT_HANDLE), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6][0]=='e', glyphs);
 	}
 	else if (stricmp(argv[1],"saveblock") == 0) {
 		int result;
