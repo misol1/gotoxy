@@ -15,6 +15,7 @@ set DL=0
 set DR=0
 set INS=
 set INSV=0
+call :TOGGLEINS
 set MFUNC1=1
 set MFUNC2=1
 if not "%~1" == "" set LOADNAME=%~1
@@ -63,8 +64,8 @@ if %MFUNC2% == 4 call :PICKUP 2
 if %DL% geq 1 gotoxy %MX% %MY% %CCHAR% %FGCOL% %BGCOL%
 goto SKIP
 :NOMOUSE
-if %KEY% == 8 cmdwiz getkeystate shift&if !ERRORLEVEL!==1 gotoxy k k "x" 10 1 & set KEY=1075 & rem BACKSPACE + shift
-if %KEY% == 8 cmdwiz getkeystate shift&if !ERRORLEVEL!==0 gotoxy k k " " %FGCOL% %BGCOL% & set KEY=1075 & rem BACKSPACE
+if %KEY% == 8 cmdwiz getkeystate shift&if !ERRORLEVEL!==1 gotoxy k k "x" 10 1 & set KEY=331 & rem BACKSPACE + shift
+if %KEY% == 8 cmdwiz getkeystate shift&if !ERRORLEVEL!==0 gotoxy k k " " %FGCOL% %BGCOL% & set KEY=331 & rem BACKSPACE
 if %KEY% == 328 cmdwiz getcursorpos y&set /a NY=!ERRORLEVEL!-1&gotoxy k !NY!&goto SKIP & rem UP
 if %KEY% == 336 cmdwiz getcursorpos y&set /a NY=!ERRORLEVEL!+1&set KEY=-1&if !NY! lss %YBOUND% gotoxy k !NY! & rem DOWN
 if %KEY% == 331 cmdwiz getcursorpos x&set /a NX=!ERRORLEVEL!-1&gotoxy !NX! k&goto SKIP & rem LEFT
