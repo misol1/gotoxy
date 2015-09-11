@@ -13,6 +13,7 @@
 // Possible To-Do's:
 // 1. Support "regular expressions", e.g. \x10(APA) to write 'APA' 10 times after each other
 // 2. Support writing only on specified character (opt. w colors)
+// 3. Force gf or bg color inside an expression too
 
 // Constants
 #define UNKNOWN -999999
