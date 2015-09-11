@@ -88,12 +88,13 @@ gotoxy.exe 0 0 %WRLD%
 
 ::LEFT RIGHT UP DOWN CTRL ESCAPE
 cmdwiz getkeystate 25h 27h 26h 28h ctrl 27
+set KDIR=0
 set VKEYS=%ERRORLEVEL%
-set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 set /a CP=%HXP%-1&cmdwiz inspectblock !CP! %HYP% 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP-=1&if !HXP! leq %XB1% set /a XP-=1 & set /a HXP+=1& if !XP! lss 0 set XP=0& set /a HXP-=1&if !HXP! lss 1 set HXP=1
-set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 set /a CP=%HXP%+6&cmdwiz inspectblock !CP! %HYP% 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP+=1&if !HXP! geq %XB2% set /a XP+=1 & set /a HXP-=1& if !XP! gtr %XL1% set XP=%XL1%& set /a HXP+=1&if !HXP! geq %XL2% set HXP=%XL2%
-set /a KS=%VKEYS% ^& 4 & if !KS! geq 1 set /a CP=%HYP%-1&cmdwiz inspectblock %HXP% !CP! 6 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HYP-=1&if !HYP! leq %YB1% set /a YP-=1 & set /a HYP+=1& if !YP! lss %YL3% set YP=%YL3%& set /a HYP-=1&if !HYP! lss 1 set HYP=1
-set /a KS=%VKEYS% ^& 8 & if !KS! geq 1 set /a CP=%HYP%+3&cmdwiz inspectblock %HXP% !CP! 6 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HYP+=1&if !HYP! geq %YB2% set /a YP+=1 & set /a HYP-=1& if !YP! gtr %YL1% set YP=%YL1%& set /a HYP+=1&if !HYP! geq %YL2% set HYP=%YL2%
-set /a KS=%VKEYS% ^& 16 & if !KS! geq 1 if !ATTACKRELEASE!==1 if !ATTACK!==0 set ATTACK=15&set ATTACKRELEASE=0
+set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 set KDIR=1&set /a CP=%HXP%-1&cmdwiz inspectblock !CP! %HYP% 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP-=1&if !HXP! leq %XB1% set /a XP-=1 & set /a HXP+=1& if !XP! lss 0 set XP=0& set /a HXP-=1&if !HXP! lss 1 set HXP=1
+set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 set KDIR=2&set /a CP=%HXP%+6&cmdwiz inspectblock !CP! %HYP% 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP+=1&if !HXP! geq %XB2% set /a XP+=1 & set /a HXP-=1& if !XP! gtr %XL1% set XP=%XL1%& set /a HXP+=1&if !HXP! geq %XL2% set HXP=%XL2%
+set /a KS=%VKEYS% ^& 4 & if !KS! geq 1 set KDIR=3&set /a CP=%HYP%-1&cmdwiz inspectblock %HXP% !CP! 6 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HYP-=1&if !HYP! leq %YB1% set /a YP-=1 & set /a HYP+=1& if !YP! lss %YL3% set YP=%YL3%& set /a HYP-=1&if !HYP! lss 1 set HYP=1
+set /a KS=%VKEYS% ^& 8 & if !KS! geq 1 set KDIR=4&set /a CP=%HYP%+3&cmdwiz inspectblock %HXP% !CP! 6 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HYP+=1&if !HYP! geq %YB2% set /a YP+=1 & set /a HYP-=1& if !YP! gtr %YL1% set YP=%YL1%& set /a HYP+=1&if !HYP! geq %YL2% set HYP=%YL2%
+set /a KS=%VKEYS% ^& 16 & if !KS! geq 1 if !ATTACKRELEASE!==1 if !ATTACK!==0 set ATTACK=15&set ATTACKRELEASE=0&if %KDIR% gtr 0 call :ATTACKFOREST
 if !KS! == 0 if !ATTACK!==0 set ATTACKRELEASE=1
 set /a KS=%VKEYS% ^& 32
 if !KS! == 0 goto LOOP
@@ -109,3 +110,13 @@ goto :eof
 if %ATTACK% gtr 3 set /a SCORE+=100&set EXP%1=-999999&goto :eof
 set /a LIVES-=1
 set FLASH=50
+goto :eof
+
+:ATTACKFOREST
+set /a FX=%XP%+%HXP%
+set /a FY=%YP%+%HYP%
+if %KDIR%==1 set /a FX-=1&gotoxy !FX! !FY! " \n \n " 0 0 r
+if %KDIR%==2 set /a FX+=6&gotoxy !FX! !FY! " \n \n " 0 0 r
+if %KDIR%==3 set /a FY-=1&gotoxy !FX! !FY! "      " 0 0 r
+if %KDIR%==4 set /a FY+=3&gotoxy !FX! !FY! "      " 0 0 r
+goto :eof
