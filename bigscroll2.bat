@@ -14,6 +14,7 @@ gotoxy 0 0 "\N\p0;40%ANIM0:~1,-1%" r
 set ANIM0=
 
 call font3.bat
+set /a ADDW=%CHARW%-0
 
 set YM=28
 set YMUL=25
@@ -27,7 +28,7 @@ for /L %%a in (0,1,360) do set SIN%%a=
 set SC=0
 
 set SCROLLTEXT="Trying out a big font for the scroller..."
-set /a BEGC=%XW%/%CHARW%+1
+set /a BEGC=%XW%/%ADDW%+1
 for /L %%a in (1,1,%BEGC%) do set SCROLLTEXT=" !SCROLLTEXT:~1,-1!"
 set SCROLLTEXT="%SCROLLTEXT:~1,-1%      "
 set DELAY=0
@@ -48,7 +49,7 @@ call util.bat strlen SCROLL_LEN %SCROLLTEXT%
 set /a SCROLL_LEN=0-(SCROLL_LEN-%XW%)
 
 set XPROG=%XW%
-set /a XMAX=%CHARW%*(%PSCR_LEN%-6)+%CHARW%*(%XW%/%CHARW%+1)
+set /a XMAX=%ADDW%*(%PSCR_LEN%-6)+%ADDW%*(%XW%/%ADDW%+1)
 set BGD=-1
 set SYD=1
 set DMODE=0
@@ -58,11 +59,11 @@ set BORD=0
 
 :LOOP
 set OUT=""
-set /a PREPC=(%XPROG%-%XW%-%CHARW%)/%CHARW%
+set /a PREPC=(%XPROG%-%XW%-%ADDW%)/%ADDW%+1
 if %PREPC% lss 1 set PREPC=0
 
 set OSC=%SC%
-for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
+for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*%ADDW%-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& set /a XT=!XP!+%ADDW%&if !XT! geq %XW% goto BIGSKIP
 :BIGSKIP
 if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
