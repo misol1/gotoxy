@@ -13,7 +13,6 @@
 // Possible To-Do's:
 // 1. Support "regular expressions", e.g. \x10(APA) to write 'APA' 10 times after each other
 // 2. Support writing only on specified character (opt. w colors)
-// 3. Force gf or bg color inside an expression too
 
 // Constants
 #define UNKNOWN -999999
@@ -63,7 +62,21 @@ void ClrScr(HANDLE h, int attrib) {
 	FillConsoleOutputCharacter(h, 0x20, GetDim(h,0)*GetDim(h,1), a, &nwrite);
 }
 
-int GetCol(char c, int oldc, int orgConsoleCol) {
+int GetHex(char c) {
+	int pc = c -'0';
+	if (pc > 9 || pc < 0) pc=0;
+	switch(c) {
+	case 'a':case 'A': pc=10; break;
+	case 'b':case 'B': pc=11; break;
+	case 'c':case 'C': pc=12; break;
+	case 'd':case 'D': pc=13; break;
+	case 'e':case 'E': pc=14; break;
+	case 'f':case 'F': pc=15; break;
+	}
+	return pc;
+}
+
+int GetCol(char c, int oldc, int orgConsoleCol, int *forceCol) {
 	int pc = c -'0';
 	if (pc > 9 || pc < 0) pc=oldc;
 	switch(c) {
@@ -81,6 +94,8 @@ int GetCol(char c, int oldc, int orgConsoleCol) {
 	case 'Y': pc=AND_EXISTING_COL+oldc; break;
 	case 'Z': pc=OR_EXISTING_COL+oldc; break;
 	case 'z': pc=ADD_EXISTING_COL+oldc; break;
+	case 'H': *forceCol=1; pc=oldc; break;
+	case 'h': *forceCol=0; pc=oldc; break;
 	}
 	return pc;
 }
@@ -285,10 +300,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 					else if (ch == 'g') {
 						int v = 0, v16 = 0;
 						i++;
-						v16 = GetCol(text[i], 0, orgConsoleCol);
+						v16 = GetHex(text[i]);
 						i++;
 						if (i < inlen) {
-							v = GetCol(text[i], 0, orgConsoleCol);
+							v = GetHex(text[i]);
 						}
 						v16 = (v16*16) + v;
 						str[j].Char.AsciiChar = v16;
@@ -435,20 +450,20 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 							i--;
 					}
 					else if (ch == 't') {
-						int v = 0, v16 = 0;
+						int v = 0, v16 = 0, dummy;
 						i++;
-						v16 = GetCol(text[i], 0, orgConsoleCol);
+						v16 = GetHex(text[i]);
 						i++;
 						if (i < inlen) {
-							v = GetCol(text[i], 0, orgConsoleCol);
+							v = GetHex(text[i]);
 						}
 						i++;
 						if (i < inlen) {
-							transpFg = GetCol(text[i], -1, orgConsoleCol);
+							transpFg = GetCol(text[i], -1, orgConsoleCol, &dummy);
 						}
 						i++;
 						if (i < inlen) {
-							transpBg = GetCol(text[i], -1, orgConsoleCol);
+							transpBg = GetCol(text[i], -1, orgConsoleCol, &dummy);
 						}
 						v16 = (v16*16) + v;
 						transpChar = v16;
@@ -467,10 +482,10 @@ void WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fl
 					else {
 						oldfc = fgCol;
 						oldbc = bgCol;
-						if (!bForceFg) fgCol = GetCol(ch, fgCol, orgConsoleCol);
+						if (!bForceFg || ch=='h') fgCol = GetCol(ch, fgCol, orgConsoleCol, &bForceFg);
 						i++;
 						if (i < inlen) {
-							if (!bForceBg) bgCol = GetCol(text[i], bgCol, orgConsoleCol);
+							if (!bForceBg || text[i]=='h') bgCol = GetCol(text[i], bgCol, orgConsoleCol, &bForceBg);
 						}
 						fgBgCol = fgCol | (bgCol<<4);
 					}
@@ -604,7 +619,7 @@ int GetConsoleColor(){
 
 int main(int argc, char **argv) {
 	int ox, oy;
-	int x, y;
+	int x, y, dummy;
 	int orgConsoleCol = 0x7;
 	int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
 	int flags = 0;
@@ -614,7 +629,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x|keep y|keep [text|file.gxy] [fgcol(*)] [bgcol(*)] [flags(**)] [wrapxpos]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (***)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (****)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or next \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or next \\O\n\n(*) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put. Precede with '-' to force color and ignore color codes\n\n(**) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling\n\n(***) Same as (*), but '-' not supported. Use 'k' to keep current color, 'Z/z/Y/X' to or/add/and/xor with color at current position\n\n(****) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n");
+		printf("\n[text] supports control codes:\n     \\px;y: cursor position x y ('k' keeps current)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (***)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\txxXX: set character xx with col XX as transparent (****)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n       \\wx: delay x ms\n       \\Wx: delay up to x ms\n        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n \\ox;y;w;h: copy/write to offscreen buffer, copy back at end or next \\o\n \\Ox;y;w;h: clear/write to offscreen buffer, copy back at end or next \\O\n\n(*) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at position where text is put. Precede with '-' to force color and ignore color codes\n\n(**) One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling\n\n(***) Same as (*), but '-' not supported. Use 'k' to keep current color, 'Z/z/Y/X' to or/add/and/xor with color at current position, 'H/h' to start/stop forcing the current color\n\n(****) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n");
 		return 0;
 	}
 
@@ -717,7 +732,7 @@ int main(int argc, char **argv) {
 		int mul = 1;
 		char *pfg = argv[5];
 		if (*pfg=='-') { mul = -1; pfg++; }
-		bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol) : atoi(pfg)) * mul;
+		bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol, &dummy) : atoi(pfg)) * mul;
 		if (bgCol == 0 && mul < 1) bgCol = -16;
 		if (bgCol > 15 && bgCol != USE_EXISTING_FG && bgCol != USE_EXISTING_BG) bgCol = 0;
 	}
@@ -725,7 +740,7 @@ int main(int argc, char **argv) {
 		int mul = 1;
 		char *pfg = argv[4];
 		if (*pfg=='-') { mul = -1; pfg++; }
-		fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol) : atoi(pfg)) * mul;
+		fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol, &dummy) : atoi(pfg)) * mul;
 		if (fgCol == 0 && mul < 1) fgCol = -16;
 		if (fgCol > 15 && fgCol != USE_EXISTING_FG && fgCol != USE_EXISTING_BG) fgCol = 0;
 	}

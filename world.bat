@@ -18,7 +18,6 @@ for /F "tokens=*" %%i in (tree.gxy) do set TREE="%%i"
 for /F "tokens=*" %%i in (hero.gxy) do set HERO="%%i"
 for /F "tokens=*" %%i in (hero2.gxy) do set HEROATTACK="%%i"
 for /F "tokens=*" %%i in (monster.gxy) do set MONSTER="%%i"
-set HEROHIT=!HERO!&set HEROHIT=!HEROHIT:\E0=\F0!&set HEROHIT=!HEROHIT:\70=\F0!&set HEROHIT=!HEROHIT:\90=\F0!&set HEROHIT=!HEROHIT:\60=\F0!!&set HEROHIT=!HEROHIT:\20=\F0!
 
 for /L %%i in (1,1,%TREENOF%) do set /a XP=!RANDOM! %% (WSW-7)+1 & set /a YP=!RANDOM! %% (WSH-8) + %YH%+2& gotoxy !XP! !YP! %TREE% 0 0 r
 
@@ -54,9 +53,10 @@ set ATTACKRELEASE=1
 
 :LOOP
 set HEROC=%HERO%
-if %FLASH% gtr 0 set /a FLASH-=1&set /a CP=%FLASH% %% 7&if !CP! lss 4 set HEROC=%HEROHIT%
+set FORCEFLASH=
+if %FLASH% gtr 0 set /a FLASH-=1&set /a CP=%FLASH% %% 7&if !CP! lss 4 set FORCEFLASH=\F0\HH
 if %ATTACK% gtr 0 set /a ATTACK-=1&if !ATTACK! gtr 5 set HEROC=%HEROATTACK%
-set WRLD="\o%XP%;%YP%;%XW%;%YH%\p%HXP%;%HYP%%HEROC%"
+set WRLD="\o%XP%;%YP%;%XW%;%YH%\p%HXP%;%HYP%%FORCEFLASH%%HEROC%\hh"
 
 set CNT=%ENEMYNOF%
 set /a ML1=%XP%-4

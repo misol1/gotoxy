@@ -3,7 +3,7 @@ Windows command line input/output tools, for text based games/utils by Mikael So
 
 Sorry about the current lack of documentation; have a look at the example files and all will be (kind of) clear...
 
-Notable examples: Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee
+Notable examples: Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll2
 
 
 gotoxy.exe
@@ -36,7 +36,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 (**)  One or more of: 'c/r' to follow/restore cursor position, 'w/W' to wrap/spritewrap
       text, 'i' to ignore all control codes, 's' to enable vertical scrolling
 (***) Same as (*), but '-' not supported. Use 'k' to keep current color, 'Z/z/Y/X' to 
-      or/add/and/xor with color at current position
+      or/add/and/xor with color at current position, 'H/h' to start/stop forcing the 
+      current color
 (****) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol      
 ```
 
