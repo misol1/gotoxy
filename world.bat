@@ -78,7 +78,7 @@ if !EDIR%CNT%!==0 set /a CP=!EXP%CNT%!-1&cmdwiz inspectblock !CP! !EYP%CNT%! 1 4
 if !EDIR%CNT%!==1 set /a CP=!EXP%CNT%!+5&cmdwiz inspectblock !CP! !EYP%CNT%! 1 4 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EXP%CNT%+=1&if !EXP%CNT%! geq %XL3% set EXP%CNT%=%XL3%
 if !EDIR%CNT%!==2 set /a CP=!EYP%CNT%!-1&cmdwiz inspectblock !EXP%CNT%! !CP! 5 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EYP%CNT%-=1&if !EYP%CNT%! lss %YL5% set EYP%CNT%=%YL5%
 if !EDIR%CNT%!==3 set /a CP=!EYP%CNT%!+4&cmdwiz inspectblock !EXP%CNT%! !CP! 5 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EYP%CNT%+=1&if !EYP%CNT%! geq %YL4% set EYP%CNT%=%YL4%
-set /a MX=!EXP%CNT%!-%XP%&set /a MY=!EYP%CNT%!-%YP%&set WRLD="%WRLD:~1,-1%\p!MX!;!MY!%MONSTER%"&if %FLASH%==0 if !MX! gtr !HITX1! if !MY! gtr !HITY1! if !MX! lss !HITX2! if !MY! lss !HITY2! call :PLYHIT %CNT%&if !LIVES! lss 1 goto OUT
+set /a MX=!EXP%CNT%!-%XP%&set /a MY=!EYP%CNT%!-%YP%&set WRLD="%WRLD:~1,-1%\p!MX!;!MY!%MONSTER%"&if !MX! gtr !HITX1! if !MY! gtr !HITY1! if !MX! lss !HITX2! if !MY! lss !HITY2! call :PLYHIT %CNT%&if !LIVES! lss 1 goto OUT
 :ESKIP
 set /a CNT-=1
 if %CNT% gtr 0 goto ELOOP
@@ -108,6 +108,7 @@ goto :eof
 
 :PLYHIT
 if %ATTACK% gtr 3 set /a SCORE+=100&set EXP%1=-999999&goto :eof
+if %FLASH% gtr 0 goto :eof
 set /a LIVES-=1
 set FLASH=50
 goto :eof
