@@ -45,9 +45,6 @@ for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=\gdb!
 for /L %%a in (0,1,%NOFCHARS%) do if "!USED%%a!" == "" set CS%%a=
 for /L %%a in (0,1,%NOFCHARS%) do set USED%%a=
 
-call util.bat strlen SCROLL_LEN %SCROLLTEXT%
-set /a SCROLL_LEN=0-(SCROLL_LEN-%XW%)
-
 set XPROG=%XW%
 set /a XMAX=%ADDW%*(%PSCR_LEN%-6)+%ADDW%*(%XW%/%ADDW%+1)
 set BGD=-1
@@ -57,13 +54,16 @@ set XPD=1
 set CNT=0
 set BORD=0
 
+set SCROLLTEXT=&set CHARSET=&set BEGC=&set SCROLL_LEN=&set INDEX=&set SCT=&set CST=
+
 :LOOP
 set OUT=""
 set /a PREPC=(%XPROG%-%XW%-%ADDW%)/%ADDW%+1
 if %PREPC% lss 1 set PREPC=0
 
 set OSC=%SC%
-for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*%ADDW%-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& set /a XT=!XP!+%ADDW%&if !XT! geq %XW% goto BIGSKIP
+set /a XP=%XW%+%PREPC%*%ADDW%-%XPROG%
+for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& set /a XP+=%ADDW%&if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
@@ -85,9 +85,9 @@ if %BXP% leq 0 set BXP=20&goto SKIP
 if %BXP% geq 20 set BXP=0
 :SKIP
 
-set /a CCNT = %CNT% %% 10
 set /A CNT+=1
-if not %CCNT% == 0 goto LOOP
+if not %CNT% == 10 goto LOOP
+set CNT=0
 cmdwiz getch nowait & set KEY=!ERRORLEVEL!
 if %KEY% == 336 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
 if %KEY% == 328 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
@@ -105,7 +105,6 @@ if %KEY% == 51 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:\g01=\gdb!&set
 if %KEY% == 43 set /a DELAY+=5
 if %KEY% == 45 set /a DELAY-=5&if !DELAY! lss 0 set DELAY=0
 if %KEY% == 27 goto OUT
-
 goto LOOP
 :OUT
 
