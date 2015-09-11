@@ -80,6 +80,7 @@ if %KEY% == 329 call :PICKUP 3 & goto SKIP & rem PGUP
 if %KEY% == 337 call :PICKUP 4 & goto SKIP & rem PGDN
 if %KEY% == 335 call :PICKUP 5 & goto SKIP & rem END
 if %KEY% == 571 call :LOAD & goto SKIP & rem F1
+if %KEY% == 606 call :LOAD y& goto SKIP & rem ctrl-F1
 if %KEY% == 572 call :SAVE & goto SKIP & rem F2
 if %KEY% == 573 set /a FGCOL+=1&call :PRINTSTATUS&goto SKIP & rem F3
 if %KEY% == 574 set /a BGCOL+=1&call :PRINTSTATUS&goto SKIP & rem F4
@@ -224,7 +225,10 @@ gotoxy 1 %YBOUND% "                                                             
 gotoxy 1 %YBOUND%
 set FNAME=&set /P FNAME=Load file(omit .gxy): 
 gotoxy %X% %Y%
-for %%a in (%FNAME%) do if exist "%%~na.gxy" gotoxy %X% %Y% "%%~na.gxy"
+for %%a in (%FNAME%) do set FNAME="%%~na.gxy"&if not exist !FNAME! goto :eof
+for /F "tokens=* usebackq" %%i in (%FNAME%) do set inf="%%i"
+if "%1"=="" set inf=!inf:\-=\A1x\r!
+gotoxy %X% %Y% %inf% 0 0 r
 call :PRINTSEPARATOR
 goto :eof
 
