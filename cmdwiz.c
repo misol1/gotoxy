@@ -78,7 +78,6 @@ int InspectBuffer(HANDLE hSrc, int x, int y, int w, int h, int bExclusive, unsig
 	CHAR_INFO *str;
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
    int retVal = 0, i, j, k, l;
-	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 
 	GetConsoleScreenBufferInfo(hSrc, &screenBufferInfo);
 	if (y > screenBufferInfo.dwSize.Y || y < 0) return 0;
@@ -318,7 +317,7 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
 int main(int argc, char **argv) {
 	int delayVal = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay gettime await] [params]\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay gettime await] [params]\n"); return 0; }
 
 	if (stricmp(argv[1],"delay") == 0) {
 		if (argc < 3) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
@@ -358,6 +357,11 @@ int main(int argc, char **argv) {
 		if (k == 0) k = 512+getch();
 		return k;
 	}
+	else if (stricmp(argv[1],"flushkeys") == 0) {
+		while(kbhit())
+			getch();
+		return 0;
+	}	
 	else if (stricmp(argv[1],"getkeystate") == 0) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 		int i, j, k = 0;

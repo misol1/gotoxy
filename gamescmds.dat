@@ -1,4 +1,5 @@
 call snake.bat&games.bat
+call world.bat&games.bat
 call yatzy.bat&games.bat
 call mastermind.bat&games.bat
 call solitaire&games.bat

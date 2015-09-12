@@ -45,7 +45,7 @@ cmdwiz.exe
 ----------
 ```
 Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate 
-               quickedit getmouse getch_or_mouse getch_and_mouse getcharat
-               getcolorat showcursor getcursorpos saveblock copyblock moveblock
-               inspectblock playsound delay gettime await] [params]
+               flushkeys quickedit getmouse getch_or_mouse getch_and_mouse
+               getcharat getcolorat showcursor getcursorpos saveblock copyblock
+               moveblock inspectblock playsound delay gettime await] [params]
 ```

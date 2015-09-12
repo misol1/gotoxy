@@ -11,7 +11,7 @@ set WSW=200
 set WSH=100
 set /a WSY=%WSH% + %YH%
 
-mode con COLS=%XW% lines=%YH%
+mode con COLS=%XW% lines=%YH%&cls
 cmdwiz setbuffersize %WSW% %WSY%
 
 for /F "tokens=*" %%i in (tree.gxy) do set TREE="%%i"
@@ -104,10 +104,11 @@ mode con lines=50 cols=80
 cls
 endlocal
 cmdwiz showcursor 1
+cmdwiz flushkeys
 goto :eof
 
 :PLYHIT
-if %ATTACK% gtr 5 set /a SCORE+=100&set EXP%1=-999999&goto :eof
+if %ATTACK% gtr 5 set /a SCORE+=100&call :PUTENEMY %1&goto :eof
 if %FLASH% gtr 0 goto :eof
 set /a LIVES-=1
 set FLASH=50
@@ -120,4 +121,12 @@ if %KDIR%==1 set /a FX-=1&gotoxy !FX! !FY! " \n \n " 0 0 r
 if %KDIR%==2 set /a FX+=6&gotoxy !FX! !FY! " \n \n " 0 0 r
 if %KDIR%==3 set /a FY-=1&gotoxy !FX! !FY! "      " 0 0 r
 if %KDIR%==4 set /a FY+=3&gotoxy !FX! !FY! "      " 0 0 r
+goto :eof
+
+:PUTENEMY
+set /a EXP%1=!RANDOM! %% (WSW-7)+1
+set /a EYP%1=!RANDOM! %% (WSH-8) + %YH%+2
+set /A EDIR%1 =!RANDOM! %% 4
+set /A ENEW%1 =!RANDOM! %% 5+1
+if !EXP%1! gtr %ML1% if !EXP%1! lss %ML2% if !EYP%1! gtr %ML3% if !EYP%1! lss %ML4% goto PUTENEMY
 goto :eof
