@@ -107,7 +107,7 @@ cmdwiz showcursor 1
 goto :eof
 
 :PLYHIT
-if %ATTACK% gtr 3 set /a SCORE+=100&set EXP%1=-999999&goto :eof
+if %ATTACK% gtr 5 set /a SCORE+=100&set EXP%1=-999999&goto :eof
 if %FLASH% gtr 0 goto :eof
 set /a LIVES-=1
 set FLASH=50
