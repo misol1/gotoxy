@@ -27,7 +27,7 @@ for /L %%a in (0,12,359) do set MSIN!CNT!=!SIN%%a!&set /A CNT+=1
 for /L %%a in (0,1,360) do set SIN%%a=
 set SC=0
 
-set SCROLLTEXT="Trying out a big font for the scroller..."
+set SCROLLTEXT="Trying out a big font for the scroller... Check out these keys: Space, RETURN, Cursor LEFT/RIGHT/UP/DOWN, H/h,b,p,1,2,3..."
 set /a BEGC=%XW%/%ADDW%+1
 for /L %%a in (1,1,%BEGC%) do set SCROLLTEXT=" !SCROLLTEXT:~1,-1!"
 set SCROLLTEXT="%SCROLLTEXT:~1,-1%      "
@@ -59,11 +59,11 @@ set SCROLLTEXT=&set CHARSET=&set BEGC=&set SCROLL_LEN=&set INDEX=&set SCT=&set C
 :LOOP
 set OUT=""
 set /a PREPC=(%XPROG%-%XW%-%ADDW%)/%ADDW%+1
-if %PREPC% lss 1 set PREPC=0
+if %PREPC% lss 2 set PREPC=0
 
 set OSC=%SC%
 set /a XP=%XW%+%PREPC%*%ADDW%-%XPROG%
-for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& set /a XP+=%ADDW%&if !XP! geq %XW% goto BIGSKIP
+for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CS%%b:~1,-1!"& set /a XP+=%ADDW%&if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
