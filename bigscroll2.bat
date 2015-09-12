@@ -63,8 +63,9 @@ if %PREPC% lss 2 set PREPC=0
 
 set OSC=%SC%
 set /a XP=%XW%+%PREPC%*%ADDW%-%XPROG%
-for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CS%%b:~1,-1!"& set /a XP+=%ADDW%&if !XP! geq %XW% goto BIGSKIP
-:BIGSKIP
+set /a ENDC=%PREPC% + (%XW%-%XP%)/%ADDW%
+
+for /L %%a in (%PREPC%,1,%ENDC%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CS%%b:~1,-1!"& set /a XP+=%ADDW%
 if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
 if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\vV%OUT:~1,-1%\o0;0\W%DELAY%"
