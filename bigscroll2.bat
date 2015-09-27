@@ -69,7 +69,7 @@ for /L %%a in (%PREPC%,1,%ENDC%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%
 if %BORD%==1 set OUT="!OUT:~1,-1!\t00kk\p0;0\02\Xz                                                                                 \p0;39                                                                                 "
 
 if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\vV%OUT:~1,-1%\o0;0\W%DELAY%"
-if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\t20kk\f0%OUT:~1,-1%\o0;0\W%DELAY%"
+if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\fV%OUT:~1,-1%\o0;0\W%DELAY%"
 if %DMODE%==2 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\f4%OUT:~1,-1%\o0;0\W%DELAY%"
 if %DMODE%==3 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\04\Xz%OUT:~1,-1%\o0;0\W%DELAY%"		
 if %DMODE%==4 gotoxy.exe 0 0 "\o%BXP%;40;%XW%;%YH%\R\82\zz%OUT:~1,-1%\o0;0\W%DELAY%"		
