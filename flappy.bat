@@ -10,7 +10,7 @@ set DDY=10
 set DY=0
 set /a MID=26*256
 set OY=0
-set DELAY=&if not "%1" == "" set DELAY=\w%1
+set DELAY=\W12&if not "%1" == "" set DELAY=\W%1
 set BARH=49
 
 set SCORE=-1
@@ -28,7 +28,8 @@ set /a DDY+=9
 set /a DY+=%DDY%
 set /a Y=(%MID%+%DY%)/256
 
-gotoxy 5 %OY% " \p5;%Y%O\p%BARX%;%BAR1Y%%BAR:~1,-1%\p%BARX%;%BAR2Y%%BAR:~1,-1%%DELAY%" 14
+gotoxy_extended.exe 5 %OY% " \p5;%Y%O\p%BARX%;%BAR1Y%%BAR:~1,-1%\p%BARX%;%BAR2Y%%BAR:~1,-1%\i:111b;%DELAY%" 14
+set VKEYS=%ERRORLEVEL%
 set OY=%Y%
 
 if %Y% lss -18 goto ESC
@@ -44,8 +45,6 @@ goto ESC
 set /a BARX-=2
 if %BARX% lss -10 call :SETBAR
 
-cmdwiz getkeystate ctrl 27
-set VKEYS=%ERRORLEVEL%
 set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 set /a DDY-=18
 set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 goto REALESC
 goto LOOP

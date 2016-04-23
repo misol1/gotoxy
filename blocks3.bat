@@ -7,7 +7,7 @@ cmdwiz getconsoledim sy
 set YSIZE=%ERRORLEVEL%
 cmdwiz getconsoledim cy
 set YCURRENT=%ERRORLEVEL%
-set FX=fz
+set FX=fQ
 if not "%1" == "" set FX=%1
 call :MAKE_SQ
 call :MAKE_SQ2
@@ -20,8 +20,9 @@ cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE% encode -1 0
 for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
 
 :LOOP
-if %MODE%==0 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R%BLOCK:~1,-1%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\O0;%YCURRENT%" 0 0 r
-if %MODE%==1 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\p0;0\R%BLOCK:~1,-1%\O0;%YCURRENT%" 0 0 r
+if %MODE%==0 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R%BLOCK:~1,-1%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\O0;%YCURRENT%\i" 0 0 r
+if %MODE%==1 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\p0;0\R%BLOCK:~1,-1%\O0;%YCURRENT%\i" 0 0 r
+if %ERRORLEVEL% == 27 goto ENDLOOP
 
 set /a YP += 1
 if %YP% gtr %YMAX% call :MAKE_SQ
@@ -29,10 +30,8 @@ if %YP% gtr %YMAX% call :MAKE_SQ
 set /a XP2 += 1
 if %XP2% gtr %XMAX% call :MAKE_SQ2
 
-set /a CNT+=1
-set /a KTMP=%CNT% %% 30
-if %KTMP% == 0 cmdwiz getch nowait
-if not %ERRORLEVEL% == 27 goto LOOP
+goto LOOP
+:ENDLOOP
 
 del /Q tempblock.gxy
 cmdwiz showcursor 1

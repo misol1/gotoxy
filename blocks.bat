@@ -12,16 +12,14 @@ set CNT=0
 set /a YMAX=%YCURRENT%+%YSIZE%
 
 :LOOP
-
-gotoxy %XP% %YP% "\R%SQ:~1,-1%\w5" 0 0 r
+gotoxy %XP% %YP% "\R%SQ:~1,-1%\w5\i" 0 0 r
+if %ERRORLEVEL% == 27 goto ENDLOOP
 
 set /a YP += 1
 if %YP% gtr %YMAX% call :MAKE_SQ %1
 
-set /a CNT+=1
-set /a KTMP=%CNT% %% 30
-if %KTMP% == 0 cmdwiz getch nowait
-if not %ERRORLEVEL% == 27 goto LOOP
+goto LOOP
+:ENDLOOP
 
 cmdwiz showcursor 1
 endlocal

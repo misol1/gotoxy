@@ -22,7 +22,6 @@ set /a XMAX=%XSIZE%*%XDELAY%
 set /a YMAX=%YSIZE%*%XDELAY%
 
 for /L %%b in (0,1,%NOF%) do call :MAKESTAR %%b
-set CNT=0
 
 :LOOP
 set FIELD=
@@ -30,11 +29,7 @@ if %DIR%==1 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIE
 if %DIR%==2 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!.   &set /a STARX%%b-=!STARS%%b!&if !STARX%%b! lss -4 set /a STARX%%b=%XMAX%+3+(!RANDOM! %% %XSIZE%)&set /a STARY%%b=!RANDOM! %% %YSIZE%
 if %DIR%==3 for /L %%b in (0,1,%NOF%) do set /a YTMP=!STARY%%b!/%XDELAY%&set FIELD=!FIELD!\p!STARX%%b!;!YTMP!!STARC%%b! \n \n \n.&set /a STARY%%b+=!STARS%%b!&if !STARY%%b! geq %YMAX% set /a STARY%%b=-3-(!RANDOM! %% %YSIZE%)&set /a STARX%%b=!RANDOM! %% %XMAX%
 if %DIR%==4 for /L %%b in (0,1,%NOF%) do set /a YTMP=!STARY%%b!/%XDELAY%&set FIELD=!FIELD!\p!STARX%%b!;!YTMP!!STARC%%b!. \n \n \n&set /a STARY%%b-=!STARS%%b!&if !STARY%%b! lss -4 set /a STARY%%b=%YMAX%+3+(!RANDOM! %% %YSIZE%)&set /a STARX%%b=!RANDOM! %% %XMAX%
-gotoxy.exe 0 0 "%FIELD%" 7 0
-
-set /a CNT+=1
-set /a KTMP=%CNT% %% 100
-if %KTMP% == 0 cmdwiz getch nowait
+gotoxy.exe 0 0 "%FIELD%\i" 7 0
 if not %ERRORLEVEL% == 27 goto LOOP
 
 mode con lines=50 cols=80

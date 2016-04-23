@@ -1,4 +1,4 @@
-/* CmdWiz (c) 2015 Mikael Sollenborn */
+/* CmdWiz (c) 2015-16 Mikael Sollenborn */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -161,7 +161,7 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	COORD b = { 0, 0 };
 	SMALL_RECT r;
 	CHAR_INFO *str;
-	char *output, attribS[8], charS[4];
+	char *output, attribS[16], charS[8];
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 	WORD oldAttrib = 6666;
 	FILE *ofp = NULL;
@@ -317,7 +317,7 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
 int main(int argc, char **argv) {
 	int delayVal = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay gettime await] [params]\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await] [params]\n"); return 0; }
 
 	if (stricmp(argv[1],"delay") == 0) {
 		if (argc < 3) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"getch") == 0) {
 		int k;
-		if (argc > 2) if (!kbhit()) return 255;
+		if (argc > 2) if (!kbhit()) return 0;
 		k = getch();
 
 		if (k == 224) k = 256+getch();
@@ -406,8 +406,8 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	else if (stricmp(argv[1],"getcharat") == 0) {
-		int x, y;
 		int ox, oy;
+		int x, y;
 		int i;
 		// printf("\nUsage: cmdwiz getcharat [x|k] [y|k]");
 		GetXY(&ox, &oy);
@@ -589,6 +589,22 @@ int main(int argc, char **argv) {
 		if (argc > 3)
 			c.dwSize = atoi(argv[3]);
 		SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+	}
+	else if (stricmp(argv[1],"stringfind") == 0) {
+		int index = 0;
+		char *cp;
+
+		if (argc < 4) { printf("\nUsage: cmdwiz stringfind [orgstring] [findstring] [startindex]\n"); return 0; }
+		if (argc > 3) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return -1; }
+
+		cp = strstr(&(argv[2][index]), argv[3]);
+		if (!cp) return -1;
+		return (int)(cp - (char *)argv[2]);
+	}
+	else if (stricmp(argv[1],"stringlen") == 0) {
+		if (argc < 3) return 0;
+
+		return strlen(argv[2]);
 	}
 	else if (stricmp(argv[1],"inspectblock") == 0) {
 		char glyphs[128];

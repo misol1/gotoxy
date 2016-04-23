@@ -23,17 +23,9 @@ if not "%2" == "" set /a NOFAPPLES=%2
 if %NOFAPPLES% lss 1 set NOFAPPLES=1
 if not "%3" == "" set /a DELAY=%3
 
-set SCREEN=#
-for /L %%a in (1,1,%WIDTH%) do call :BUILDSCR "*"
-gotoxy 0 0 "!SCREEN!" 11 0 1
-gotoxy 0 %HEIGHT% "!SCREEN!" 11 0 1
-
-set SCREEN=*
 set /A TEMP=%WIDTH%-2
-for /L %%a in (1,1,%TEMP%) do call :BUILDSCR " "
-set SCREEN=%SCREEN%*
-set /A TEMP=%HEIGHT%-1
-for /L %%a in (1,1,%TEMP%) do gotoxy 0 %%a "!SCREEN!" 11 0 1
+set /A TEMP2=%HEIGHT%-1
+gotoxy 0 0 "\M%WIDTH%{*}\p0;%HEIGHT%\M%WIDTH%{*}\p0;1\M%TEMP2%{*\M%TEMP%{ \}*\n}" 11 0 x
 
 set XPOS=20
 set /A YPOS=%HEIGHT%/2
@@ -52,18 +44,15 @@ call :PRINTSCORE
 for /L %%a in (1,1,%NOFAPPLES%) do call :PUTAPPLE
 
 :PLAYLOOP
-gotoxy %XPOS% %YPOS% "o" 15 12 1
-gotoxy !XO%OLDI%! !YO%OLDI%! " " 15 0 1
+gotoxy %XPOS% %YPOS% "o\f0\p!XO%OLDI%!;!YO%OLDI%! \i" 15 12 1
+if %ERRORLEVEL% == 27 set SCORE=-1 & goto CLEANUP
+if %ERRORLEVEL% == 122 call :SWITCHDIR1
+if %ERRORLEVEL% == 120 call :SWITCHDIR2
 
 set XO%OLDI%=%XPOS%
 set YO%OLDI%=%YPOS%
 set /A OLDI=%OLDI%+1
 if %OLDI% GTR %LEN% set OLDI=1
-
-cmdwiz getch nowait
-if %ERRORLEVEL% == 27 set SCORE=-1 & goto CLEANUP
-if %ERRORLEVEL% == 122 call :SWITCHDIR1
-if %ERRORLEVEL% == 120 call :SWITCHDIR2
 
 set /A XPOS=%XPOS%+%XD%
 set /A YPOS=%YPOS%+%YD%
@@ -101,10 +90,6 @@ cmdwiz getch
 call hiscore.bat snakescore.dat clean
 cmdwiz showcursor 1
 endlocal
-goto :EOF
-
-:BUILDSCR
-set SCREEN=%SCREEN%%~1
 goto :EOF
 
 :SWITCHDIR1

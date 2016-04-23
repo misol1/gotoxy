@@ -4,15 +4,12 @@ color 07
 setlocal ENABLEDELAYEDEXPANSION
 call sintable.bat
 cmdwiz showcursor 0
-cmdwiz getcursorpos x&set X=!ERRORLEVEL!
-cmdwiz getcursorpos y&set Y=!ERRORLEVEL!
 cmdwiz getconsoledim y&set YM=!ERRORLEVEL!
 cmdwiz getconsoledim x&set XM=!ERRORLEVEL!
 set DELAY=&if not "%1" == "" set DELAY=\W%1
 
 for /F "tokens=*" %%i in (goomba.gxy) do set gom="%%i"
 
-set CNT=0
 set SC=0
 set CC=180
 set SC2=50
@@ -54,15 +51,17 @@ set /a XPOS2=%XMID%-4+(!SIN%SC2%!*%XMUL%^>^>14)
 set /a YPOS3=%YMID%-4+(!SIN%SC3%!*18^>^>14)
 set FIELD=
 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIELD=!FIELD!\p!XTMP!;!STARY%%b!!STARC%%b!.&set /a STARX%%b+=!STARS%%b!&if !STARX%%b! geq %XMAX% set /a STARX%%b=-3-(!RANDOM! %% %XM%)&set /a STARY%%b=!RANDOM! %% %YM%
-gotoxy.exe 0 0 "\O0;0;80;%YM%%FIELD%\p%XPOS2%;%YPOS2%!spi%TOGG%!\p%XPOS3%;%YPOS3%%spi2%\p%XPOS%;%YPOS%%gom%%DELAY%"
+gotoxy.exe 0 0 "\O0;0;80;%YM%%FIELD%\p%XPOS2%;%YPOS2%!spi%TOGG%!\p%XPOS3%;%YPOS3%%spi2%\p%XPOS%;%YPOS%%gom%%DELAY%\i"
+if %ERRORLEVEL% == 27 goto ENDREP
 set /a SC+=6 & if !SC! geq 720 set /A SC=!SC!-720
 set /a CC+=6 & if !CC! geq 720 set /A CC=!CC!-720
 set /a SC2+=5 & if !SC2! geq 720 set /A SC2=!SC2!-720
 set /a SC3+=3 & if !SC3! geq 720 set /A SC3=!SC3!-720
 set /a CNT+=1 & set /a CNTEMP=!CNT! %% 20 & if !CNTEMP!==0 cmdwiz getch nowait
 set /a TOGG=1-%TOGG%
-if not %ERRORLEVEL% == 27 goto REP
+goto REP
 
+:ENDREP
 cmdwiz showcursor 1
 endlocal
 cls

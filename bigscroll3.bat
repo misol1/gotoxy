@@ -7,8 +7,8 @@ set YH=40
 set /A YHA=%YH%+1
 
 mode con COLS=%XW% lines=%YH%
-cmdwiz setbuffersize 100 81
-gotoxy 0 0 "\N\p0;40;\M5{\M6{\M8{\F9 \F1         \70          \\}\n\}\M6{\M8{\70          \F9 \F1         \\}\n\}}" 0 0 rx
+::set CHESS=\M4{\M6{\M8{\F9 \F1         \70          \\}\n\}\M6{\M8{\70          \F9 \F1         \\}\n\}}
+set CHESS=\M4{\M6{\F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \n\}\M6{\70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \n\}}
 
 call font3.bat
 set /a ADDW=%CHARW%-0
@@ -37,6 +37,7 @@ set CNT=0
 for /L %%a in (1,1,%SCROLL_LEN%) do set SCT=!SCROLLTEXT:~%%a,1!& for /L %%b in (1,1,%CHARS_LEN%) do set CST=!CHARSET:~%%b,1!&if "!SCT!"=="!CST!" set /a INDEX=%%b-1 & set T!CNT!=!INDEX!& set /a CNT+=1 & set USED!INDEX!=1
 set PSCR_LEN=%CNT%
 
+::for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a: #=\gb0!
 for /L %%a in (0,1,%NOFCHARS%) do set CS%%a=!CS%%a:#=\gdb!
 
 for /L %%a in (0,1,%NOFCHARS%) do if "!USED%%a!" == "" set CS%%a=
@@ -47,6 +48,7 @@ set /a XMAX=%ADDW%*(%PSCR_LEN%-6)+%ADDW%*(%XW%/%ADDW%+1)
 set BGD=-1
 set SYD=1
 set DMODE=0
+call :SETMODE
 set XPD=1
 set BORD=0
 
@@ -64,11 +66,7 @@ set /a ENDC=%PREPC% + (%XW%-%XP%)/%ADDW%
 for /L %%a in (%PREPC%,1,%ENDC%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CS%%b:~1,-1!"& set /a XP+=%ADDW%
 if %BORD%==1 set OUT="!OUT:~1,-1!\T00kk\p0;0\02\xQ                                                                                 \p0;39                                                                                 "
 
-if %DMODE%==0 gotoxy.exe 0 0 "\o%BXP%;%YHA%;%XW%;%YHA%\R\vV%OUT:~1,-1%\o0;0\W%DELAY%\i"
-if %DMODE%==1 gotoxy.exe 0 0 "\o%BXP%;%YHA%;%XW%;%YHA%\T20kk\f0%OUT:~1,-1%\o0;0\W%DELAY%\i"
-if %DMODE%==2 gotoxy.exe 0 0 "\o%BXP%;%YHA%;%XW%;%YHA%\f4%OUT:~1,-1%\o0;0\W%DELAY%\i"
-if %DMODE%==3 gotoxy.exe 0 0 "\o%BXP%;%YHA%;%XW%;%YHA%\R\04\xQ%OUT:~1,-1%\o0;0\W%DELAY%\i"
-if %DMODE%==4 gotoxy.exe 0 0 "\o%BXP%;%YHA%;%XW%;%YHA%\R\82\qQ%OUT:~1,-1%\o0;0\W%DELAY%\i"
+gotoxy.exe 0 0 "\O0;0;%XW%;%YHA%\p-%BXP%;-1;%CHESS%%MODECODE%%OUT:~1,-1%\O\W%DELAY%\i" 0 0 x
 set KEY=!ERRORLEVEL!
 
 set /a XPROG+=%XPD%
@@ -88,7 +86,7 @@ if %KEY% == 336 set /a BGD-=1&if !BGD! lss -2 set BGD=-2
 if %KEY% == 328 set /a BGD+=1&if !BGD! gtr 2 set BGD=2
 if %KEY% == 333 set /a XPD-=1&if !XPD! lss -3 set XPD=-3
 if %KEY% == 331 set /a XPD+=1&if !XPD! gtr 3 set XPD=3
-if %KEY% == 32 set /A DMODE+=1&if !DMODE! gtr 4 set DMODE=0
+if %KEY% == 32 call :SETMODE
 if %KEY% == 13 set /A SYD=1-%SYD%
 if %KEY% == 98 set /A BORD=1-%BORD%
 if %KEY% == 112 cmdwiz getch
@@ -103,8 +101,16 @@ if %KEY% == 27 goto OUT
 goto LOOP
 :OUT
 
-
 mode con lines=50 cols=80
 cls
 endlocal
 cmdwiz showcursor 1
+goto :eof
+
+:SETMODE
+if %DMODE%==0 set MODECODE=\R\vV
+if %DMODE%==1 set MODECODE=\T20kk\f0
+if %DMODE%==2 set MODECODE=\f4
+if %DMODE%==3 set MODECODE=\R\04\xQ
+if %DMODE%==4 set MODECODE=\R\82\qQ
+set /A DMODE+=1&if !DMODE! gtr 4 set DMODE=0

@@ -10,7 +10,6 @@ set /a FTMP=%FRAMES%-1
 if "!ANIM%FTMP%!" == "" echo Error: invalid data file&goto OUT2
 
 set CNT=0
-set CNT2=0
 set DELTA=1
 set DELAY=& if not "%2" == "" if not "%2" == "0" set DELAY=\W%2
 set XP=0& if not "%4" == "" set XP=%4
@@ -32,9 +31,7 @@ shift
 if not "%~8" == "" goto REP
 
 :LOOP
-gotoxy.exe %XP% %YP% \O0;0;%SCRW%;%SCRH%!ANIM%CNT%!%DELAY% %COLOR% %BCOLOR%
-set /a CNT2+=1&set /a KTMP=!CNT2! %% 15
-if %KTMP% == 0 cmdwiz getch nowait
+gotoxy.exe %XP% %YP% \O0;0;%SCRW%;%SCRH%!ANIM%CNT%!%DELAY%\i %COLOR% %BCOLOR%
 if %ERRORLEVEL% == 27 goto OUT
 set /a CNT+=%DELTA%
 if %BOUNCE% == 0 if %CNT% geq %FRAMES% set CNT=0

@@ -1,4 +1,4 @@
-:: LISTb : Mikael Sollenborn 2015
+:: LISTb : Mikael Sollenborn 2015-16
 @echo off
 if "%~1"=="_YESNO" call :YESNO %2&goto :eof
 if "%~1"=="_GETANSWER" call :GETANSWER %2 %3&goto :eof
@@ -43,9 +43,11 @@ set PATHNOFCOL=B
 set SELCHAR=\g07
 set HLPC1=\BU
 set HLPC2=\7U
+if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SET_COLORS
 
 set MOUSESUPPORT=0
-if not "%~5" == "" set MOUSESUPPORT=1
+if "%~5" == "Y" set MOUSESUPPORT=1
+if "%~5" == "y" set MOUSESUPPORT=1
 if %MOUSESUPPORT%==1 cmdwiz quickedit 0
 
 set VIEWCMD=less -f

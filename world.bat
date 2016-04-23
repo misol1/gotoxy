@@ -83,13 +83,13 @@ set /a MX=!EXP%CNT%!-%XP%&set /a MY=!EYP%CNT%!-%YP%&set WRLD="%WRLD:~1,-1%\p!MX!
 set /a CNT-=1
 if %CNT% gtr 0 goto ELOOP
 
-set WRLD="%WRLD:~1,-1%\p1;1\c4\g03%LIVES%\-\e6\g07%SCORE%\o0;0"
-gotoxy.exe 0 0 %WRLD%
+set WRLD="%WRLD:~1,-1%\p1;1\c4\g03%LIVES%\-\e6\g07%SCORE%\o0;0\i:25272628111b"
+gotoxy_extended.exe 0 0 %WRLD%
 
 ::LEFT RIGHT UP DOWN CTRL ESCAPE
-cmdwiz getkeystate 25h 27h 26h 28h ctrl 27
-set KDIR=0
+::cmdwiz getkeystate 25h 27h 26h 28h ctrl 27
 set VKEYS=%ERRORLEVEL%
+set KDIR=0
 set /a FX=%XP%+%HXP%
 set /a FY=%YP%+%HYP%
 set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 set KDIR=1&set /a CP=%FX%-1&cmdwiz inspectblock !CP! !FY! 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP-=1&if !HXP! leq %XB1% set /a XP-=1 & set /a HXP+=1& if !XP! lss 0 set XP=0& set /a HXP-=1&if !HXP! lss 1 set HXP=1

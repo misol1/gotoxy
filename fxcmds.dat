@@ -3,10 +3,11 @@ call starfield.bat&fx.bat
 call starfield2.bat&fx.bat
 call sprite3.bat 14 5&fx.bat
 call splitscreen.bat 1 0&fx.bat
-call random.bat 0&fx.bat
-call bigscroll2.bat&fx.bat
+call bigscroll3.bat&fx.bat
 call animplay.bat animdata-chess1.bat 0 reverse&fx.bat
 call animplay.bat animdata-chess2.bat 20&fx.bat
 call animplay.bat animdata-grow.bat 20 bounce&fx.bat
 call animplay.bat animdata-rectangle.bat 16 bounce&fx.bat
-call blocks4.bat Xz&fx.bat
+call blocks5.bat xQ&fx.bat
+call blocks5.bat vX y y&fx.bat
+call fadeseq.bat&fx.bat
