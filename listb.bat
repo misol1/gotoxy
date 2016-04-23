@@ -399,7 +399,7 @@ goto :eof
 set /a CURRTMP=%CURRPOS%+1
 if not "%~1"=="U" goto NOUPDTB
 set BARINFO="%CURRTMP%/%FCOUNT%"
-gotoxy 6 0 "a          \p5;0 %BARINFO:~1,-1%" %BARTEXTCOL% %BARCOL%
+gotoxy 6 0 "           \p5;0 %BARINFO:~1,-1%" %BARTEXTCOL% %BARCOL%
 goto :eof
 :NOUPDTB
 set BARINFO="Item %CURRTMP%/%FCOUNT%"
@@ -410,9 +410,8 @@ goto :eof
 
 
 :SHOWBOTTOMBAR
-gotoxy 0 %BARPOS% %BAR% 0 %BARCOL%
-if not "%~1"=="" gotoxy 1 %BARPOS% "%~1" %BARINFOCOL% %BARCOL% & set UPDATEBOTTOM=1
-if "%~1"=="" set /a TP=%COLS%-14 & gotoxy !TP! %BARPOS% "F1/? for help" %BARINFOCOL% %BARCOL%
+if not "%~1"=="" gotoxy 0 %BARPOS% "%BAR:~1,-1%\p1;%BARPOS%;%~1" %BARINFOCOL% %BARCOL% & set UPDATEBOTTOM=1
+if "%~1"=="" set /a TP=%COLS%-14 & gotoxy 0 %BARPOS% "%BAR:~1,-1%\p!TP!;%BARPOS%;F1/? for help" %BARINFOCOL% %BARCOL%
 goto :eof
 
 
