@@ -344,10 +344,12 @@ set SHOWS=""
 set /a PARTPRINT=%LH%+1
 set /A FMCOUNT=%FCOUNT%-1
 
-cls
+::cls
+set /A BLH=%LINES%-2&gotoxy 0 0 "\O0;1;%COLS%;!BLH!;"
 call :SHOWBOTTOMBAR
 call :SHOWTOPBAR
-for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:^&=^^^&!&set FNAME=!FNAME:~1,-1!!FT%%a!&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!FNAME:~0,%CXM%!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
+for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:~1,-1!!FT%%a!&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!FNAME:~0,%CXM%!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
+::set FNAME=!FNAME:^&=^^^&!
 
 :OUTLOOP
 gotoxy 0 1 %SHOWS% %DIRCOL%
@@ -390,7 +392,7 @@ set FNAME=!FO%CURRPOS%!
 set FNAME=!FNAME:^&=^^^&!
 set FNAME=%FNAME:~1,-1%!FT%CURRPOS%!
 set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
- 
+
 gotoxy 0 0 %SHOWS% 0 0
 goto :eof
 
