@@ -343,20 +343,9 @@ set /a CNT=%PAGE%*(%COLSPERSCR%*%LH%)
 set CC=0
 set SHOWS=""
 set /a PARTPRINT=%LH%+1
-:SHOWLOOP
-set BGCOL=U&if %CNT%==%CURRPOS% set BGCOL=%CURRCOL%
-set FGCOL=%FILECOL%&if "!FT%CNT%!"=="/" set FGCOL=%DIRCOL%
-set SEL= &if not "!FS%CNT%!"=="" set SEL=!FS%CNT%!
-set FNAME=!FO%CNT%!
-set FNAME=!FNAME:^&=^^^&!
-set FNAME=%FNAME:~1,-1%!FT%CNT%!
-set SHOWS="%SHOWS:~1,-1%\%FGCOL%%BGCOL%!FNAME:~0,%CXM%!%SEL%\n"
-set /a Y+=1
-set /a PTEMP=%Y% %% %PARTPRINT%& if !PTEMP!==0 gotoxy 0 1 %SHOWS% %DIRCOL%&set SHOWS=""
+set /A FMCOUNT=%FCOUNT%-1
 
-if %Y% gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="%SHOWS:~1,-1%\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP
-set /a CNT+=1
-if %CNT% lss %FCOUNT% goto SHOWLOOP
+for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:^&=^^^&!&set FNAME=!FNAME:~1,-1!!FT%%a!&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!FNAME:~0,%CXM%!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
 
 :OUTLOOP
 gotoxy 0 1 %SHOWS% %DIRCOL%
