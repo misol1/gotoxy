@@ -1,0 +1,41 @@
+1. Special characters in names
+The character ! is not handled properly. If you really want to do something with such a file/folder, use 's/S' and find the name using tab completion. For some reason that works (don't ask me why...).
+Other special characters may cause problems, e.g. if you managed to somehow make a file with <,>,| or similar in the name.
+The character & should work.
+Characters outside of Ascii range will not look and/or not work properly
+
+2. "extendlistb.bat" does not work / how does it work?
+You must add an ABSOLUTE PATH to "extendlistb.bat" as the fourth parameter to listb.bat to make it work. See "l.bat" for an example (you need to change the path to where your extendlistb.bat is)
+Also note that you should put gotoxy.exe,cmdwiz.exe,listb.bat (and l.bat) into a PATH folder.
+
+3. Clipboard move/copy does not properly check for overwriting existing files
+Might be fixed...some day
+
+4. 'd' does not work for folders
+That's right, I thought it was too "dangerous" to do recursive deletion of a folder, even with a y/n question.
+But in "extendlistb.bat" I have added ^D, which does what you want, for folders specifically
+
+5. c,C,B,T do not copy folders
+Again, too much like opening a can of worms... but I did add ^X in "extendlistb.bat", which will recursively copy a folder to the specified place
+
+6. It's slow, especially when there are many files
+True, this is batch scripting after all...
+It's even slower when the laptop has no power supply, for reasons only Microsoft can answer
+Other programs running in the background will slow it down more too
+
+7. Hidden/system/write protected files cannot be copied/deleted/moved etc
+This is standard Windows functionality. You can see/change the attributes with '^A' if "extendlistb.bat" is used
+
+8. Some folders cannot be entered
+Again, standard behavior, probably because they have the 'hidden' attribute set
+
+9. When using mouse support, mouse quick editing does not work until you leave program
+Yep, it's not currently restored when e.g. launching a program with 'i'. Might be fixed...some day
+Also, don't mess around with the right click menu or you might block input and have to quit listb with Ctrl-C...
+
+10. 'x' key does not work when using Windows Powershell
+True, Powershell does not allow batch scripts to set the path after the script ends.
+There are also other, more subtle differences, such as 'f' not working for hidden files/folders
+Also, to make sure you don't get blue background color in some cases, you should call $HOST.UI.RawUI.BackgroundColor = 0 and $HOST.UI.RawUI.ForegroundColor = 7 from the command line before running.
+
+...
