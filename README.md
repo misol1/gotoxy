@@ -3,7 +3,7 @@ Windows command line input/output tools, for text based games/utils by Mikael So
 
 Sorry about the current lack of documentation; have a look at the example files and all will be (kind of) clear...
 
-Notable examples: Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll2, Blocks5
+Notable examples: Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll3, Blocks6
 
 
 gotoxy.exe
