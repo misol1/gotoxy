@@ -308,7 +308,7 @@ goto :eof
 
 :FINDOP
 call :strlen LEN "!ANSWER!"
-for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,%LEN%!&if !FTP!==!ANSWER! set OLDPOS=%CURRPOS%& set CURRPOS=%%a& if "%2"=="" call :UPDATELIST & goto :eof
+for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,%LEN%!&if !FTP!==!ANSWER! set OLDPOS=%CURRPOS%& set CURRPOS=%%a& (if "%1"=="" call :UPDATELIST) & goto :eof
 goto :eof
 
 
