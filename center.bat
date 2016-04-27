@@ -2,7 +2,7 @@
 ::Does not handle special chars like &,<,> etc 
 @echo off
 if "%~1"=="" echo Usage: center [message] [col] [ypos] [xpos] [xendpos]&goto :eof
-setlocal
+setlocal ENABLEDELAYEDEXPANSION
 set DMSG=%~1
 set DMSG=%DMSG:\n=# %
 echo %DMSG%>tmplines.dat

@@ -1,7 +1,7 @@
 ::Does not support all codes, i,e. \p, \w, \W, \o, \O, \T, \g
 @echo off
 if "%~1"=="" echo Usage: typewrite-code [message] [speed] [color] [xstart] [xend]&goto :eof
-setlocal
+setlocal ENABLEDELAYEDEXPANSION
 set TWMSG=""
 set OMSG=%~1
 set WF=w
