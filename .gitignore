@@ -29,3 +29,10 @@
 
 # Debug files
 *.dSYM/
+
+flappyscore.dat
+snakescore.dat
+golfscore.dat
+yatzyscore.dat
+hiscore.dat
+sintable.dat
