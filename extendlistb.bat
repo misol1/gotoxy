@@ -31,14 +31,19 @@ if %KEY% == 24 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat
 if not %KEY% == 97 goto NOT_a & rem a
 if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1
-call :LOCASE XTENSION
 set XFILE=%~n1
-if "%XTENSION%"==".wav" cmdwiz playsound %1 & exit /b 0
-if "%XTENSION%"==".gxy" cls&gotoxy 0 0 %1 0 0 c & cmdwiz getch & exit /b 1
-if "%XTENSION%"==".mp3" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
-if "%XTENSION%"==".mod" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
-if "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
-if "%XTENSION%"==".zip" cls&unzip -l %1|%EXTVIEW% & exit /b 3
+if /I "%XTENSION%"==".wav" cmdwiz playsound %1 & exit /b 0
+if /I "%XTENSION%"==".gxy" cls&gotoxy 0 0 %1 0 0 c & cmdwiz getch & exit /b 1
+if /I "%XTENSION%"==".mp3" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
+if /I "%XTENSION%"==".mod" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
+if /I "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1
+if /I "%XTENSION%"==".zip" cls&unzip -l %1|%EXTVIEW% & exit /b 3
+if /I "%XTENSION%"==".jpg" %1 & exit /b 0
+if /I "%XTENSION%"==".gif" %1 & exit /b 0
+if /I "%XTENSION%"==".png" %1 & exit /b 0
+if /I "%XTENSION%"==".pcx" %1 & exit /b 0
+if /I "%XTENSION%"==".tga" %1 & exit /b 0
+if /I "%XTENSION%"==".bmp" %1 & exit /b 0
 cls
 %EXTVIEW% %1
 exit /b 1
@@ -109,9 +114,4 @@ set PATHNOFCOL=E
 set SELCHAR=\g07
 set HLPC1=\CU
 set HLPC2=\7U
-goto :eof
-
-
-:LOCASE
-for %%i in ("A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j" "K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t" "U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z") do call set "%1=%%%1:%%~i%%"
 goto :eof

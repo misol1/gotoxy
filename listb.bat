@@ -4,7 +4,6 @@ if "%~1"=="_YESNO" call :YESNO %2&goto :eof
 if "%~1"=="_GETANSWER" call :GETANSWER %2 %3&goto :eof
 if "%~1"=="_SHOWBOTTOMBAR" call :SHOWBOTTOMBAR %2&goto :eof
 if "%~1"=="_COUNTITEMS" call :COUNTITEMS %2 %3&goto :eof
-if "%~1"=="_STRLEN" call :STRLEN %2 %3&goto :eof
 
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
@@ -228,7 +227,7 @@ goto :eof
 :SPLITANSWER
 set SPLITPOS=-1
 set ANSWER2=
-call :strlen LEN "%ANSWER%"
+cmdwiz stringlen "%ANSWER%"&set LEN=!ERRORLEVEL!
 for /L %%a in (0,1,%LEN%) do if "!ANSWER:~%%a,1!"=="#" set SPLITPOS=%%a
 set /a A2=%SPLITPOS%+1
 if not %SPLITPOS%==-1 set ANSWER2=!ANSWER:~%A2%!&set ANSWER=!ANSWER:~0,%SPLITPOS%!
@@ -307,7 +306,7 @@ goto :eof
 
 
 :FINDOP
-call :strlen LEN "!ANSWER!"
+cmdwiz stringlen "%ANSWER%"&set LEN=!ERRORLEVEL!
 for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,%LEN%!&if !FTP!==!ANSWER! set OLDPOS=%CURRPOS%& set CURRPOS=%%a& (if "%1"=="" call :UPDATELIST) & goto :eof
 goto :eof
 
@@ -317,7 +316,7 @@ for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set FT%%a=&set FS%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 dir /-p /b /ad /O%SORT% >%MYTEMP%folders.dat 2>nul
 set CNT=0
-call :strlen LEN "%CD%"
+cmdwiz stringlen "%CD%"&set LEN=!ERRORLEVEL!
 if %LEN% geq 4 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=/&set /a CNT+=1
 dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
@@ -432,7 +431,7 @@ goto :eof
 :GETANSWER
 gotoxy 0 0 %BAR% %BARINFOCOL% %BARCOL%
 gotoxy 1 0 %1 %BARTEXTCOL% %BARCOL%
-call :strlen LEN %1
+cmdwiz stringlen %1&set LEN=!ERRORLEVEL!
 set /a LEN+=2
 gotoxy %LEN% 0
 cmdwiz showcursor 1
@@ -448,13 +447,6 @@ if not "%2"=="" goto :eof
 set ANSWER=%~1
 goto :eof
 
-
-:strlen <resultVar> <stringVar>
-(
-  echo "%~2">%MYTEMP%tmpLen.dat
-  for %%? in (%MYTEMP%tmpLen.dat) do set /A %1=%%~z? - 4
-  goto :eof
-)
 
 :dectohex <result> <value>
 if "%2" == "" goto :eof
