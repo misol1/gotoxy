@@ -52,7 +52,6 @@ goto NOMOUSE
 :MOUSEINPUT
 set /a MX=(%MR%^>^>10) ^& 255
 set /a MY=%MR%^>^>19
-gotoxy 0 0 "%MX% %MY%   " 15
 set /a MT=%MR% ^& 2 &if !MT! geq 1 set DL=1
 set /a MT=%MR% ^& 2 &if !MT! equ 0 set DL=0
 set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1
