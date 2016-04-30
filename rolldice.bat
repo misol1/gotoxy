@@ -42,12 +42,3 @@ if %1==12 set %2=C
 if %1==13 set %2=D
 if %1==14 set %2=E
 if %1==15 set %2=F
-goto :EOF
-
-rem *******
-rem *     *
-rem * * * *
-rem * * * *
-rem * * * *
-rem *     *
-rem *******
