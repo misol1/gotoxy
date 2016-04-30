@@ -60,7 +60,7 @@ set /a XS=16+%RANDOM% %% 25
 set /a YP=0-%YS%
 set /a XP=%RANDOM% %% (%XSIZE% - %XS% + 6) - 3
 set /a SC=9+%RANDOM% %% 6
-call :DECTOHEX %SC%
+call :DECTOHEX %SC% P
 
 set SQ="\f%P%\%FX%"
 set /a XW=%XS%*2
@@ -73,21 +73,17 @@ set /a XS2=16+%RANDOM% %% 25
 set /a XP2=-1-%XS2%
 set /a YP2=%RANDOM% %% (%YSIZE% - %YS2% + 6) - 3
 set /a SC2=9+%RANDOM% %% 6
-call :DECTOHEX %SC2%
+call :DECTOHEX %SC2% P
 
 set SQ2="\f%P%\%FX%"
 set /a XW=%XS2%*2
 for /L %%b in (1,1,%YS2%) do set SQ2="!SQ2:~1,-1!!BL:~0,%XW%!\n"
 goto :eof
 
-:DECTOHEX
-if %1 geq 16 set P=0&goto :eof
-if %1 lss 0 set P=0&goto :eof
-if %1 leq 9 set P=%1&goto :eof
-if %1 == 10 set P=A&goto :eof
-if %1 == 11 set P=B&goto :eof
-if %1 == 12 set P=C&goto :eof
-if %1 == 13 set P=D&goto :eof
-if %1 == 14 set P=E&goto :eof
-if %1 == 15 set P=F&goto :eof
+:DECTOHEX <in> <out>
+if "%~2"=="" goto :eof
+if "%D2H%"=="" set D2H=0123456789abcdef
+set /A DECVAL=%~1
+set OR=0&(if %DECVAL% geq 16 set OR=1)&(if %DECVAL% lss 0 set OR=1)&if !OR!==1 set %2=0&goto :eof
+set %2=!D2H:~%DECVAL%,1!
 goto :eof

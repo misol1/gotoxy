@@ -31,7 +31,6 @@ gotoxy.exe %XPOS% %YPOS% "%DSPR%" %COL% 0 c
 
 exit /b %DICE%
 endlocal
-echo on
 goto :EOF
 
 :DECTOHEX

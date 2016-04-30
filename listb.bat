@@ -76,11 +76,10 @@ if %KEY% == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
 
 cmdwiz getkeystate alt
 set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOALTPRESSED
-if %KEY% gtr 255 goto NOALTPRESSED
-call :dectohex result %KEY%
-gotoxy 0 %BARPOS% "\g%result%" %BARCOL% %BARCOL%
-cmdwiz saveblock %MYTEMP%keytemp 0 %BARPOS% 1 1 nocode
-for /F "tokens=*" %%a in (%MYTEMP%keytemp.gxy) do set CHAR="%%a"&set CHAR=!CHAR:~4,1!
+set OR=0&(if %KEY% gtr 126 set OR=1)&(if %KEY% lss 40 set OR=1)&if !OR!==1 goto NOALTPRESSED
+set /A MKEY=%KEY%-40+1
+set SCHR="() +,-./0123456789:; =  @ABCDEFGHIJKLMNOPQRSTUVWXYZ[ ] _ abcdefghijklmnopqrstuvwxyz{ }~"
+set CHAR=!SCHR:~%MKEY%,1!&set SCHR=
 set /a TC=%CURRPOS%+1
 for /L %%a in (%TC%,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if !FTP!==%CHAR% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
 for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if !FTP!==%CHAR% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
@@ -343,7 +342,6 @@ set SHOWS=""
 set /a PARTPRINT=%LH%+1
 set /A FMCOUNT=%FCOUNT%-1
 
-::cls
 set /A BLH=%LINES%-2&gotoxy 0 0 "\O0;1;%COLS%;!BLH!;"
 call :SHOWBOTTOMBAR
 call :SHOWTOPBAR
@@ -445,35 +443,6 @@ goto :eof
 :STRIPQUOTES
 if not "%2"=="" goto :eof
 set ANSWER=%~1
-goto :eof
-
-
-:dectohex <result> <value>
-if "%2" == "" goto :eof
-set P1=
-if %2 lss 16 if "%3" == "" goto BELOW16
-set /a P1=%2 / 16
-call :DECTOHEX2 %P1%
-set P1=%P%
-:BELOW16
-set /a P2=%2 %% 16
-call :DECTOHEX2 %P2%
-set P2=%P%
-
-set %1=%P1%%P2%
-set P1=&set P2=&set P=
-goto :eof
-
-:DECTOHEX2
-if %1 geq 16 set P=0&goto :eof
-if %1 lss 0 set P=0&goto :eof
-if %1 leq 9 set P=%1&goto :eof
-if %1 == 10 set P=A&goto :eof
-if %1 == 11 set P=B&goto :eof
-if %1 == 12 set P=C&goto :eof
-if %1 == 13 set P=D&goto :eof
-if %1 == 14 set P=E&goto :eof
-if %1 == 15 set P=F&goto :eof
 goto :eof
 
 

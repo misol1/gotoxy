@@ -7,8 +7,8 @@ set LOADNAME=
 set FGCOL=7
 set BGCOL=0
 set CKEY=176
-call :DECTOHEX %CKEY%
-set CCHAR=%CHAR%
+call :DECTOHEX %CKEY% CHAR
+set CCHAR=\g%CHAR%
 set SAVEPX=-1
 set SAVEPY=-1
 set FILLPX=-1
@@ -50,16 +50,17 @@ set /a MT=%MR% ^& 1 &if !MT! == 0 goto MOUSEINPUT
 set /a KEY=%MR%/2
 goto NOMOUSE
 :MOUSEINPUT
+set /a MX=(%MR%^>^>10) ^& 255
+set /a MY=%MR%^>^>19
+gotoxy 0 0 "%MX% %MY%   " 15
 set /a MT=%MR% ^& 2 &if !MT! geq 1 set DL=1
 set /a MT=%MR% ^& 2 &if !MT! equ 0 set DL=0
 set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1
 set /a MT=%MR% ^& 4 &if !MT! equ 0 set DR=0
-set /a MT=%MR% ^& 32 &if !MT! geq 1 call :ROLL -1&call :PRINTSTATUS
-set /a MT=%MR% ^& 64 &if !MT! geq 1 call :ROLL 1&call :PRINTSTATUS
-set /a MX=(%MR%^>^>10) ^& 511
-set /a MY=%MR%^>^>19
+set /a MT=%MR% ^& 32 &if !MT! geq 1 call :ROLL -1&call :PRINTSTATUS&goto :SKIP
+set /a MT=%MR% ^& 64 &if !MT! geq 1 call :ROLL 1&call :PRINTSTATUS&goto :SKIP
 if %MY% geq %YBOUND% goto SKIP
-gotoxy %MX% %MY%
+if %DR% == 0 if %DL% == 0 gotoxy %MX% %MY%
 if %DR% == 0 goto NORIGHTMB
 if %MFUNC2% == 1 gotoxy %MX% %MY% " " 7 0
 if %MFUNC2% == 2 gotoxy %MX% %MY% "x" 10 1
@@ -132,11 +133,11 @@ if %KEY% lss 0 goto SKIP
 if %KEY% gtr 255 goto SKIP
 if %KEY% == 27 goto SKIP
 
-call :DECTOHEX %KEY%
-if %DRAWSTATE%==1 gotoxy k k %CHAR% %FGCOL% %BGCOL% %INS%
-if %DRAWSTATE%==2 gotoxy k k %CHAR% v V %INS%
+call :DECTOHEX %KEY% CHAR
+if %DRAWSTATE%==1 gotoxy k k \g%CHAR% %FGCOL% %BGCOL% %INS%
+if %DRAWSTATE%==2 gotoxy k k \g%CHAR% v V %INS%
 if %DRAWSTATE%==3 gotoxy k k \G %FGCOL% %BGCOL% %INS%
-if %DRAWSTATE%==4 gotoxy k k %CHAR% %FGCOL% V %INS%
+if %DRAWSTATE%==4 gotoxy k k \g%CHAR% %FGCOL% V %INS%
 set SAVEPX=-1
 set SAVEPY=-1
 
@@ -149,28 +150,14 @@ if exist edcpp.gxy del /Q edcpp.gxy>nul
 cmdwiz quickedit 1
 goto :eof
 
-:DECTOHEX
-set /a P1=%1 / 16
-call :DECTOHEX2 %P1%
-set P1=%P%
-
-set /a P2=%1 %% 16
-call :DECTOHEX2 %P2%
-set P2=%P%
-
-set CHAR=\g%P1%%P2%
-goto :eof
-
-:DECTOHEX2
-if %1 geq 16 set P=0&goto :eof
-if %1 lss 0 set P=0&goto :eof
-if %1 leq 9 set P=%1&goto :eof
-if %1 == 10 set P=A&goto :eof
-if %1 == 11 set P=B&goto :eof
-if %1 == 12 set P=C&goto :eof
-if %1 == 13 set P=D&goto :eof
-if %1 == 14 set P=E&goto :eof
-if %1 == 15 set P=F&goto :eof
+:DECTOHEX <in> <out> <noTrailZero>
+if "%~2"=="" goto :eof
+if "%D2H%"=="" set D2H=0123456789ABCDEF
+set /A HB=%1/16
+set /A LB=%1%%16
+set OR=0&(if %HB% geq 16 set OR=1)&(if %HB% lss 0 set OR=1)&(if %LB% lss 0 set OR=1)&if !OR!==1 set %2=0&goto :eof
+if not "%~3"=="" if %HB%==0 set %2=!D2H:~%LB%,1!&goto :eof
+set %2=!D2H:~%HB%,1!!D2H:~%LB%,1!
 goto :eof
 
 :PRINTSEPARATOR
@@ -235,8 +222,8 @@ set Y=!ERRORLEVEL!
 if %1 geq 3 goto SKIP_PCHAR
 cmdwiz getcharat %X% %Y%
 set CKEY=!ERRORLEVEL!
-call :DECTOHEX %CKEY%
-set CCHAR=%CHAR%
+call :DECTOHEX %CKEY% CHAR
+set CCHAR=\g%CHAR%
 if %1 == 1 goto FINPICKUP
 
 :SKIP_PCHAR
@@ -258,8 +245,8 @@ goto :eof
 set /a CKEY+=%1
 if %CKEY% gtr 255 set CKEY=1
 if %CKEY% lss 1 set CKEY=255
-call :DECTOHEX %CKEY%
-set CCHAR=%CHAR%
+call :DECTOHEX %CKEY% CHAR
+set CCHAR=\g%CHAR%
 call :PRINTSTATUS
 goto :eof
 
