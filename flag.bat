@@ -14,6 +14,9 @@ set XMUL=4
 set YMUL=8
 set SC=0
 set CC=180
+if "%~1"=="0" set CC=180
+if "%~1"=="1" set CC=90
+if "%~1"=="2" set CC=290
 
 set XP=5
 set YP=3
