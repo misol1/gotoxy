@@ -12,9 +12,11 @@ call sintable.bat
 for /F "tokens=*" %%i in (circles_p1.gxy) do set CIRC="%%i"
 for /F "tokens=*" %%i in (circles_p2.gxy) do set CIRC2="%%i"
 
+if not "%~4"=="" set CIRC=!CIRC: =%~4!&set CIRC2=!CIRC2: =%~4!
+
 set CIRC3=%CIRC%
 set CIRC4=%CIRC2%
-if not "%~1"=="" set CIRC3=!CIRC3:\01=\0%~1!&set CIRC4=!CIRC2:\01=\0%~1!
+if not "%~1"=="" set CIRC3=!CIRC:\01=\0%~1!&set CIRC4=!CIRC2:\01=\0%~1!
 
 gotoxy 0 190 %CIRC3% 0 0 r
 gotoxy 0 227 %CIRC4% 0 0 r
