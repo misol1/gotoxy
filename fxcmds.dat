@@ -12,3 +12,4 @@ call blocks5.bat xQ&fx.bat
 call blocks5.bat vX y y&fx.bat
 call fadeseq.bat&fx.bat
 call testmouse2.bat&fx.bat
+call interference.bat&fx.bat
