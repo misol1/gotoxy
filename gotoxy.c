@@ -8,6 +8,12 @@
 
 // Compilation with tcc(32 bit version) : tcc -lshell32 -luser32 -o gotoxy.exe gotoxy.c
 
+/* Possible TO-DO's:
+	1. \N become \Nxx to fill with character xx, or possibly \Nxx[;x;y;w;h;]
+	2. Move \i to a flag (makes no sense to repeat, plus then it can be used for gxy files too)
+	3. Allow inlining of gxy files in string?
+*/
+
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED
 #define SUPPORT_EXTENDED_ASCII_ON_CMD_LINE

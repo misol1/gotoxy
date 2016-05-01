@@ -67,5 +67,5 @@ set UT=!UT:BALL4=%BALL4%!
 gotoxy %XPP% %YPP% "%UT%\i" 9 0
 if not !ERRORLEVEL! == 27 goto LOOP3
 
-setlocal
 cmdwiz showcursor 1
+endlocal

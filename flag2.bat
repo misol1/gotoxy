@@ -67,5 +67,5 @@ if !ERRORLEVEL!==333 set /A YRADD+=1
 if !ERRORLEVEL!==331 set /A YRADD-=1&if !YRADD! lss 1 set YRADD=1
 if not !ERRORLEVEL! == 27 goto LOOP2
 
-setlocal
 cmdwiz showcursor 1
+endlocal

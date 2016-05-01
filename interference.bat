@@ -3,7 +3,6 @@ setlocal ENABLEDELAYEDEXPANSION
 mode con lines=45 cols=80
 cmdwiz setbuffersize 80 150
 cmdwiz showcursor 0
-cmdwiz quickedit 0
 color 07
 cls
 
@@ -47,6 +46,5 @@ gotoxy %CX2% %CY22% "\R%CIRC2:~1,-1%\o0;100;80;50;\o0;0;\i" 0 -X r
 
 if not !ERRORLEVEL! == 27 goto LOOP
 
-setlocal
-cmdwiz quickedit 1
 cmdwiz showcursor 1
+endlocal

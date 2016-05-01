@@ -19,7 +19,8 @@ set /A SPACEW=%CHARW%/2
 set TEXT="%~1"
 for /L %%a in (1,1,%SL%) do call :PRINTLETTER %%a
 set /A YP+=%CHARH%
-gotoxy 0 %YP%
+shift
+if "%9"=="" gotoxy 0 %YP%
 ::gotoxy 0 100&gotoxy 0 /1
 endlocal
 goto :eof
