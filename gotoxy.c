@@ -9,9 +9,8 @@
 // Compilation with tcc(32 bit version) : tcc -lshell32 -luser32 -o gotoxy.exe gotoxy.c
 
 /* Possible TO-DO's:
-	1. \N become \Nxx to fill with character xx, or possibly \Nxx[;x;y;w;h;]
-	2. Move \i to a flag (makes no sense to repeat, plus then it can be used for gxy files too)
-	3. Allow inlining of gxy files in string?
+	1. Move \i to a flag (makes no sense to put in string other than last, plus then it can be used when printing gxy files too)
+	2. Allow inlining of gxy files in string?
 */
 
 //#define SUPPORT_EXTENDED
@@ -98,11 +97,11 @@ void GetXY(HANDLE h, int *x, int *y) {
 	*y = csbInfo.dwCursorPosition.Y;
 }
 
-void ClrScr(HANDLE h, int attrib) {
+void ClrScr(HANDLE h, int attrib, int glyph) {
 	COORD a = {0,0};
 	DWORD nwrite;
 	FillConsoleOutputAttribute(h, attrib, GetDim(h,DIM_WIDTH)*GetDim(h,DIM_HEIGHT), a, &nwrite);
-	FillConsoleOutputCharacter(h, 0x20, GetDim(h,DIM_WIDTH)*GetDim(h,DIM_HEIGHT), a, &nwrite);
+	FillConsoleOutputCharacter(h, glyph, GetDim(h,DIM_WIDTH)*GetDim(h,DIM_HEIGHT), a, &nwrite);
 }
 
 int GetHex(char c) {
@@ -627,7 +626,14 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					}
 					
 					case 'N': {
-						ClrScr(hCurrHandle, fgBgCol);
+						i++; v16 = GetHex(text[i]);
+						i++; v = 0;
+						if (i < inlen) {
+							v = GetHex(text[i]);
+						}
+						v16 = (v16*16) + v;
+
+						ClrScr(hCurrHandle, fgBgCol, v16);
 						newX = newY = 0;
 						j = 0;
 						yp = 0;
@@ -956,7 +962,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\TxxXX: set character xx with col XX as transparent (5)\n        \\n: newline\n        \\N: clear screen\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\I: wait for key press; last key value is returned\n%s\n        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, 'F/T' to force input as file/text\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n", iH);
+		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\TxxXX: set character xx with col XX as transparent (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\I: wait for key press; last key value is returned\n%s\n        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, 'F/T' to force input as file/text\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n", iH);
 		return keyret;
 	}
 	

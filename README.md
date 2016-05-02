@@ -21,7 +21,7 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
       \gxx: ascii character in hex
     \TxxXX: set character xx with col XX as transparent (5)
         \n: newline
-        \N: clear screen
+      \Nxx: fill screen with hex character xx
         \-: skip character (transparent)
         \\: print \
         \G: print existing character at position

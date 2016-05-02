@@ -8,7 +8,7 @@ set /A YHA=%YH%+1
 
 mode con COLS=%XW% lines=%YH%
 cmdwiz setbuffersize 100 81
-gotoxy 0 0 "\N\p0;40;\M5{\M6{\M8{\F9 \F1         \70          \\}\n\}\M6{\M8{\70          \F9 \F1         \\}\n\}}" 0 0 rx
+gotoxy 0 0 "\N20\p0;40;\M5{\M6{\M8{\F9 \F1         \70          \\}\n\}\M6{\M8{\70          \F9 \F1         \\}\n\}}" 0 0 rx
 
 call font3.bat
 set /a ADDW=%CHARW%-0

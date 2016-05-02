@@ -2,7 +2,7 @@
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 mode con cols=80 lines=40
-gotoxy 0 0 "\N\M5{\M6{\M8{\01          \00          \\}\n\}\M6{\M8{\00          \01          \\}\n\}}" 0 0 x
+gotoxy 0 0 "\N20\M5{\M6{\M8{\01          \00          \\}\n\}\M6{\M8{\00          \01          \\}\n\}}" 0 0 x
 
 set COLOR=B
 set SCROLLTEXT="Trying out the \E0\QVtransparent\%COLOR%V color effect...                                                                                       "
