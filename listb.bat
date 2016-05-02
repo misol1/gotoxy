@@ -51,6 +51,11 @@ if %MOUSESUPPORT%==1 cmdwiz quickedit 0
 
 set VIEWCMD=less -f
 set EDITCMD=b
+set NEWCMDWINDOW=start dosgo.bat
+
+::set VIEWCMD="more # ^&cmdwiz getch"
+::set EDITCMD=start notepad
+::set NEWCMDWINDOW=start
 
 call :MAKEDIRLIST
 call :SHOWLIST
@@ -87,7 +92,8 @@ goto MAINLOOP
 :NOALTPRESSED
 
 if %KEY% == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN (folder)
-if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" cls&%VIEWCMD% !FO%CURRPOS%!&call :SHOWLIST R & rem RETURN (files)
+if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" cls&set ANSWER=%VIEWCMD%&call :SPLITANSWER &cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :SHOWLIST R & rem RETURN (files)
+
 if %KEY% == 60 call :GOTOPARENT & rem <
 if %KEY% == 120 goto EXITLIST & rem x
 if %KEY% == 113 goto EXITLIST & rem q
@@ -100,6 +106,7 @@ if %KEY% == 111 call :SORTOP & rem o
 if %KEY% == 63 call :SHOWHELP & rem ?
 if %KEY% == 571 call :SHOWHELP & rem F1
 if %KEY% geq 49 if %KEY% leq 53 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-5
+if %KEY% == 112 %NEWCMDWINDOW% & rem p
 
 if %KEY% == 105 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST & rem i
 if %KEY% == 106 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem j
@@ -226,6 +233,7 @@ goto :eof
 :SPLITANSWER
 set SPLITPOS=-1
 set ANSWER2=
+set ANSWER=%ANSWER:"=%
 cmdwiz stringlen "%ANSWER%"&set LEN=!ERRORLEVEL!
 for /L %%a in (0,1,%LEN%) do if "!ANSWER:~%%a,1!"=="#" set SPLITPOS=%%a
 set /a A2=%SPLITPOS%+1
@@ -449,7 +457,7 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend path\\name] [mouse]\n" 0 0 c
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend path\\name] [mouse]\n" 0 0 c
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SHOW_EXTENDED_HELP
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP
