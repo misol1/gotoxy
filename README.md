@@ -51,11 +51,11 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 gotoxy_extended.exe
 -------------------
 ```
-Separate due to lower speed. There are currently two extensions:
+Separate executable due to lower speed. There are currently two extensions:
 
 1. Control code \k[:xx..;]: check for key xx, yy etc, don't wait; return keystate(s)
 
-2. Correctly prints extended ascii characters even if written as-is (i.e. no use of \g)
+2. Correctly prints extended ascii characters as input when written as-is
 
 ```
 
@@ -68,5 +68,5 @@ Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate
                moveblock inspectblock playsound delay stringfind stringlen 
                gettime await] [params]
 					
-Write cmdwiz 'operation' for information on arguments
+Use cmdwiz 'operation' for information on arguments
 ```
