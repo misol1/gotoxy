@@ -11,13 +11,13 @@ call writebig.bat "  ;;;;Here is\;an example\of a scroll\;going up.$$$$.$$$$.\\ 
 set YPOS=155
 :LOOP
 set /A YPOS+=1&if !YPOS! geq 350 gotoxy 0 0&set YPOS=153
-gotoxy 0 %YPOS% "\W30\i"
+gotoxy 0 %YPOS% "\W30" 0 0 k
 if not !ERRORLEVEL! == 27 goto LOOP
 
 ::set YPOS=100
 ::LOOP
 ::set /A YPOS+=1&if !YPOS! geq 290 set YPOS=100
-::gotoxy 0 0 "\o0;%YPOS%;160;50;\o0;0;\W30\i"
+::gotoxy 0 0 "\o0;%YPOS%;160;50;\o0;0;\W30" 0 0 k
 ::if not !ERRORLEVEL! == 27 goto LOOP
 
 mode con lines=50 cols=80

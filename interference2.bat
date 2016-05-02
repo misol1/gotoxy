@@ -51,7 +51,7 @@ set /a CC2+=9 & if !CC2! geq 720 set /A CC2=!CC2!-720
 
 gotoxy 0 0 "\o%CX1%;190;80;80;\o0;%CY1%;\R\p%CX2%;%CY2%;%CIRC:~1,-1%" 0 -%FX% r
 set /A CY22=%CY2%+37
-gotoxy %CX2% %CY22% "\R%CIRC2:~1,-1%\o0;100;80;50;\o0;0;\i" 0 -%FX% r
+gotoxy %CX2% %CY22% "\R%CIRC2:~1,-1%\o0;100;80;50;\o0;0" 0 -%FX% rk
 
 if not !ERRORLEVEL! == 27 goto LOOP
 

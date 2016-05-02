@@ -17,8 +17,7 @@ set NOF=%CNT%&set CNT=0
 cls
 
 :LOOP
-gotoxy_extended %XP% %YP% !FNAME%CNT%! %COL% %BCOL% F
-cmdwiz getch nowait
+gotoxy_extended %XP% %YP% !FNAME%CNT%! %COL% %BCOL% Fk
 if %ERRORLEVEL% == 27 goto OUTOF
 cmdwiz delay %DELAY%
 set /A CNT+=1

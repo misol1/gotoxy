@@ -25,7 +25,7 @@ call :PREPCOL
 set YP=%YPS%
 set MENUDAT=""
 for /L %%a in (0,1,%NOF%) do set MENUDAT="!MENUDAT:~1,-1!\!COLS%%a!\p!XP!;!YP!!IT%%a!"&set /a YP+=2
-gotoxy.exe 0 0 "%MENUDAT:~1,-1%\I" 7 0
+gotoxy.exe 0 0 "%MENUDAT:~1,-1%\K" 7 0
 if %ERRORLEVEL% == 27 goto CLEANUP
 if %ERRORLEVEL% == 336 set /A SEL+=1 &call :PREPCOL & if %SEL% GEQ %NOF% set SEL=0&call :PREPCOL
 if %ERRORLEVEL% == 328 set /A SEL-=1 &call :PREPCOL & if %SEL% LSS 1 set SEL=%NOF%&call :PREPCOL

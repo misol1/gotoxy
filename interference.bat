@@ -42,7 +42,7 @@ gotoxy %CX1% %CY12% "%CIRC2:~1,-1%" 0 0 r
 
 gotoxy %CX2% %CY2% "\R%CIRC:~1,-1%" 0 -X r
 set /A CY22=%CY2%+37
-gotoxy %CX2% %CY22% "\R%CIRC2:~1,-1%\o0;100;80;50;\o0;0;\i" 0 -X r
+gotoxy %CX2% %CY22% "\R%CIRC2:~1,-1%\o0;100;80;50;\o0;0" 0 -X rk
 
 if not !ERRORLEVEL! == 27 goto LOOP
 

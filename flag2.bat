@@ -59,7 +59,7 @@ set UT=!UT:BALL2=%BALL2%!
 set UT=!UT:BALL3=%BALL3%!
 set UT=!UT:BALL4=%BALL4%!
 
-gotoxy %XPP% %YPP% "%UT%\i" 9 0
+gotoxy %XPP% %YPP% "%UT%" 9 0 k
 
 if !ERRORLEVEL!==328 set /A XRADD+=1
 if !ERRORLEVEL!==336 set /A XRADD-=1&if !XRADD! lss 1 set XRADD=1

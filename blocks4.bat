@@ -34,7 +34,7 @@ call :MAKE_SQ2
 
 
 :LOOP
-gotoxy 0 0 "\o0;%YSIZE%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\o0;0\w%DELAY%\i" 0 0
+gotoxy 0 0 "\o0;%YSIZE%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\o0;0\w%DELAY%" 0 0 k
 if %ERRORLEVEL% == 27 goto ENDLOOP
 
 set /a YP += 1

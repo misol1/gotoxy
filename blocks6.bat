@@ -25,8 +25,8 @@ cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE% encode -1 0
 for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
 
 :LOOP
-if %MODE%==0 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R%BLOCK:~1,-1%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\O0;%YCURRENT%\i" 0 0 rx
-if %MODE%==1 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\p0;0\R%BLOCK:~1,-1%\O0;%YCURRENT%\i" 0 0 rx
+if %MODE%==0 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R%BLOCK:~1,-1%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\O0;%YCURRENT%" 0 0 rxk
+if %MODE%==1 gotoxy 0 0 "\O0;%YCURRENT%;%XSIZE%;%YSIZE%\R\p%XP%;%YP%%SQ:~1,-1%\R\p%XP2%;%YP2%%SQ2:~1,-1%\p0;0\R%BLOCK:~1,-1%\O0;%YCURRENT%" 0 0 rxk
 if %ERRORLEVEL% == 27 goto ENDLOOP
 
 set /a YP += 1

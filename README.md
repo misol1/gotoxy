@@ -27,8 +27,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
         \G: print existing character at position
       \wx;: delay x ms
       \Wx;: delay up to x ms
-        \I: wait for key press; last key value is returned
-\i[:xx..;]: check for key(s), don't wait; return key or keystate(s)
+        \K: wait for key press; last key value is returned
+\k[:xx..;]: check for key xx, yy etc, don't wait; return keystate(s) ( *extended ONLY* )
         \R: read/refresh buffer for v/V/Z/z/Y/X/\G (faster but less accurate)
 \ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \o
 \Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \O
@@ -41,7 +41,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
       position. Precede with '-' to force color and ignore color codes in [text]
 (3)   One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position,
       'w/W/z' to wrap/wordwrap/wrap-0 text, 'i' to ignore all control codes,
-      's' to enable vertical scrolling, 'x' to enable support for expressions
+      's' to enable vertical scrolling, 'x' to enable support for expressions,
+      'k' to check for key press(es) and return last key value
 (4)   Same as (2) for both values, but '-' to force is not supported. In addition, use
       'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for
       next color, '/' for previous color

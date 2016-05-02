@@ -31,7 +31,7 @@ shift
 if not "%~8" == "" goto REP
 
 :LOOP
-gotoxy.exe %XP% %YP% \O0;0;%SCRW%;%SCRH%!ANIM%CNT%!%DELAY%\i %COLOR% %BCOLOR%
+gotoxy.exe %XP% %YP% \O0;0;%SCRW%;%SCRH%!ANIM%CNT%!%DELAY% %COLOR% %BCOLOR% k
 if %ERRORLEVEL% == 27 goto OUT
 set /a CNT+=%DELTA%
 if %BOUNCE% == 0 if %CNT% geq %FRAMES% set CNT=0

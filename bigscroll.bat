@@ -52,8 +52,8 @@ set /a YP=28-(!MSIN%SC%!*25^>^>14)
 for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% & set SCI=!T%%a!& for %%b in (!SCI!) do set CHAR=!CS%%b!& set OUT="!OUT:~1,-1!\p!XP!;!YP!!CHAR:~1,-1!"& if !XP! geq %XW% goto BIGSKIP
 :BIGSKIP
 
-gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\R\vV%OUT:~1,-1%%DELAY%\i"
-::gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\T20kk\f0%OUT:~1,-1%%DELAY%\i"
+gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\R\vV%OUT:~1,-1%%DELAY%" 0 0 k
+::gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\T20kk\f0%OUT:~1,-1%%DELAY%" 0 0 k
 if %ERRORLEVEL% == 27 goto OUT
 
 set /a XPROG+=1

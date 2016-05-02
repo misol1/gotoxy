@@ -64,7 +64,7 @@ set UT=!UT:BALL1=%BALL1%!
 set UT=!UT:BALL2=%BALL2%!
 set UT=!UT:BALL3=%BALL3%!
 set UT=!UT:BALL4=%BALL4%!
-gotoxy %XPP% %YPP% "%UT%\i" 9 0
+gotoxy %XPP% %YPP% "%UT%" 9 0 k
 if not !ERRORLEVEL! == 27 goto LOOP3
 
 cmdwiz showcursor 1

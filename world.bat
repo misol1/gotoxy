@@ -83,7 +83,7 @@ set /a MX=!EXP%CNT%!-%XP%&set /a MY=!EYP%CNT%!-%YP%&set WRLD="%WRLD:~1,-1%\p!MX!
 set /a CNT-=1
 if %CNT% gtr 0 goto ELOOP
 
-set WRLD="%WRLD:~1,-1%\p1;1\c4\g03%LIVES%\-\e6\g07%SCORE%\o0;0\i:25272628111b"
+set WRLD="%WRLD:~1,-1%\p1;1\c4\g03%LIVES%\-\e6\g07%SCORE%\o0;0\k:25272628111b"
 gotoxy_extended.exe 0 0 %WRLD%
 
 ::LEFT RIGHT UP DOWN CTRL ESCAPE

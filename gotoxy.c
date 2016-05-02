@@ -9,8 +9,7 @@
 // Compilation with tcc(32 bit version) : tcc -lshell32 -luser32 -o gotoxy.exe gotoxy.c
 
 /* Possible TO-DO's:
-	1. Move \i to a flag (makes no sense to put in string other than last, plus then it can be used when printing gxy files too)
-	2. Allow inlining of gxy files in string?
+	1. Inlining of gxy files in string?
 */
 
 //#define SUPPORT_EXTENDED
@@ -45,6 +44,7 @@ void DebugPrintIS(int v);
 #define F_WORDWRAP 256
 #define F_FORCE_FILE_INPUT 512
 #define F_FORCE_TEXT_INPUT 1024
+#define F_RETURN_KEY_INPUT 2048
 
 #define USE_EXISTING_FG 32
 #define USE_EXISTING_BG 64
@@ -319,6 +319,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	if (flags & F_WORDWRAP) { wordwrap = F_WORDWRAP; wrap = F_WRAPSPRITE; }
 	if (flags & F_WRAP0) wrap = F_WRAP0;
 	if (flags & F_WRAPSPRITE) wrap = F_WRAPSPRITE;
+	if (flags & F_RETURN_KEY_INPUT) keyWait = KEY_CHECK;
 
 	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol < USE_EXISTING_FG) fgCol=0; }
 	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol < USE_EXISTING_FG) bgCol=0; }
@@ -435,14 +436,14 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 						break;
 					}
 					
-					case 'I': {
+					case 'K': {
 						keyWait = KEY_WAIT;
 						i++;
 						bBreakToWrite = 1;
 						break;
 					}
 					
-					case 'i': {
+					case 'k': {
 						i++;
 						keyWait = KEY_CHECK;
 #ifdef SUPPORT_KEYCODES_CHECK
@@ -945,9 +946,9 @@ char *EvaluateExpression(char *inp, int bAllocated) {
 
 int main(int argc, char **argv) {
 #ifdef SUPPORT_KEYCODES_CHECK
-	char iH[128] = "\\i[:xx..;]: check for key(s), don't wait; return key or keystate(s)";
+	char iH[128] = "\\k[:xx..;]: check for key xx,yy etc, don't wait; return keystate(s)\n";
 #else
-	char iH[128] = "        \\i: check for key, don't wait; last key value is returned";
+	char iH[128] = "";
 #endif
 	int ox = UNKNOWN, oy;
 	int x, y, dummy;
@@ -962,7 +963,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 9) {
 		printf("\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\TxxXX: set character xx with col XX as transparent (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\I: wait for key press; last key value is returned\n%s\n        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, 'F/T' to force input as file/text\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n", iH);
+		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\TxxXX: set character xx with col XX as transparent (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, 'F/T' to force input as file/text, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n", iH);
 		return keyret;
 	}
 	
@@ -992,6 +993,7 @@ int main(int argc, char **argv) {
 			case 'x': flags |= F_EVALUATEEXPRESSIONS; break;
 			case 'F': flags |= F_FORCE_FILE_INPUT; break;
 			case 'T': flags |= F_FORCE_TEXT_INPUT; break;
+			case 'k': flags |= F_RETURN_KEY_INPUT; break;
 			}
 		}
 		wrapxpos = GetDim(h, DIM_WIDTH) - 1;

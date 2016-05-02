@@ -15,7 +15,7 @@ set /a SCROLL_LEN=0-(SCROLL_LEN-80)
 :LOOP
 set /a SCROLLPOS-=1
 if %SCROLLPOS% == %SCROLL_LEN% set SCROLLPOS=81 & set /a YP = 5 + %RANDOM% %% 30
-gotoxy.exe %SCROLLPOS% %YP% "%SCROLLTEXT:~1,-1%%DELAY%\i" %COLOR% V
+gotoxy.exe %SCROLLPOS% %YP% "%SCROLLTEXT:~1,-1%%DELAY%" %COLOR% V k
 if not %ERRORLEVEL% == 27 goto LOOP
 
 endlocal

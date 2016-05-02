@@ -17,5 +17,5 @@ if %PATTE%==0 set INP=%~2
 if not "%~3"=="" for /L %%a in (1,1,%3) do set INP=!INP!\g20
 cmdwiz stringlen %INP%&set /A NOFC=!ERRORLEVEL!/4
 :REP
-for /L %%i in (1,1,200) do set /A R=(!RANDOM! %% %NOFC%)*4&for %%a in (!R!) do gotoxy k k "!INP:~%%a,4!\i" %COL% 0 csz & if !ERRORLEVEL!==27 endlocal&goto :eof
+for /L %%i in (1,1,200) do set /A R=(!RANDOM! %% %NOFC%)*4&for %%a in (!R!) do gotoxy k k "!INP:~%%a,4!" %COL% 0 cszk & if !ERRORLEVEL!==27 endlocal&goto :eof
 goto REP

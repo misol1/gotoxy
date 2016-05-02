@@ -66,7 +66,7 @@ set /a ENDC=%PREPC% + (%XW%-%XP%)/%ADDW%
 for /L %%a in (%PREPC%,1,%ENDC%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CS%%b:~1,-1!"& set /a XP+=%ADDW%
 if %BORD%==1 set OUT="!OUT:~1,-1!\T00kk\p0;0\02\xQ                                                                                 \p0;39                                                                                 "
 
-gotoxy.exe 0 0 "\O0;0;%XW%;%YHA%\p-%BXP%;-1;%CHESS%%MODECODE%%OUT:~1,-1%\O\W%DELAY%\i" 0 0 x
+gotoxy.exe 0 0 "\O0;0;%XW%;%YHA%\p-%BXP%;-1;%CHESS%%MODECODE%%OUT:~1,-1%\O\W%DELAY%" 0 0 xk
 set KEY=!ERRORLEVEL!
 
 set /a XPROG+=%XPD%

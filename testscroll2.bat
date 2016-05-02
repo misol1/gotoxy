@@ -14,7 +14,7 @@ set CNT3=0&for /F "tokens=*" %%i in (gamescmds.dat) do set BSRC!CNT3!=%%i&set /A
 set /A NOFL2=%CNT3%&set CNT3=0
 
 :REP
-gotoxy 0 %Y1% "\S0;0;%W%;%H1%;\f0%CNT3% \70:\90 !BSRC%CNT3%!\n\S0;%Y1P%;%W%;%H2%;\p0;%Y2%;\c0%CNT% \70:\80 !RANDOM!\n\S0;%Y2P%;%W%;%H3%;\p0;%Y3%;\a0%CNT2% \u0: !SRC%CNT2%!\n\i" 0 0 cs
+gotoxy 0 %Y1% "\S0;0;%W%;%H1%;\f0%CNT3% \70:\90 !BSRC%CNT3%!\n\S0;%Y1P%;%W%;%H2%;\p0;%Y2%;\c0%CNT% \70:\80 !RANDOM!\n\S0;%Y2P%;%W%;%H3%;\p0;%Y3%;\a0%CNT2% \u0: !SRC%CNT2%!\n" 0 0 csk
 set KEY=!ERRORLEVEL!
 set /A CNT+=1
 set /A CNT2+=1&if !CNT2!==%NOFL% set CNT2=0

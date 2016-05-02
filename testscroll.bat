@@ -20,6 +20,6 @@ set CNT=0
 
 :REP
 set /A CNT+=1
-gotoxy %S1% k "\S%S1%;%S2%;%T3%;%T4%;%CNT% \70:\80 !RANDOM!\n\i" f 0 cs
+gotoxy %S1% k "\S%S1%;%S2%;%T3%;%T4%;%CNT% \70:\80 !RANDOM!\n" f 0 csk
 if not %ERRORLEVEL%==27 goto REP
 endlocal

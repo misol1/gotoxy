@@ -44,7 +44,7 @@ call :PRINTSCORE
 for /L %%a in (1,1,%NOFAPPLES%) do call :PUTAPPLE
 
 :PLAYLOOP
-gotoxy %XPOS% %YPOS% "o\f0\p!XO%OLDI%!;!YO%OLDI%! \i" 15 12 1
+gotoxy %XPOS% %YPOS% "o\f0\p!XO%OLDI%!;!YO%OLDI%! \W8" 15 12 k
 if %ERRORLEVEL% == 27 set SCORE=-1 & goto CLEANUP
 if %ERRORLEVEL% == 122 call :SWITCHDIR1
 if %ERRORLEVEL% == 120 call :SWITCHDIR2
