@@ -667,13 +667,12 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 			} else {
 				if (ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
 					bCheckWrap = bHandleTransp = 1;
-#ifdef SUPPORT_CONVERT_SPECIAL_CHARS
-				} else if (ch == 10) { // && (flags & F_FORCE_FILE_INPUT)) {
+				} else if (ch == 10) {
 					i++;
 					yp = 1;
 					if (wrap == F_WRAP0) newX = 0;
 					break;
-				} else if (ch == 9) { // && (flags & F_FORCE_FILE_INPUT)) {
+				} else if (ch == 9) {
 					newX=*x+j+4;
 					newX-=newX%4;
 					newY=*y;
@@ -681,7 +680,6 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					bDoScroll = 0;
 					i++;
 					break;
-#endif
 				} else {
 					str[j].Char.AsciiChar = ch;
 					if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)

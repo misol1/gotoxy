@@ -28,7 +28,6 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
       \wx;: delay x ms
       \Wx;: delay up to x ms
         \K: wait for key press; last key value is returned
-\k[:xx..;]: check for key xx, yy etc, don't wait; return keystate(s) ( *extended ONLY* )
         \R: read/refresh buffer for v/V/Z/z/Y/X/\G (faster but less accurate)
 \ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \o
 \Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \O
@@ -49,6 +48,17 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)
 (5)   Use 'k' to ignore color, 'u/U' for console fgcol/bgcol      
 ```
 
+gotoxy_extended.exe
+-------------------
+```
+Separate due to lower speed. There are currently two extensions:
+
+1. Control code \k[:xx..;]: check for key xx, yy etc, don't wait; return keystate(s)
+
+2. Correctly prints extended ascii characters even if written as-is (i.e. no use of \g)
+
+```
+
 cmdwiz.exe
 ----------
 ```
@@ -56,5 +66,7 @@ Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate
                flushkeys quickedit getmouse getch_or_mouse getch_and_mouse
                getcharat getcolorat showcursor getcursorpos saveblock copyblock
                moveblock inspectblock playsound delay stringfind stringlen 
-			   gettime await] [params]
+               gettime await] [params]
+					
+Write cmdwiz 'operation' for information on arguments
 ```

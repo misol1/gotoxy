@@ -46,5 +46,6 @@ gotoxy %CX2% %CY22% "\R%CIRC2:~1,-1%\o0;100;80;50;\o0;0" 0 -X rk
 
 if not !ERRORLEVEL! == 27 goto LOOP
 
+mode con lines=50 cols=80&cls
 cmdwiz showcursor 1
 endlocal
