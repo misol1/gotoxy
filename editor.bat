@@ -289,10 +289,10 @@ set FILLPY2=%Y%
 set /A W=%FILLPX2%-%FILLPX%+1
 set /A H=%FILLPY2%-%FILLPY%+1
 
-if %DRAWSTATE%==1 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{%CHAR%\}\n}" %FGCOL% %BGCOL% x
-if %DRAWSTATE%==2 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{%CHAR%\}\n}" v V x
+if %DRAWSTATE%==1 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{\g%CHAR%\}\n}" %FGCOL% %BGCOL% x
+if %DRAWSTATE%==2 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{\g%CHAR%\}\n}" v V x
 if %DRAWSTATE%==3 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{\G\}\n}" %FGCOL% %BGCOL% x
-if %DRAWSTATE%==4 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{%CHAR%\}\n}" %FGCOL% V x
+if %DRAWSTATE%==4 gotoxy %FILLPX% %FILLPY% "\M%H%{\M%W%{\g%CHAR%\}\n}" %FGCOL% V x
 
 :SKIPFILL
 set FILLPX=-1
