@@ -24,6 +24,9 @@ if %MODE%==reverse set DELTA=-1&set ENDVAL=-1&set /A CNT=%NOF%-1
 gotoxy %XP% %YP% !FNAME%CNT%! %COL% %BCOL% Fk
 if %ERRORLEVEL% == 27 goto OUTOF
 if %ERRORLEVEL% == 112 cmdwiz getch
+if %ERRORLEVEL% == 110 set MODE=normal&set DELTA=1
+if %ERRORLEVEL% == 98 set MODE=bounce
+if %ERRORLEVEL% == 114 set MODE=reverse&set DELTA=-1
 if %DELAY% gtr 0 cmdwiz delay %DELAY%
 set /A CNT+=%DELTA%
 if %CNT% == %NOF% set CNT=0&(if %MODE%==bounce set /A CNT=%NOF%-1&set DELTA=-1)&if %REP%==2 set REP=0
