@@ -19,7 +19,7 @@ cls
 :LOOP
 gotoxy %XP% %YP% !FNAME%CNT%! %COL% %BCOL% Fk
 if %ERRORLEVEL% == 27 goto OUTOF
-cmdwiz delay %DELAY%
+if %DELAY% gtr 0 cmdwiz delay %DELAY%
 set /A CNT+=1
 if %CNT% geq %NOF% set CNT=0&if %REP%==2 set REP=0
 if %REP% gtr 0 goto LOOP
