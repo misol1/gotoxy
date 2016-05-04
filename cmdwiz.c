@@ -485,7 +485,7 @@ int main(int argc, char **argv) {
 	else if (stricmp(argv[1],"getmouse") == 0 || stricmp(argv[1],"getch_or_mouse") == 0 || stricmp(argv[1],"getch_and_mouse") == 0) {
 		DWORD fdwMode, oldfdwMode, cNumRead, j; 
 		INPUT_RECORD irInBuf[128];
-		char mouse_output[256] = "NO_EVENT";
+		char mouse_output[256] = "NO_EVENT\n";
 		int wtime = -1, i, res, res2, bReadKeys = 0, bWroteKey = 0, bKeyAndMouse = 0, k = 0, bMouseEvent = 0;
 
 		if (!(stricmp(argv[1],"getmouse") == 0))
