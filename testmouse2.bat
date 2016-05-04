@@ -13,8 +13,6 @@ for /L %%a in (0,1,%TRAIL_LEN%) do set TRAILPX%%a=-1&set TRAILPY%%a=-100
 set TRAIL_I=0
 set STRING=\kk    \gB2\gB0\gDB\gB2\gB0    \n  \gB0\gB0     \gB0\gB0  \n \gB0         \gB0 \n\gB0           \gB2\n\gB2           \gDB\n\gB2           \gB1\n \gB0         \gB0 \n  \gB0\gB2     \gB2\gB0  \n    \gB0\gB2\gB2\gDB\gB0    \n
 
-set DL=0
-set DR=0
 set MX=-100&set MY=-100
 
 :LOOP
@@ -35,7 +33,7 @@ set TCNT=%TRAIL_I%
 set /A TCNT+=1&if !TCNT! geq %TRAIL_LEN% set TCNT=0
 for /L %%a in (0,1,%TRAIL_LEN_M%) do for %%b in (!TCNT!) do set OUT="!OUT:~1,-1!\!TRAILCOL%%a!\p!TRAILPX%%b!;!TRAILPY%%b!;%STRING%"&set /A TCNT+=1&if !TCNT! geq %TRAIL_LEN% set TCNT=0
 
-gotoxy 0 0 %OUT% 9 0
+gotoxy 0 0 %OUT%
 
 set /a TRAIL_I+=1
 if %TRAIL_I% geq %TRAIL_LEN% set /a TRAIL_I=0
