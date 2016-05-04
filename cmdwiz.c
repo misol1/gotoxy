@@ -275,7 +275,7 @@ void CopyBlock(int x, int y, int w, int h, int dx, int dy) {
 }
 
 
-int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
+int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, char *output) {
 	int res = 0;
 	if (bKeyAndMouse)
 		res = (mer.dwMousePosition.X << 7) | (mer.dwMousePosition.Y << 14);
@@ -307,12 +307,31 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse) {
 	}
 	
 	if (bKeyAndMouse) res |= 1;
+	
+	sprintf(output, "MOUSE_EVENT 1 MOUSE_X %d MOUSE_Y %d LEFT_BUTTON %d RIGHT_BUTTON %d LEFT_DOUBLE_CLICK %d RIGHT_DOUBLE_CLICK %d MOUSE_WHEEL %d\n",
+							mer.dwMousePosition.X, mer.dwMousePosition.Y, (res & 2)>0, (res & 4)>0, (res & 8)>0, (res & 16)>0, (res & 32)>0? 1: (res & 64)>0? -1 : 0);
+
 	return res;
 }
 
 /* void ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr) {
 	printf("Resized. Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
 }*/
+
+void printKeystates(int keys, int nofKeys) {
+	int i, check = 1; // << (nofKeys-1);
+	char output[1024] = "";
+	
+	for (i = 0; i < nofKeys; i++) {
+		if (keys & check)
+			strcat(output, "1 ");
+		else
+			strcat(output, "0 ");
+		check = check << 1;
+	}
+	
+	printf("%s\n", output);
+}
 
 int main(int argc, char **argv) {
 	int delayVal = 0;
@@ -374,6 +393,7 @@ int main(int argc, char **argv) {
 				j = GetAsyncKeyState(vKeys[i]);
 				k = (k<<1) | ((j & 0x8000)? 1:0 );
 			}
+			printKeystates(k, 9);
 			return k;
 		}
 
@@ -398,6 +418,7 @@ int main(int argc, char **argv) {
 
 			k = (k<<1) | ((j & 0x8000)? 1:0 );
 		}
+		printKeystates(k, argc-2);
 		return k;
 	}
 	else if (stricmp(argv[1],"playsound") == 0) {
@@ -463,8 +484,9 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"getmouse") == 0 || stricmp(argv[1],"getch_or_mouse") == 0 || stricmp(argv[1],"getch_and_mouse") == 0) {
 		DWORD fdwMode, oldfdwMode, cNumRead, j; 
-		INPUT_RECORD irInBuf[128]; 
-		int wtime = -1, i, res, res2, bReadKeys = 0, bWroteKey = 0, bKeyAndMouse = 0, k = 0;
+		INPUT_RECORD irInBuf[128];
+		char mouse_output[256] = "NO_EVENT";
+		int wtime = -1, i, res, res2, bReadKeys = 0, bWroteKey = 0, bKeyAndMouse = 0, k = 0, bMouseEvent = 0;
 
 		if (!(stricmp(argv[1],"getmouse") == 0))
 			bReadKeys = 1;
@@ -482,7 +504,7 @@ int main(int argc, char **argv) {
 
 		if (wtime > -1) {
 			res = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), wtime);
-			if (res & WAIT_TIMEOUT) return -1;
+			if (res & WAIT_TIMEOUT) { printf(mouse_output); return -1; }
 		}
 
 		res = -1;
@@ -490,7 +512,8 @@ int main(int argc, char **argv) {
 		for (i = 0; i < cNumRead; i++) {
 			switch(irInBuf[i].EventType) { 
 			case MOUSE_EVENT:
-				res = MouseEventProc(irInBuf[i].Event.MouseEvent, bKeyAndMouse);
+				res = MouseEventProc(irInBuf[i].Event.MouseEvent, bKeyAndMouse, mouse_output);
+				bMouseEvent = 1;
 				break; 
 			case KEY_EVENT:
 				if (bReadKeys) {
@@ -505,12 +528,12 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		k = -1;
 		if (bWroteKey) {
-			k = -1;
 			if (kbhit()) {
 				k=getch();
-				if (k == 224) k = 256+getch();
-				if (k == 0) k = 512+getch();
+				if (k == 224) k = 256 + getch();
+				if (k == 0) k = 512 + getch();
 			}
 			res2 = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), 1);
 			if (!(res2 & WAIT_TIMEOUT))
@@ -524,6 +547,12 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		if (k == -1) k = 0;
+		if (bMouseEvent)
+			printf("EVENT KEY_EVENT %d %s\n", k, mouse_output);
+		else
+			printf("EVENT KEY_EVENT %d MOUSE_EVENT 0\n", k);
+		
 		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), oldfdwMode);
 		return res;
 	}

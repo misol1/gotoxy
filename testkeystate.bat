@@ -5,22 +5,22 @@ setlocal ENABLEDELAYEDEXPANSION
 goto LOP2
 
 :LOP
-cmdwiz getkeystate ctrl
+cmdwiz getkeystate ctrl>nul
 if %ERRORLEVEL% == 1 echo Control pressed
-cmdwiz getkeystate alt
+cmdwiz getkeystate alt>nul
 if %ERRORLEVEL% == 1 echo Alt pressed
-cmdwiz getkeystate shift
+cmdwiz getkeystate shift>nul
 if %ERRORLEVEL% == 1 echo Shift pressed
-cmdwiz getkeystate rshift
+cmdwiz getkeystate rshift>nul
 if %ERRORLEVEL% == 1 echo Right shift pressed
-cmdwiz getkeystate 65
+cmdwiz getkeystate 65>nul
 if %ERRORLEVEL% == 1 echo A pressed
-cmdwiz getkeystate 27
+cmdwiz getkeystate 27>nul
 if %ERRORLEVEL% == 0 goto LOP
 goto :eof
 
 :LOP2
-cmdwiz getkeystate all
+cmdwiz getkeystate all>nul
 set VKEYS=%ERRORLEVEL%
 set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 echo RAlt PRESSED...
 set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 echo LAlt PRESSED...
@@ -32,14 +32,14 @@ set /a KS=%VKEYS% ^& 64 & if !KS! geq 1 echo RShift PRESSED...
 set /a KS=%VKEYS% ^& 128 & if !KS! geq 1 echo LShift PRESSED...
 set /a KS=%VKEYS% ^& 256 & if !KS! geq 1 echo Shift PRESSED...
 
-cmdwiz getkeystate 25h 26h 27h 28h
+cmdwiz getkeystate 25h 26h 27h 28h>nul
 set VKEYS=%ERRORLEVEL%
 set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 echo Left PRESSED...
 set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 echo Up PRESSED...
 set /a KS=%VKEYS% ^& 4 & if !KS! geq 1 echo Right PRESSED...
 set /a KS=%VKEYS% ^& 8 & if !KS! geq 1 echo Down PRESSED...
 
-cmdwiz getkeystate 27
+cmdwiz getkeystate 27>nul
 if %ERRORLEVEL% == 0 goto LOP2
 set VKEYS=&set KS=
 endlocal

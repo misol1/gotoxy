@@ -12,7 +12,7 @@ set KEY=0
 goto LOOP3
 
 :LOOP
-cmdwiz getmouse
+cmdwiz getmouse>nul
 set MR=%ERRORLEVEL%
 if %MR%==-1 goto NOINPUT
 set /a MT=%MR% ^& 2 &if !MT! geq 1 if %DL%==0 set DL=1& echo Left button...
@@ -27,13 +27,13 @@ set /a MX=(%MR%^>^>10) ^& 511
 set /a MY=%MR%^>^>19
 echo %MX%,%MY%
 :NOINPUT
-cmdwiz getkeystate 27
+cmdwiz getkeystate 27>nul
 if %ERRORLEVEL% == 0 goto LOOP
 goto END
 
 
 :LOOP2
-cmdwiz getch_or_mouse
+cmdwiz getch_or_mouse>nul
 set MR=%ERRORLEVEL%
 if %MR%==-1 goto NOINPUT2
 set /a MT=%MR% ^& 1 &if !MT! == 0 goto MOUSEINPUT
@@ -56,7 +56,7 @@ goto END
 
 
 :LOOP3
-cmdwiz getch_and_mouse
+cmdwiz getch_and_mouse>nul
 set MR=%ERRORLEVEL%
 if %MR%==-1 goto NOINPUT3
 set /a KEY=(%MR%^>^>21)
@@ -76,5 +76,5 @@ if not %KEY% == 27 goto LOOP3
 
 
 :END
-setlocal
+endlocal
 cmdwiz quickedit 1

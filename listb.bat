@@ -61,7 +61,7 @@ call :MAKEDIRLIST
 call :SHOWLIST
 
 :MAINLOOP
-cmdwiz getch_and_mouse
+cmdwiz getch_and_mouse>nul
 set MR=%ERRORLEVEL%
 if %MR% == -1 goto MAINLOOP
 set /a KEY=(%MR%^>^>21)
@@ -79,7 +79,7 @@ if %UPDATEBOTTOM%==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
 
 if %KEY% == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
 
-cmdwiz getkeystate alt
+cmdwiz getkeystate alt>nul
 set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOALTPRESSED
 set OR=0&(if %KEY% gtr 126 set OR=1)&(if %KEY% lss 40 set OR=1)&if !OR!==1 goto NOALTPRESSED
 set /A MKEY=%KEY%-40+1
@@ -268,7 +268,7 @@ goto :eof
 
 
 :MARKITEM
-cmdwiz getkeystate ctrl
+cmdwiz getkeystate ctrl>nul
 set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOCTRLPRESSED
 call :CLEARSELECTED
 call :SHOWLIST
@@ -508,3 +508,4 @@ if %DR%==2 set KEY=105&set DBLCL=1
 
 if not %OLDCP% == %CURRPOS% set OLDPOS=%OLDCP%& call :UPDATELIST
 goto :eof
+g

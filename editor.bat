@@ -22,6 +22,7 @@ set DRAWINSTANT=0
 call :TOGGLEINS
 set MFUNC1=1
 set MFUNC2=1
+set OLDMX=-1&set OLDMY=-1
 if not "%~1" == "" set LOADNAME=%~1
 if not "%2" == "" set COLS=%2
 if not "%3" == "" set ROWS=%3
@@ -43,7 +44,7 @@ cmdwiz showcursor 1
 
 :LOOP
 set KEY=0
-cmdwiz getch_or_mouse
+cmdwiz getch_or_mouse>nul
 set MR=%ERRORLEVEL%
 if %MR%==-1 goto SKIP
 set /a MT=%MR% ^& 1 &if !MT! == 0 goto MOUSEINPUT
@@ -59,7 +60,7 @@ set /a MT=%MR% ^& 4 &if !MT! equ 0 set DR=0
 set /a MT=%MR% ^& 32 &if !MT! geq 1 call :ROLL -1&call :PRINTSTATUS&goto :SKIP
 set /a MT=%MR% ^& 64 &if !MT! geq 1 call :ROLL 1&call :PRINTSTATUS&goto :SKIP
 if %MY% geq %YBOUND% goto SKIP
-if %DR% == 0 if %DL% == 0 gotoxy %MX% %MY%
+if %DR% == 0 if %DL% == 0 set OR=0&(if %MX% neq %OLDMX% set OR=1)&(if %MY% neq %OLDMY% set OR=1)& if !OR!==1 gotoxy %MX% %MY%&set OLDMX=%MX%&set OLDMY=%MY%
 if %DR% == 0 goto NORIGHTMB
 if %MFUNC2% == 1 gotoxy %MX% %MY% " " 7 0
 if %MFUNC2% == 2 gotoxy %MX% %MY% "x" 10 1
@@ -72,15 +73,15 @@ if %DL% geq 1 if %DRAWSTATE%==3 gotoxy %MX% %MY% \G %FGCOL% %BGCOL%
 if %DL% geq 1 if %DRAWSTATE%==4 gotoxy %MX% %MY% %CCHAR% %FGCOL% V
 goto SKIP
 :NOMOUSE
-if %KEY% == 8 cmdwiz getkeystate shift&if !ERRORLEVEL!==1 gotoxy k k "x" 10 1 & set KEY=331 & rem BACKSPACE + shift
-if %KEY% == 8 cmdwiz getkeystate shift&if !ERRORLEVEL!==0 gotoxy k k " " %FGCOL% %BGCOL% & set KEY=331 & rem BACKSPACE
+if %KEY% == 8 cmdwiz getkeystate shift>nul&if !ERRORLEVEL!==1 gotoxy k k "x" 10 1 & set KEY=331 & rem BACKSPACE + shift
+if %KEY% == 8 cmdwiz getkeystate shift>nul&if !ERRORLEVEL!==0 gotoxy k k " " %FGCOL% %BGCOL% & set KEY=331 & rem BACKSPACE
 if %KEY% == 328 cmdwiz getcursorpos y&set /a NY=!ERRORLEVEL!-1&gotoxy k !NY!&goto SKIP & rem UP
 if %KEY% == 336 cmdwiz getcursorpos y&set /a NY=!ERRORLEVEL!+1&set KEY=-1&if !NY! lss %YBOUND% gotoxy k !NY! & rem DOWN
 if %KEY% == 331 cmdwiz getcursorpos x&set /a NX=!ERRORLEVEL!-1&gotoxy !NX! k&goto SKIP & rem LEFT
 if %KEY% == 333 cmdwiz getcursorpos x&set /a NX=!ERRORLEVEL!+1&gotoxy !NX! k&goto SKIP & rem RIGHT
 if %KEY% == 13 set KEY=%CKEY% & rem RETURN
-if %KEY% == 339 cmdwiz getkeystate shift&if !ERRORLEVEL!==1 gotoxy k k "x" 10 1 %INS%& goto SKIP & rem shift+DEL
-if %KEY% == 339 cmdwiz getkeystate shift&if !ERRORLEVEL!==0 gotoxy k k " " 7 0 %INS%& goto SKIP & rem DEL
+if %KEY% == 339 cmdwiz getkeystate shift>nul&if !ERRORLEVEL!==1 gotoxy k k "x" 10 1 %INS%& goto SKIP & rem shift+DEL
+if %KEY% == 339 cmdwiz getkeystate shift>nul&if !ERRORLEVEL!==0 gotoxy k k " " 7 0 %INS%& goto SKIP & rem DEL
 if %KEY% == 338 call :TOGGLEINS & goto SKIP & rem INS
 if %KEY% == 9 call :PICKUP 1 & goto SKIP & rem TAB
 if %KEY% == 327 call :PICKUP 2 & goto SKIP & rem HOME
@@ -120,13 +121,13 @@ if %KEY% == 393 call :MODCHAR -1 & goto SKIP & rem ctrl-F11
 if %KEY% == 394 call :MODCHAR 1 & goto SKIP & rem ctrl-F12
 if %KEY% == 389 set KEY=-1 & set /a MFUNC1+=1&if !MFUNC1! geq 4 set MFUNC1=1 & rem F11
 if %KEY% == 390 set KEY=-1 & set /a MFUNC2+=1&if !MFUNC2! geq 5 set MFUNC2=1 & rem F12
-if %KEY% geq 48 if %KEY% leq 57 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a FGCOL=%KEY%-48&call :PRINTSTATUS& goto SKIP & rem 0-9 with alt
-if %KEY% geq 97 if %KEY% leq 102 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a FGCOL=%KEY%-97+10&call :PRINTSTATUS& goto SKIP & rem a-f with alt
-if %KEY% geq 65 if %KEY% leq 70 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a BGCOL=%KEY%-65+10&call :PRINTSTATUS& goto SKIP & rem A-F with alt
-if %KEY% geq 33 if %KEY% leq 41 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a BGCOL=%KEY%-32&call :PRINTSTATUS& goto SKIP & rem 0-9 with shift+alt
-if %KEY% == 61 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a BGCOL=0&call :PRINTSTATUS& goto SKIP & rem 0 with shift+alt
-if %KEY% == 207 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a BGCOL=4&call :PRINTSTATUS& goto SKIP & rem 4 with shift+alt
-if %KEY% == 47 cmdwiz getkeystate alt&if !ERRORLEVEL!==1 set /a BGCOL=7&call :PRINTSTATUS& goto SKIP & rem 7 with shift+alt
+if %KEY% geq 48 if %KEY% leq 57 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a FGCOL=%KEY%-48&call :PRINTSTATUS& goto SKIP & rem 0-9 with alt
+if %KEY% geq 97 if %KEY% leq 102 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a FGCOL=%KEY%-97+10&call :PRINTSTATUS& goto SKIP & rem a-f with alt
+if %KEY% geq 65 if %KEY% leq 70 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a BGCOL=%KEY%-65+10&call :PRINTSTATUS& goto SKIP & rem A-F with alt
+if %KEY% geq 33 if %KEY% leq 41 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a BGCOL=%KEY%-32&call :PRINTSTATUS& goto SKIP & rem 0-9 with shift+alt
+if %KEY% == 61 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a BGCOL=0&call :PRINTSTATUS& goto SKIP & rem 0 with shift+alt
+if %KEY% == 207 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a BGCOL=4&call :PRINTSTATUS& goto SKIP & rem 4 with shift+alt
+if %KEY% == 47 cmdwiz getkeystate alt>nul&if !ERRORLEVEL!==1 set /a BGCOL=7&call :PRINTSTATUS& goto SKIP & rem 7 with shift+alt
 
 if %KEY% lss 0 goto SKIP
 if %KEY% gtr 255 goto SKIP
