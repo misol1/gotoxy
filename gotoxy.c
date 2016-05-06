@@ -8,10 +8,6 @@
 
 // Compilation with tcc(32 bit version) : tcc -lshell32 -lwinmm -luser32 -o gotoxy.exe gotoxy.c
 
-/* Possible TO-DO's:
-	1. Inlining of gxy files in string?
-*/
-
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED
 #define SUPPORT_EXTENDED_ASCII_ON_CMD_LINE
@@ -28,8 +24,17 @@ void DebugPrintIS(int v);
 // Constants
 #define UNKNOWN -999999
 #define HIGH_NUMBER 1000000
-#define MAX_STR_SIZE 32000
-#define MAX_BUF_SIZE 64000
+#define MAX_STR_SIZE 64000
+#define MAX_BUF_SIZE 128000
+
+#define OFFSCREEN_NEW_COPY   1
+#define OFFSCREEN_NEW_CLEAR  2
+
+#define KEY_WAIT   1
+#define KEY_CHECK  2
+
+#define DIM_WIDTH  0
+#define DIM_HEIGHT 1
 
 // Flags
 #define F_WRAP0 1
@@ -45,6 +50,7 @@ void DebugPrintIS(int v);
 #define F_FORCE_TEXT_INPUT 1024
 #define F_RETURN_KEY_INPUT 2048
 
+// Bit operations
 #define USE_EXISTING_FG 32
 #define USE_EXISTING_BG 64
 #define XOR_EXISTING_BG 128
@@ -55,15 +61,6 @@ void DebugPrintIS(int v);
 #define AND_EXISTING_FG 4096
 #define OR_EXISTING_FG 8192
 #define ADD_EXISTING_FG 16384
-
-#define OFFSCREEN_NEW_COPY   1
-#define OFFSCREEN_NEW_CLEAR  2
-
-#define KEY_WAIT   1
-#define KEY_CHECK  2
-
-#define DIM_WIDTH  0
-#define DIM_HEIGHT 1
 
 int GetDim(HANDLE h, int bH) {
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
@@ -290,13 +287,13 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	CHAR_INFO *currentConsoleOutput = NULL;
 	int i, j, inlen, orgx, yp = 0, keyWait = 0, bUseCurrentConsoleOutput = 0;
 	int keyret = 0, bBreakToWrite, bCheckWrap, bHandleTransp;
-	int bY, k, ks, v, v16, dI, tmp1, tmp2, relX, relY, bWroteTab = 0;
+	int bY, k, ks, v, v16, dI, tmp1, tmp2, relX, relY, bWroteTab = 0, transparentMode = 0;
 	char ch, number[1024];
 	unsigned int startT;
 	SMALL_RECT r;
 	CHAR_INFO *str;
 	COORD a, b;
-
+	
 	hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	startT = GetTickCount();		
 	oldfc = orgConsoleCol & 0xf;
@@ -420,8 +417,17 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					case 'G': {
 						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
-							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
-						str[j].Attributes = fgBgCol;
+							str[j].Attributes = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						else
+							str[j].Attributes = fgBgCol;
+						j++;
+						if (wrap) bCheckWrap = 1;
+						break;
+					}
+					
+					case 'J': {
+						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Attributes = GetColorTranspCol(hCurrHandle, USE_EXISTING_FG, USE_EXISTING_BG, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						j++;
 						if (wrap) bCheckWrap = 1;
 						break;
@@ -620,6 +626,11 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 						if (i < inlen) {
 							transpBg = GetCol(text[i], -1, orgConsoleCol, &tmp1);
 						}
+						i++;
+						if (i < inlen) {
+							transparentMode = 0;
+							if (text[i] == '1') transparentMode = 1;
+						}
 						v16 = (v16*16) + v;
 						transpChar = v16;
 						break;
@@ -664,7 +675,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 				if (bBreakToWrite) break;
 				
 			} else {
-				if (ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
+				if (transparentMode == 0 && ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
 					bCheckWrap = bHandleTransp = 1;
 				} else if (ch == 10) {
 					i++;
@@ -680,10 +691,15 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					i++;
 					break;
 				} else {
-					str[j].Char.AsciiChar = ch;
-					if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
-						fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
-					str[j].Attributes = fgBgCol;
+					if (transparentMode == 1 && ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
+						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Attributes = GetColorTranspCol(hCurrHandle, USE_EXISTING_FG, USE_EXISTING_BG, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+					} else {
+						str[j].Char.AsciiChar = ch;
+						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Attributes = fgBgCol;
+					}
 					j++;
 			
 					if (wordwrap && ch == ' ') {
@@ -714,14 +730,14 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 		if (j > 0) {
 			a.X = j;
 			a.Y = 1;
-
-			b.X = b.Y = 0;
-
-			r.Left = *x;
-			r.Top = *y;
-			r.Right = *x + j;
-			r.Bottom = *y + 1;
-			WriteConsoleOutput(hCurrHandle, str, a, b, &r);
+			if (*y >= 0) {
+				b.X = b.Y = 0;
+				r.Left = *x;
+				r.Top = *y;
+				r.Right = *x + j;
+				r.Bottom = *y + 1;
+				WriteConsoleOutput(hCurrHandle, str, a, b, &r);
+			}
 		}
 		if (yp == 1) {
 			(*y)++;
@@ -822,7 +838,6 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 		free(currentConsoleOutput);
 	free(str);
 	if (*x!=orgx) (*x)--;
-	
 	return keyret;
 }
 
@@ -853,8 +868,59 @@ int GetConsoleColor(){
 	return info.wAttributes;
 }
 
+
+char *InlineGxy(char *inp, int bAllocated) {
+	char *nb = NULL, *nf = NULL, *fnd, *fnd2, fname[256], *currI, *currO, nofile[64] = "[FILE NOT FOUND]";
+	FILE *ifp;
+	int fr;
+
+	fnd = strstr(inp, "\\I:");
+ 	if (!fnd) return NULL;
+
+	nb = (char *)malloc(MAX_BUF_SIZE);
+	if (!nb) return NULL;
+	nf = (char *)malloc(MAX_STR_SIZE);
+	if (!nf) { free(nb); return NULL; }
+	currI = inp;
+	currO = nb;
+	
+	do {
+		fnd2 = strstr((char *)(fnd + 3), ";");
+		if (!fnd2 || fnd2 == (char *)(fnd+1) || (fnd2 - fnd) > 250) {
+			free(nb); free(nf);
+			return NULL;
+		}
+		memcpy(currO, currI, fnd - currI);
+		currO = currO + (fnd - currI);
+		
+		memcpy(fname, (char *)(fnd + 3), (int)fnd2 - (int)fnd - 2);
+		fname[(int)fnd2 - (int)fnd - 3] = 0;
+
+		ifp=fopen(fname, "r");
+		if (ifp == NULL) {
+			memcpy(currO, nofile, strlen(nofile));
+			currO = currO + strlen(nofile);
+		} else {
+			fr = fread(nf, 1, MAX_STR_SIZE, ifp);
+			memcpy(currO, nf, fr);
+			currO = currO + fr;
+			fclose(ifp);
+		}
+		
+		currI = fnd2 + 1;
+		fnd = strstr(currI, "\\I:");
+	} while(fnd);
+
+	memcpy(currO, currI, strlen(currI));
+	currO[strlen(currI)] = 0;
+
+	free(nf);
+	return nb;
+}
+
+
 char *EvaluateExpression(char *inp, int bAllocated) {
-	int i, j, sl, l, reps, bExp, bMoreExp, biggestSl;
+	int i, j, sl, l, reps, bExp, bMoreExp, biggestSl, slen;
 	char nofrep[64], *nb = NULL, *oldnb = NULL, *subs, *in=inp;
 
 	subs = (unsigned char *)malloc(MAX_STR_SIZE);
@@ -865,7 +931,8 @@ char *EvaluateExpression(char *inp, int bAllocated) {
 		bExp = 0;
 		bMoreExp = 0;
 		biggestSl = 0;
-		for (i=0; i < strlen(in); i++) {
+		slen = strlen(in);
+		for (i=0; i < slen; i++) {
 			if (in[i]=='\\' && in[i+1]=='M') {
 				bExp = 1;
 				i+=2; j=0;
@@ -895,7 +962,8 @@ char *EvaluateExpression(char *inp, int bAllocated) {
 			l = 0;
 			if (nb) {
 				nb[0] = 0;
-				for (i=0; i < strlen(in); i++) {
+				slen = strlen(in);
+				for (i=0; i < slen; i++) {
 					if (in[i]=='\\' && in[i+1]=='M') {
 						i+=2; j=0;
 						while(in[i]>='0' && in[i]<='9' && in[i]!=0) {
@@ -959,8 +1027,8 @@ int main(int argc, char **argv) {
 
 	if (argc < 3 || argc > 8) {
 		printf("\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n");
-		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray(default)\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n    \\TxxXX: set character xx with col XX as transparent (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but less accurate)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, 'F/T' to force input as file/text, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol\n", iH);
+		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
+		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
 		return keyret;
 	}
 	
@@ -1091,7 +1159,17 @@ int main(int argc, char **argv) {
 		char *u8tmp = EvaluateExpression(u8buf? u8buf : (unsigned char *)argv[3], u8buf? 1:0);
 		if (u8tmp) u8buf = u8tmp;
 	}
-		
+
+	if (argc > 3) {
+		char *u8tmp = InlineGxy(u8buf? u8buf : (unsigned char *)argv[3], u8buf? 1:0);
+		if (u8tmp) u8buf = u8tmp;
+
+		if (u8tmp && (flags & F_EVALUATEEXPRESSIONS)) {
+			char *u8tmp = EvaluateExpression(u8buf? u8buf : (unsigned char *)argv[3], u8buf? 1:0);
+			if (u8tmp) u8buf = u8tmp;
+		}
+	}
+
 	if (argc > 3)
 		keyret = WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol);
 		

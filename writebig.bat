@@ -39,10 +39,10 @@ set CC=%CC: #= \gb1%
 set CC=%CC:# =\gb1 %
 set CC=%CC:#=\gdb%
 set SX=1&set SY=1&if not %COL3%==-1 set SX=2&set SY=2
-if not %COL2%==-1 set /A XPT=%XP%+%SX%&set /A YPT=%YP%+%SY%&set OUT="%OUT:~1,-1%\%COL2%0\p!XPT!;!YPT!;\T20k0%CC:~1,-1%"
-if not %COL3%==-1 for %%a in (1,-1,10,-10) do set /A XPT=%XP%+%%a%%10&set /A YPT=%YP%+%%a/10&&set OUT="!OUT:~1,-1!\%COL3%0\p!XPT!;!YPT!;\T20k0%CC:~1,-1%"
+if not %COL2%==-1 set /A XPT=%XP%+%SX%&set /A YPT=%YP%+%SY%&set OUT="%OUT:~1,-1%\%COL2%0\p!XPT!;!YPT!;\T20k01%CC:~1,-1%"
+if not %COL3%==-1 for %%a in (1,-1,10,-10) do set /A XPT=%XP%+%%a%%10&set /A YPT=%YP%+%%a/10&&set OUT="!OUT:~1,-1!\%COL3%0\p!XPT!;!YPT!;\T20k01%CC:~1,-1%"
 if %IS%==0 set CC=!CS%INDEX%!&set CC=!CC:#=\gdb!
-set OUT="!OUT:~1,-1!\%COL1%0\p!XP!;!YP!;\T20k0%CC:~1,-1%"
+set OUT="!OUT:~1,-1!\%COL1%0\p!XP!;!YP!;\T20k01%CC:~1,-1%"
 gotoxy !XP! !YP! %OUT% 0 0 r
 if "!SCT!"==" " set /A XP+=%SPACEW% 
 if not "!SCT!"==" " set /A XP+=%CHARW%

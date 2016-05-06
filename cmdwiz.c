@@ -7,6 +7,10 @@
 
 // Compilation with tcc (32 bit version): tcc -lwinmm -luser32 -o cmdwiz.exe cmdwiz.c
 
+// Possible TO-DO's
+// 1. Print out data if no argument given: getconsoledim, getconsolecolor, getcharat, getcolorat?, getcursorpos
+// 2. getconsoledim: args should be called w,h,sw,sh,cx,cy NOT x,y,sx,sy,cx,cy
+
 #define BUFW 0
 #define BUFH 1
 #define SCRW 2
@@ -569,9 +573,9 @@ int main(int argc, char **argv) {
 		r.Top = atoi(argv[3]);
 		w = atoi(argv[4]);
 		h = atoi(argv[5]);
-		if (r.Right < 0 || r.Bottom < 0) return 1;
 		r.Right = r.Left + w-1;
 		r.Bottom = r.Top + h-1;
+		if (r.Right < 0 || r.Bottom < 0) return 1;
 		np.X = atoi(argv[6]);
 		np.Y = atoi(argv[7]);
 		chiFill.Attributes = FOREGROUND_RED;
@@ -579,7 +583,6 @@ int main(int argc, char **argv) {
 			chiFill.Attributes = info.wAttributes;
 		chiFill.Char.AsciiChar = ' ';
 		cl.Left=np.X; cl.Top=np.Y; cl.Right=np.X+w; cl.Bottom=np.Y+h; //not working (tried to copy instead of moving). Hence the NULL below.
-
 		ScrollConsoleScreenBuffer(GetStdHandle(STD_OUTPUT_HANDLE), &r, NULL, np, &chiFill);
 		return 0;
 	}

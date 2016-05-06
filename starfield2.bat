@@ -23,7 +23,6 @@ set /a YMAX=%YSIZE%*%XDELAY%
 for /L %%b in (0,1,%NOF%) do call :MAKESTAR %%b
 
 cmdwiz saveblock tempblock 0 %YCURRENT% %XSIZE% %YSIZE%
-for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
 
 :LOOP
 set FIELD=
@@ -32,7 +31,7 @@ if %DIR%==2 for /L %%b in (0,1,%NOF%) do set /a XTMP=!STARX%%b!/%XDELAY%&set FIE
 if %DIR%==3 for /L %%b in (0,1,%NOF%) do set /a YTMP=!STARY%%b!/%XDELAY%&set FIELD=!FIELD!\p!STARX%%b!;!YTMP!!STARC%%b!.&set /a STARY%%b+=!STARS%%b!&if !STARY%%b! geq %YMAX% set /a STARY%%b=-3-(!RANDOM! %% %YSIZE%)&set /a STARX%%b=!RANDOM! %% %XMAX%
 if %DIR%==4 for /L %%b in (0,1,%NOF%) do set /a YTMP=!STARY%%b!/%XDELAY%&set FIELD=!FIELD!\p!STARX%%b!;!YTMP!!STARC%%b!.&set /a STARY%%b-=!STARS%%b!&if !STARY%%b! lss -4 set /a STARY%%b=%YMAX%+3+(!RANDOM! %% %YSIZE%)&set /a STARX%%b=!RANDOM! %% %XMAX%
 
-gotoxy.exe 0 %YCURRENT% "\O0;%YCURRENT%;%XSIZE%;%YSIZE%%FIELD%\p0;0\T20kU%BLOCK:~1,-1%" 7 0 rk
+gotoxy.exe 0 %YCURRENT% "\O0;%YCURRENT%;%XSIZE%;%YSIZE%%FIELD%\p0;0\T20kU1\R\I:tempblock.gxy;" 7 0 rk
 if not %ERRORLEVEL% == 27 goto LOOP
 
 gotoxy 0 %YCURRENT% tempblock.gxy 0 0 r

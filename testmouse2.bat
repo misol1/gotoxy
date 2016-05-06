@@ -25,7 +25,7 @@ if not "%MWHEEL%"=="0" goto LOOP
 set MX=%NEW_MX%&set MY=%NEW_MY%
 
 :NOINPUT
-set OUT="\O0;0;80;50;\T20kk"
+set OUT="\O0;0;80;50;\T20kk0"
 set /a TRAILPX%TRAIL_I%=%MX%-6
 set /a TRAILPY%TRAIL_I%=%MY%-4
 

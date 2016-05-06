@@ -64,7 +64,7 @@ set /a XP=%XW%+%PREPC%*%ADDW%-%XPROG%
 set /a ENDC=%PREPC% + (%XW%-%XP%)/%ADDW%
 
 for /L %%a in (%PREPC%,1,%ENDC%) do set SCI=!T%%a!& for %%b in (!SCI!) do for %%c in (!SC!) do set /a YP=%YM%-(!MSIN%%c!*%YMUL%^>^>14) & set /a SC+=%SYD% & set OUT="!OUT:~1,-1!\p!XP!;!YP!!CS%%b:~1,-1!"& set /a XP+=%ADDW%
-if %BORD%==1 set OUT="!OUT:~1,-1!\T00kk\p0;0\02\xQ                                                                                 \p0;39                                                                                 "
+if %BORD%==1 set OUT="!OUT:~1,-1!\T00kk1\p0;0\02\xQ                                                                                 \p0;39                                                                                 "
 
 gotoxy.exe 0 0 "\O0;0;%XW%;%YHA%\p-%BXP%;-1;%CHESS%%MODECODE%%OUT:~1,-1%\O\W%DELAY%" 0 0 xk
 set KEY=!ERRORLEVEL!
@@ -109,7 +109,7 @@ goto :eof
 
 :SETMODE
 if %DMODE%==0 set MODECODE=\R\vV
-if %DMODE%==1 set MODECODE=\T20kk\f0
+if %DMODE%==1 set MODECODE=\T20kk1\R\f0
 if %DMODE%==2 set MODECODE=\f4
 if %DMODE%==3 set MODECODE=\R\04\xQ
 if %DMODE%==4 set MODECODE=\R\82\qQ

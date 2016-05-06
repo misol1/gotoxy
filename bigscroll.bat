@@ -53,7 +53,6 @@ for /L %%a in (%PREPC%,1,%PSCR_LEN%) do set /a XP=%XW%+%%a*(%CHARW%-0)-%XPROG% &
 :BIGSKIP
 
 gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\R\vV%OUT:~1,-1%%DELAY%" 0 0 k
-::gotoxy.exe %BXP% 0 "\O0;0;%XW%;%YH%%ANIM0:~1,-1%\T20kk\f0%OUT:~1,-1%%DELAY%" 0 0 k
 if %ERRORLEVEL% == 27 goto OUT
 
 set /a XPROG+=1

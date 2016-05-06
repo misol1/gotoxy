@@ -47,7 +47,7 @@ set CNT=0
 :LOOP2
 set CNO=%CNT%
 set YPP=%YP%
-set UT=\O0;0;80;50;\T20k1\01\N20
+set UT=\O0;0;80;50;\T20k10\01\N20
 set BALLCOLCNT=0
 for /L %%c in (0,1,%YW%) do set CN=!CNO!&set /A CNO+=%YRADD%&(if !CNO! geq %NOFPOS% set /A CNO=!CNO!-%NOFPOS%)&set /A YPP+=7&set XPP=%XP%&for /L %%a in (0,1,%XW%) do for %%b in (!CN!) do set /A XT=!XPP!+!CX%%b!&set /A YT=!YPP!+!CY%%b!&set UT=!UT!\p!XT!;!YT!;BALL!BALLCOLCNT!&set /A XPP+=12&(set /A BALLCOLCNT+=1&if !BALLCOLCNT! geq 5 set /A BALLCOLCNT=0)&set /A CN+=%XRADD%&if !CN! geq %NOFPOS% set /A CN=!CN!-%NOFPOS%
 set UT%CNT%=%UT%
