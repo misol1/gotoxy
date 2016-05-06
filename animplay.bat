@@ -20,9 +20,9 @@ set BOUNCE=0
 if "%3" == "bounce" set BOUNCE=1
 if "%3" == "bouncefast" set BOUNCE=2
 if "%3" == "reverse" set DELTA=-1&set /a CNT=%FRAMES%-1
-cmdwiz getconsoledim y
+cmdwiz getconsoledim h
 set SCRH=%ERRORLEVEL%
-cmdwiz getconsoledim x
+cmdwiz getconsoledim w
 set SCRW=%ERRORLEVEL%
 
 :REP

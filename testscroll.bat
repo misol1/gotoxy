@@ -1,8 +1,8 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 cls
-cmdwiz getconsoledim sx&set SW=!ERRORLEVEL!
-cmdwiz getconsoledim sy&set SH=!ERRORLEVEL!
+cmdwiz getconsoledim sw&set SW=!ERRORLEVEL!
+cmdwiz getconsoledim sh&set SH=!ERRORLEVEL!
 set W=14
 set H=25
 set /A X=%SW%/2-%W%/2

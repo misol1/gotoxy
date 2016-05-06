@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cmdwiz showcursor 0
-cmdwiz getconsoledim sx
+cmdwiz getconsoledim sw
 set W=%ERRORLEVEL%
 set /a WB=-(%W%+2)
 set /a WF=%W%/2
@@ -9,7 +9,7 @@ set /a WF2=-%W%/2
 set /a WF3=%WF%+1
 cmdwiz getconsoledim cy
 set YCURR=%ERRORLEVEL%
-cmdwiz getconsoledim sy
+cmdwiz getconsoledim sh
 set H=%ERRORLEVEL%
 set /a H1=%H%/2
 set /a H1C=%H1%+%YCURR%

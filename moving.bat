@@ -4,8 +4,8 @@ color 07
 setlocal ENABLEDELAYEDEXPANSION
 call sintable.bat
 cmdwiz showcursor 0
-cmdwiz getconsoledim y&set YM=!ERRORLEVEL!
-cmdwiz getconsoledim x&set XM=!ERRORLEVEL!
+cmdwiz getconsoledim h&set YM=!ERRORLEVEL!
+cmdwiz getconsoledim w&set XM=!ERRORLEVEL!
 set DELAY=&if not "%1" == "" set DELAY=\W%1
 
 for /F "tokens=*" %%i in (goomba.gxy) do set gom="%%i"

@@ -4,11 +4,11 @@ cmdwiz showcursor 0
 
 if not "%2" == "" mode con lines=40 cols=80 & gotoxy 0 0 "\N20\M4{\M6{\M5{\F1          \70          \\}\n\}\M6{\M5{\70          \F1          \\}\n\}}" 0 0 rx
 
-cmdwiz getconsoledim sx
+cmdwiz getconsoledim sw
 set XSIZE=%ERRORLEVEL%
-cmdwiz getconsoledim sy
+cmdwiz getconsoledim sh
 set YSIZE=%ERRORLEVEL%
-cmdwiz getconsoledim y
+cmdwiz getconsoledim h
 set YORG=%ERRORLEVEL%
 cmdwiz getconsoledim cy
 set YCURRENT=%ERRORLEVEL%

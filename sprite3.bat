@@ -3,10 +3,11 @@ setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 cmdwiz getcursorpos x&set X=!ERRORLEVEL!
 cmdwiz getcursorpos y&set Y=!ERRORLEVEL!
-cmdwiz getconsoledim y&set YM=!ERRORLEVEL!
+cmdwiz getconsoledim w&set W=!ERRORLEVEL!
+cmdwiz getconsoledim h&set H=!ERRORLEVEL!
 gotoxy 0 0
 set YP=2&if not "%1" == "" set YP=%1
-set DELAY=\W6&if not "%2" == "" set DELAY=\W%2
+set DELAY=\W5&if not "%2" == "" set DELAY=\W%2
 
 Set "spi=\-\-\0A \-\-\-\-\- \n"
 Set "spi=%spi%\-\-\- \-\-\- \n"
@@ -17,10 +18,10 @@ Set "spi=%spi% \-       \- \n"
 Set "spi=%spi% \- \-\-\-\-\- \- \n"
 Set "spi=%spi%\-\-\-  \-  "
 
-cmdwiz saveblock tempblock 0 0 80 50
+cmdwiz saveblock tempblock 0 0 %W% %H%
 gotoxy 0 0 tempblock.gxy
 
-cmdwiz saveblock tempblock 0 %YP% 80 8
+cmdwiz saveblock tempblock 0 %YP% %W% 8
 for /F "tokens=*" %%i in (tempblock.gxy) do set BLOCK="%%i"
 
 :REP

@@ -7,9 +7,9 @@ cmdwiz showcursor 0
 setlocal ENABLEDELAYEDEXPANSION
 call hiscore.bat snakescore.dat create "Wormhole" 50
 
-cmdwiz getconsoledim x
+cmdwiz getconsoledim w
 set MAXX=%ERRORLEVEL%
-cmdwiz getconsoledim y
+cmdwiz getconsoledim h
 set /a MAXY=%ERRORLEVEL%-2
 
 set WIDTH=%MAXX%

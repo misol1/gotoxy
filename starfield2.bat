@@ -2,10 +2,9 @@
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 set NOF=15
-::gotoxy 0 0
-cmdwiz getconsoledim sx
+cmdwiz getconsoledim sw
 set XSIZE=%ERRORLEVEL%
-cmdwiz getconsoledim sy
+cmdwiz getconsoledim sh
 set YSIZE=%ERRORLEVEL%
 cmdwiz getconsoledim cy
 set YCURRENT=%ERRORLEVEL%

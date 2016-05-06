@@ -1,13 +1,13 @@
 @echo off
 setlocal
 cmdwiz showcursor 0
-cmdwiz getconsoledim sx
+cmdwiz getconsoledim sw
 set W=%ERRORLEVEL%
 set /a WB=-(%W%+2)
 set /a WF=(%W%+2)
 cmdwiz getconsoledim cy
 set YCURR=%ERRORLEVEL%
-cmdwiz getconsoledim sy
+cmdwiz getconsoledim sh
 set H=%ERRORLEVEL%
 if %H% geq 60 set H=60
 cmdwiz saveblock tempblock 0 %YCURR% %W% %H%

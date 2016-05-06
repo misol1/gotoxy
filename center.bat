@@ -22,7 +22,7 @@ cmdwiz stringlen "%OMSG%"
 set /A SLEN=%ERRORLEVEL%-1
 set CNT=0
 set RLEN=0
-cmdwiz getconsoledim x&set CW=!ERRORLEVEL!
+cmdwiz getconsoledim w&set CW=!ERRORLEVEL!
 if not "%~5"=="" set CW=%~5
 if not %CODE%==1 set RLEN=%SLEN%&goto OUTOF
 for /L %%a in (0,1,%SLEN%) do set /A RLEN+=1&if "!OMSG:~%%a,1!"=="\" set /A RLEN-=3&set /A TM=%%a+1&for %%c in (!TM!) do for %%b in (r,N,n,-,R,\,G) do if "!OMSG:~%%c,1!"=="%%b" set /A RLEN+=1

@@ -838,12 +838,17 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 		free(currentConsoleOutput);
 	free(str);
 	if (*x!=orgx) (*x)--;
+	
 	return keyret;
 }
 
 #ifdef DEBUG_PRINT
 void DebugPrint(char *msg, int px, int py, int waitVal) {
+	static int bDebugPrinting = 0;
+	if (bDebugPrinting) return;
+	bDebugPrinting = 1;
 	WriteText(msg, 15, 0, &px, &py, 0, 0, 7);
+	bDebugPrinting = 0;
 	if (waitVal > 0)
 		Sleep(waitVal);
 }
@@ -851,9 +856,7 @@ void DebugPrint(char *msg, int px, int py, int waitVal) {
 void DebugPrintI(int v, int px, int py, int waitVal) {
 	char dbuf[64];
 	sprintf(dbuf, "%d                ", v);
-	WriteText(dbuf, 15, 0, &px, &py, 0, 0, 7);
-	if (waitVal > 0)
-		Sleep(waitVal);
+	DebugPrint(dbuf, px, py, waitVal);
 }
 
 void DebugPrintIS(int v) {

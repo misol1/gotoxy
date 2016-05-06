@@ -9,7 +9,6 @@
 
 // Possible TO-DO's
 // 1. Print out data if no argument given: getconsoledim, getconsolecolor, getcharat, getcolorat?, getcursorpos
-// 2. getconsoledim: args should be called w,h,sw,sh,cx,cy NOT x,y,sx,sy,cx,cy
 
 #define BUFW 0
 #define BUFH 1
@@ -351,11 +350,11 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"getconsoledim") == 0) {
 		int dim = BUFW;
-		if (argc < 3) { printf("\nUsage: cmdwiz getconsoledim [x|y|sx|sy|cx|cy]\n"); return 0; }
-		if (argv[2][0] == 'x') dim = BUFW;
-		if (argv[2][0] == 'y') dim = BUFH;
-		if (argv[2][0] == 's') if (argv[2][1] == 'x') dim = SCRW;
-		if (argv[2][0] == 's') if (argv[2][1] == 'y') dim = SCRH;
+		if (argc < 3) { printf("\nUsage: cmdwiz getconsoledim [w|h|sw|sh|cx|cy]\n"); return 0; }
+		if (argv[2][0] == 'w') dim = BUFW;
+		if (argv[2][0] == 'h') dim = BUFH;
+		if (argv[2][0] == 's') if (argv[2][1] == 'w') dim = SCRW;
+		if (argv[2][0] == 's') if (argv[2][1] == 'h') dim = SCRH;
 		if (argv[2][0] == 'c') if (argv[2][1] == 'x') dim = CURRX;
 		if (argv[2][0] == 'c') if (argv[2][1] == 'y') dim = CURRY;
 		return GetDim(dim);

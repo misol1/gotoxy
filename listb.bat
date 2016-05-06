@@ -7,7 +7,7 @@ if "%~1"=="_COUNTITEMS" call :COUNTITEMS %2 %3&goto :eof
 
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
-cmdwiz getconsoledim y&set OLDH=!ERRORLEVEL!
+cmdwiz getconsoledim h&set OLDH=!ERRORLEVEL!
 set COLS=81&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set LINES=%3&if !LINES! lss 20 set LINES=20
 cls

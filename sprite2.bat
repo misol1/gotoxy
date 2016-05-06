@@ -3,14 +3,14 @@ setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 cmdwiz getcursorpos x&set X=!ERRORLEVEL!
 cmdwiz getcursorpos y&set Y=!ERRORLEVEL!
-cmdwiz getconsoledim sy&set YM=!ERRORLEVEL!
-cmdwiz getconsoledim sx&set XM=!ERRORLEVEL!
+cmdwiz getconsoledim sh&set YM=!ERRORLEVEL!
+cmdwiz getconsoledim sw&set XM=!ERRORLEVEL!
 set BUFPOS=%YM%
 set /a DOUBLEBUF=%BUFPOS%*2
 if %YM% lss %DOUBLEBUF% cmdwiz setbuffersize %XM% %DOUBLEBUF%
 gotoxy 0 0
 set YP=2&if not "%1" == "" set YP=%1
-set DELAY=\W10&if not "%2" == "" set DELAY=\W%2
+set DELAY=\W5&if not "%2" == "" set DELAY=\W%2
 
 Set "spi=\-\-\0A \-\-\-\-\- \n"
 Set "spi=%spi%\-\-\- \-\-\- \n"
