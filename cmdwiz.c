@@ -7,9 +7,6 @@
 
 // Compilation with tcc (32 bit version): tcc -lwinmm -luser32 -o cmdwiz.exe cmdwiz.c
 
-// Possible TO-DO's
-// 1. Print out data if no argument given: getconsoledim, getconsolecolor, getcharat, getcolorat?, getcursorpos
-
 #define BUFW 0
 #define BUFH 1
 #define SCRW 2
@@ -351,6 +348,7 @@ int main(int argc, char **argv) {
 	else if (stricmp(argv[1],"getconsoledim") == 0) {
 		int dim = BUFW;
 		if (argc < 3) { printf("\nUsage: cmdwiz getconsoledim [w|h|sw|sh|cx|cy]\n"); return 0; }
+//		if (argc < 3) { printf("WIDTH %d HEIGHT %d SCREEN_WIDTH %d SCREEN_HEIGHT %d SCROLL_X %d SCROLL_Y %d\n", GetDim(BUFW), GetDim(BUFH), GetDim(SCRW), GetDim(SCRH), GetDim(CURRX), GetDim(CURRY)); return 0; }
 		if (argv[2][0] == 'w') dim = BUFW;
 		if (argv[2][0] == 'h') dim = BUFH;
 		if (argv[2][0] == 's') if (argv[2][1] == 'w') dim = SCRW;
@@ -433,11 +431,16 @@ int main(int argc, char **argv) {
 		int ox, oy;
 		int x, y;
 		int i;
-		// printf("\nUsage: cmdwiz getcharat [x|k] [y|k]");
+		
+		if ((argc < 4)) {
+			printf("\nUsage: cmdwiz getcharat [x|k] [y|k]\n");
+			return 0;
+		}
+		
 		GetXY(&ox, &oy);
 
-		if (argc > 2) { if (argv[2][0]!='k') x=atoi(argv[2]); else x=ox; } else x=ox;
-		if (argc > 3) { if (argv[3][0]!='k') y=atoi(argv[3]); else y=oy; } else y=oy;
+		if (argv[2][0]!='k') x=atoi(argv[2]); else x=ox;
+		if (argv[3][0]!='k') y=atoi(argv[3]); else y=oy;
 
 		i = ReadCharProperty(x,y,CHARPROP_CHAR);
 		if (i<0) i = 256+i;
@@ -448,12 +451,12 @@ int main(int argc, char **argv) {
 		int ox, oy;
 		int i;
 
-		if (argc < 3) { printf("\nUsage: cmdwiz getcolorat [fg|bg] [x|k] [y|k]\n"); return 0; }
+		if (argc < 5) { printf("\nUsage: cmdwiz getcolorat [fg|bg] [x|k] [y|k]\n"); return 0; }
 
 		GetXY(&ox, &oy);
 
-		if (argc > 3) { if (argv[3][0]!='k') x=atoi(argv[3]); else x=ox; } else x=ox;
-		if (argc > 4) { if (argv[4][0]!='k') y=atoi(argv[4]); else y=oy; } else y=oy;
+		if (argv[3][0]!='k') x=atoi(argv[3]); else x=ox;
+		if (argv[4][0]!='k') y=atoi(argv[4]); else y=oy;
 
 		i = ReadCharProperty(x,y,argv[2][0]=='f'? CHARPROP_FGCOL : CHARPROP_BGCOL);
 		return i;
