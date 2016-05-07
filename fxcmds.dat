@@ -12,3 +12,4 @@ call fadeseq.bat&fx.bat
 call testmouse2.bat&fx.bat
 call interference3.bat&fx.bat
 call flag3.bat&fx.bat
+call showimg2.bat emma.gxy 80 50 1&fx.bat
