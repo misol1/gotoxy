@@ -156,7 +156,8 @@ goto :eof
 
 
 :CLIPBOARDCOPYOP
-if "%CLIPB%" == "" call :SHOWBOTTOMBAR "No items in clipboard."&goto :eof
+cmdwiz stringlen "%CLIPB%"
+if !ERRORLEVEL! == 0 call :SHOWBOTTOMBAR "No items in clipboard."&goto :eof
 if "%1"=="copy" call :YESNO "Really %1 ALL selected files from clipboard?(y/n) " 
 if "%1"=="move" call :YESNO "Really %1 ALL selected files/folders from clipboard?(y/n) " 
 if "!ANSWER!"=="N" goto :eof
