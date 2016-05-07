@@ -27,6 +27,6 @@ gotoxy 0 0 "\O0;0;80;45;\00\N20\T20kk1;\p%CX1%;%CY1%;\%COL1%0\R\I:circles.gxy;\R
 
 if not !ERRORLEVEL! == 27 goto LOOP
 
-mode con 80,50&cls
+mode 80,50&cls
 cmdwiz showcursor 1
 endlocal
