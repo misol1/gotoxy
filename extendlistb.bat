@@ -30,7 +30,7 @@ if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1
 set XFILE=%~n1
 if /I "%XTENSION%"==".wav" cmdwiz playsound %1 & exit /b 0
-if /I "%XTENSION%"==".gxy" cls&gotoxy 0 0 %1 0 0 c & cmdwiz getch & exit /b 1
+if /I "%XTENSION%"==".gxy" cls&gotoxy 0 0 %1 u 0 c & cmdwiz getch & exit /b 1
 if /I "%XTENSION%"==".mp3" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
 if /I "%XTENSION%"==".mod" taskkill.exe /F /IM dlc.exe>nul 2>nul& start /MIN dlc.exe -p %1 0 0 c & exit /b 0
 if /I "%XTENSION%"==".ans" cls&ansicon -t %1 & cmdwiz getch & exit /b 1

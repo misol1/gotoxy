@@ -277,7 +277,7 @@ void ScrollUp(HANDLE h, int scrolldims[], int orgConsoleCol) {
 	ScrollConsoleScreenBuffer(h, &r, NULL, np, &chiFill);
 }
 
-int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int flags, int wrapxpos, int orgConsoleCol) {
+int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int flags, int wrapxpos, int orgConsoleCol, unsigned int startT) {
 	HANDLE hCurrHandle, hNewScreenBuffer = INVALID_HANDLE_VALUE;
 	int bufdims[4] = {0,0,80,25}, scrolldims[4] = {0,0,80,25}, newscrolldims[4], bNewHandle = 0, bCopyback = 0, bNewScrollDims = 0;
 	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
@@ -289,13 +289,12 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	int keyret = 0, bBreakToWrite, bCheckWrap, bHandleTransp;
 	int bY, k, ks, v, v16, dI, tmp1, tmp2, relX, relY, bWroteTab = 0, transparentMode = 0;
 	char ch, number[1024];
-	unsigned int startT;
 	SMALL_RECT r;
 	CHAR_INFO *str;
 	COORD a, b;
 	
 	hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-	startT = GetTickCount();		
+
 	oldfc = orgConsoleCol & 0xf;
 	oldbc = (orgConsoleCol>>4) & 0xf;
 	orgx = *x;
@@ -847,7 +846,7 @@ void DebugPrint(char *msg, int px, int py, int waitVal) {
 	static int bDebugPrinting = 0;
 	if (bDebugPrinting) return;
 	bDebugPrinting = 1;
-	WriteText(msg, 15, 0, &px, &py, 0, 0, 7);
+	WriteText(msg, 15, 0, &px, &py, 0, 0, 7, 0);
 	bDebugPrinting = 0;
 	if (waitVal > 0)
 		Sleep(waitVal);
@@ -1026,7 +1025,10 @@ int main(int argc, char **argv) {
 	unsigned char *u8buf = NULL;
 	char ch;
 	int keyret = 0;
+	unsigned int startT;
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	startT = GetTickCount();
 
 	if (argc < 3 || argc > 8) {
 		printf("\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n");
@@ -1174,7 +1176,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (argc > 3)
-		keyret = WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol);
+		keyret = WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol, startT);
 		
 	if (flags & F_FOLLOWCURSOR) {
 		GotoXY(h, x, y);
