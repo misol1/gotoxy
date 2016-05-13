@@ -336,9 +336,36 @@ void printKeystates(int keys, int nofKeys) {
 int main(int argc, char **argv) {
 	int delayVal = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await] [params]\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await cache] [params]\n"); return 0; }
 
-	if (stricmp(argv[1],"delay") == 0) {
+	
+	if (stricmp(argv[1],"cache") == 0) {
+		FILE *ifp, *ifp2;
+		char *dummy, *fch;
+		int fmsize = 1048576 * 16;
+				
+		if (argc < 3) { printf("\nUsage: cmdwiz cache [filelist]\n"); return 0; }
+		ifp = fopen(argv[2], "r");
+		if (!ifp) { printf("Error: file not found\n"); return 0; }
+
+		dummy = (char *) malloc(fmsize);
+		if (!dummy) { printf("Error: could not allocate memory\n"); fclose(ifp); return 0; }
+		
+		do {
+			fch = fgets(dummy, fmsize, ifp);
+			if (fch) {
+				dummy[strlen(dummy)-1] = 0;
+				ifp2 = fopen(dummy, "r");
+				if (ifp2) {
+					fread(dummy, 1, fmsize, ifp2);
+					fclose(ifp2);
+				}
+			}
+		} while (fch);
+		
+		free(dummy);
+		fclose(ifp);
+	} else if (stricmp(argv[1],"delay") == 0) {
 		if (argc < 3) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
 
 		delayVal=atoi(argv[2]);

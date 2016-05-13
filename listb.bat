@@ -509,4 +509,3 @@ if %DR%==2 set KEY=105&set DBLCL=1
 
 if not %OLDCP% == %CURRPOS% set OLDPOS=%OLDCP%& call :UPDATELIST
 goto :eof
-g

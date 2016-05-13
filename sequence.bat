@@ -13,8 +13,9 @@ set REP=1&if not "%8"=="" set REP=2
 set FNAME=%~1
 
 if not exist "%~1" echo Error: file not found.&goto :OUTOF
-set CNT=0&for /F "tokens=* delims=" %%a in (%~1) do set FNAME!CNT!="%%a"&set /A CNT+=1
+set CNT=0&for /F "tokens=* delims=" %%a in (%~1) do set FNAME!CNT!="%%a"&set /A CNT+=1&echo "%%a">>cachelist.dat
 set NOF=%CNT%&set CNT=0
+cmdwiz cache cachelist.dat&del /Q cachelist.dat>nul 2>nul
 cls
 
 set DELTA=1&set ENDVAL=%NOF%
