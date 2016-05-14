@@ -8,9 +8,9 @@ if "%~1"=="_COUNTITEMS" call :COUNTITEMS %2 %3&goto :eof
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
 cmdwiz getconsoledim h&set OLDH=!ERRORLEVEL!
-set COLS=81&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
+set COLS=80&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set LINES=%3&if !LINES! lss 20 set LINES=20
-set COLSPERSCR=3&if not "%4" == "" set COLSPERSCR=%4&(if !COLSPERSCR! gtr 9 set COLSPERSCR=9)&if !COLSPERSCR! lss 1 set COLSPERSCR=1
+set COLSPERSCR=4&if not "%4" == "" set COLSPERSCR=%4&(if !COLSPERSCR! gtr 9 set COLSPERSCR=9)&if !COLSPERSCR! lss 1 set COLSPERSCR=1
 cls
 mode con lines=%LINES% cols=%COLS%
 set OLDCOLS=%COLS%
