@@ -262,7 +262,6 @@ gotoxy 1 %YBOUND%
 set FNAME=&set /P FNAME=Load file(omit .gxy): 
 gotoxy %X% %Y%
 for %%a in (%FNAME%) do set FNAME="%%~da%%~pa%%~na.gxy"&if not exist !FNAME! call :PRINTSEPARATOR&goto :eof
-goto :eof
 :GOTNAME
 set inf=
 for /F "tokens=* usebackq" %%i in (%FNAME%) do set inf="%%i"
