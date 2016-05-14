@@ -3,7 +3,7 @@
 cmdwiz showcursor 0
 color 07
 cls
-mode con lines=54
+mode con lines=54 cols=81
 setlocal ENABLEDELAYEDEXPANSION
 set CNT=1
 set YCNT=1

@@ -6,6 +6,7 @@ set D1=1
 set XS=35&set XE=44
 set MC1=1&set MC2=
 set LOWB=8
+mode con lines=50 cols=80
 cls
 :LOOP
 gotoxy %XS% 0 "\M100{\0%MC1%\M%V1%{ \}\90\M%V2%{ \}%MC2%}" 9 0 wxk %XE%

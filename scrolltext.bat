@@ -8,7 +8,8 @@ set DELAY=&if not "%2" == "" set DELAY=\W%2
 set YP=0&if not "%3" == "" set YP=%3
 set COLOR=u&if not "%4" == "" set COLOR=%4
 
-set SCROLLPOS=80
+cmdwiz getconsoledim sw&set /A SW=!ERRORLEVEL!+1
+set SCROLLPOS=%SW%
 cmdwiz stringlen %SCROLLTEXT%&set SCROLL_LEN=!ERRORLEVEL!
 set /a SCROLL_LEN=0-SCROLL_LEN
 set CNT=0
@@ -16,7 +17,7 @@ set CNT=0
 :LOOP
 gotoxy.exe %SCROLLPOS% %YP% %SCROLLTEXT%%DELAY% %COLOR% U k
 set /A SCROLLPOS-=1
-if %SCROLLPOS% == %SCROLL_LEN% set SCROLLPOS=81
+if %SCROLLPOS% == %SCROLL_LEN% set SCROLLPOS=%SW%
 if not !ERRORLEVEL!==27 goto LOOP
 
 endlocal

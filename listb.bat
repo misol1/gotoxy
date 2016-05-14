@@ -10,6 +10,7 @@ cmdwiz showcursor 0
 cmdwiz getconsoledim h&set OLDH=!ERRORLEVEL!
 set COLS=81&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set LINES=%3&if !LINES! lss 20 set LINES=20
+set COLSPERSCR=3&if not "%4" == "" set COLSPERSCR=%4&(if !COLSPERSCR! gtr 9 set COLSPERSCR=9)&if !COLSPERSCR! lss 1 set COLSPERSCR=1
 cls
 mode con lines=%LINES% cols=%COLS%
 set OLDCOLS=%COLS%
@@ -27,14 +28,15 @@ set DIRP=0
 set DIROP=1
 set FCOUNTSUB=0
 set SORT=N
-set COLSPERSCR=3
-set EXTEND=""&if not "%~4" == "" set EXTEND="%~4"
+set EXTEND=""&if not "%~5" == "" set EXTEND="%~5"
 set CLIPB=
 
 set BARCOL=3
 set BARTEXTCOL=F
 set BARINFOCOL=0
 set CURRCOL=1
+cmdwiz getconsolecolor bg
+if "%CURRCOL%" == "!ERRORLEVEL!" (if not "%CURRCOL%"=="0" set CURRCOL=0)&(if "%CURRCOL%"=="0" set CURRCOL=1)
 set FILECOL=u
 set DIRCOL=B
 set SELCOL=4
@@ -45,8 +47,8 @@ set HLPC2=\7U
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SET_COLORS
 
 set MOUSESUPPORT=0
-if "%~5" == "Y" set MOUSESUPPORT=1
-if "%~5" == "y" set MOUSESUPPORT=1
+if "%~6" == "Y" set MOUSESUPPORT=1
+if "%~6" == "y" set MOUSESUPPORT=1
 if %MOUSESUPPORT%==1 cmdwiz quickedit 0
 
 set VIEWCMD=less -f
@@ -73,8 +75,8 @@ if %KEY% == 331 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH% & call :UPDATELIST & g
 if %KEY% == 333 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH% & call :UPDATELIST & goto MAINLOOP & rem RIGHT
 if %KEY% == 327 set OLDPOS=%CURRPOS%&set CURRPOS=0& call :UPDATELIST & goto MAINLOOP & rem HOME
 if %KEY% == 335 set OLDPOS=%CURRPOS%&set CURRPOS=%FCOUNT%& call :UPDATELIST & goto MAINLOOP & rem END
-if %KEY% == 337 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH%*3 & call :UPDATELIST & goto MAINLOOP & rem PAGEDOWN
-if %KEY% == 329 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH%*3 & call :UPDATELIST & goto MAINLOOP & rem PAGEUP
+if %KEY% == 337 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH%*%COLSPERSCR% & call :UPDATELIST & goto MAINLOOP & rem PAGEDOWN
+if %KEY% == 329 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH%*%COLSPERSCR% & call :UPDATELIST & goto MAINLOOP & rem PAGEUP
 if %UPDATEBOTTOM%==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
 
 if %KEY% == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
@@ -104,8 +106,8 @@ if %KEY% == 83 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz show
 if %KEY% == 6 call :GETANSWER "Search for:" STRIPQUOTES& if not "!ANSWER!"=="" call :FINDOP & rem ^F
 if %KEY% == 111 call :SORTOP & rem o
 if %KEY% == 63 call :SHOWHELP & rem ?
-if %KEY% == 571 call :SHOWHELP & rem F1
-if %KEY% geq 49 if %KEY% leq 53 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-5
+if %KEY% == 315 call :SHOWHELP & rem F1
+if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-5
 if %KEY% == 112 %NEWCMDWINDOW% & rem p
 
 if %KEY% == 105 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST & rem i
@@ -458,7 +460,7 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-5: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy/move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [columns] [rows] [extend_path\\name] [mouse]\n" 0 0 c
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-9: %HLPC2%number of columns per screen\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%<: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy/move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [width] [height] [columns] [extend_path\\name] [mouse]\n" 0 0 c
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SHOW_EXTENDED_HELP
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP
@@ -486,8 +488,8 @@ set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1
 set /a MT=%MR% ^& 4 &if !MT! equ 0 set DR=0
 set /a MT=%MR% ^& 8 &if !MT! geq 1 set DL=2
 set /a MT=%MR% ^& 16 &if !MT! geq 1 set DR=2
-set /a MT=%MR% ^& 32 &if !MT! geq 1 set /a CURRPOS+=%LH%*3
-set /a MT=%MR% ^& 64 &if !MT! geq 1 set /a CURRPOS-=%LH%*3
+set /a MT=%MR% ^& 32 &if !MT! geq 1 set /a CURRPOS+=%LH%*%COLSPERSCR%
+set /a MT=%MR% ^& 64 &if !MT! geq 1 set /a CURRPOS-=%LH%*%COLSPERSCR%
 set /a MX=(%MR%^>^>7) ^& 127
 set /a MY=(%MR%^>^>14) ^& 127
 

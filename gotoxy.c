@@ -779,8 +779,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 		
 		if (keyWait == KEY_WAIT || (keyWait == KEY_CHECK && kbhit())) {
 			k = getch();
-			if (k == 224) k = 256+getch();
-			if (k == 0) k = 512+getch();
+			if (k == 224 || k == 0) k = 256 + getch();
 			keyret = k;
 			keyWait = 0;
 		}

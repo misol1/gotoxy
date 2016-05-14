@@ -3,7 +3,7 @@
 setlocal ENABLEDELAYEDEXPANSION
 color 07
 cls
-mode con lines=50
+mode con lines=50 cols=80
 cmdwiz showcursor 0
 gotoxy 33 1 " MASTERMIND " 11 1
 for /L %%a in (1,1,10) do call :PRINTROW %%a xxxxxx 8

@@ -400,8 +400,7 @@ int main(int argc, char **argv) {
 		if (argc > 2) if (!kbhit()) return 0;
 		k = getch();
 
-		if (k == 224) k = 256+getch();
-		if (k == 0) k = 512+getch();
+		if (k == 224 || k == 0) k = 256 + getch();
 		return k;
 	}
 	else if (stricmp(argv[1],"flushkeys") == 0) {
@@ -565,8 +564,7 @@ int main(int argc, char **argv) {
 		if (bWroteKey) {
 			if (kbhit()) {
 				k=getch();
-				if (k == 224) k = 256 + getch();
-				if (k == 0) k = 512 + getch();
+				if (k == 224 || k == 0) k = 256 + getch();
 			}
 			res2 = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), 1);
 			if (!(res2 & WAIT_TIMEOUT))

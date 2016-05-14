@@ -43,7 +43,7 @@ if %BOUNCE% == 2 if %CNT% lss 0 set DELTA=1&set /a CNT+=!DELTA!&set /a CNT+=!DEL
 goto LOOP
 :OUT
 
-mode con lines=50
+mode con lines=50 cols=80
 cls
 :OUT2
 endlocal

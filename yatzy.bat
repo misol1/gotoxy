@@ -1,7 +1,7 @@
 :: Yatzy : Mikael Sollenborn 2015
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
-mode con lines=50
+mode con lines=50 cols=80
 color 07
 cls
 cmdwiz showcursor 0

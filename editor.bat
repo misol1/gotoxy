@@ -88,35 +88,35 @@ if %KEY% == 327 call :PICKUP 2 & goto SKIP & rem HOME
 if %KEY% == 329 call :PICKUP 4 & goto SKIP & rem PGUP
 if %KEY% == 337 call :PICKUP 5 & goto SKIP & rem PGDN
 if %KEY% == 335 call :PICKUP 3 & goto SKIP & rem END
-if %KEY% == 571 call :LOAD & goto SKIP & rem F1
-if %KEY% == 596 call :LOAD 1& goto SKIP & rem shift-F1
-if %KEY% == 572 call :SAVE & goto SKIP & rem F2
-if %KEY% == 573 set /a FGCOL+=1&call :PRINTSTATUS&goto SKIP & rem F3
-if %KEY% == 574 set /a BGCOL+=1&call :PRINTSTATUS&goto SKIP & rem F4
-if %KEY% == 575 set DRAWSTATE=1&goto SKIP & rem F5
-if %KEY% == 576 set DRAWSTATE=2&goto SKIP & rem F6
-if %KEY% == 577 set DRAWSTATE=3&goto SKIP & rem F7
-if %KEY% == 578 set DRAWSTATE=4&goto SKIP & rem F8
-if %KEY% == 598 set /a FGCOL-=1&call :PRINTSTATUS&goto SKIP & rem shift-F3
-if %KEY% == 599 set /a BGCOL-=1&call :PRINTSTATUS&goto SKIP & rem shift-F4
-if %KEY% == 601 call :FILL&goto SKIP & rem shift-F6
-if %KEY% == 602 call :SAVE edcpp& goto SKIP & rem shift-F7
-if %KEY% == 603 if exist edcpp.gxy call :LOAD 1 edcpp.gxy& goto SKIP & rem shift-F8
-if %KEY% == 623 if exist edcpp.gxy call :LOAD 0 edcpp.gxy& goto SKIP & rem alt-F8
-if %KEY% == 604 set /A DRAWINSTANT=1-%DRAWINSTANT%&goto SKIP & rem shift-F9
-if %KEY% == 606 set CKEY=219&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F1
-if %KEY% == 607 set CKEY=178&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F2
-if %KEY% == 608 set CKEY=177&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F3
-if %KEY% == 609 set CKEY=176&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F4
-if %KEY% == 610 set CKEY=220&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F5
-if %KEY% == 611 set CKEY=223&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F6
-if %KEY% == 612 set CKEY=254&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F7
-if %KEY% == 613 set CKEY=7&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F8
-if %KEY% == 614 set CKEY=1&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F9
-if %KEY% == 615 call :SELCHAR&goto SKIP & rem ctrl-F10
+if %KEY% == 315 call :LOAD & goto SKIP & rem F1
+if %KEY% == 340 call :LOAD 1& goto SKIP & rem shift-F1
+if %KEY% == 316 call :SAVE & goto SKIP & rem F2
+if %KEY% == 317 set /a FGCOL+=1&call :PRINTSTATUS&goto SKIP & rem F3
+if %KEY% == 318 set /a BGCOL+=1&call :PRINTSTATUS&goto SKIP & rem F4
+if %KEY% == 319 set DRAWSTATE=1&goto SKIP & rem F5
+if %KEY% == 320 set DRAWSTATE=2&goto SKIP & rem F6
+if %KEY% == 321 set DRAWSTATE=3&goto SKIP & rem F7
+if %KEY% == 322 set DRAWSTATE=4&goto SKIP & rem F8
+if %KEY% == 342 set /a FGCOL-=1&call :PRINTSTATUS&goto SKIP & rem shift-F3
+if %KEY% == 343 set /a BGCOL-=1&call :PRINTSTATUS&goto SKIP & rem shift-F4
+if %KEY% == 345 call :FILL&goto SKIP & rem shift-F6
+if %KEY% == 346 call :SAVE edcpp& goto SKIP & rem shift-F7
+if %KEY% == 347 if exist edcpp.gxy call :LOAD 1 edcpp.gxy& goto SKIP & rem shift-F8
+if %KEY% == 367 if exist edcpp.gxy call :LOAD 0 edcpp.gxy& goto SKIP & rem alt-F8
+if %KEY% == 348 set /A DRAWINSTANT=1-%DRAWINSTANT%&goto SKIP & rem shift-F9
+if %KEY% == 350 set CKEY=219&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F1
+if %KEY% == 351 set CKEY=178&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F2
+if %KEY% == 352 set CKEY=177&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F3
+if %KEY% == 353 set CKEY=176&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F4
+if %KEY% == 354 set CKEY=220&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F5
+if %KEY% == 355 set CKEY=223&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F6
+if %KEY% == 356 set CKEY=254&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F7
+if %KEY% == 357 set CKEY=7&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F8
+if %KEY% == 358 set CKEY=1&call :MODCHAR 0 &set KEY=!CKEY!&if %DRAWINSTANT%==0 goto SKIP & rem ctrl-F9
+if %KEY% == 359 call :SELCHAR&goto SKIP & rem ctrl-F10
 
-if %KEY% == 579 call :PRINTCOORDS & goto SKIP & rem F9
-if %KEY% == 580 call :SHOWHELP&goto SKIP & rem F10
+if %KEY% == 323 call :PRINTCOORDS & goto SKIP & rem F9
+if %KEY% == 324 call :SHOWHELP&goto SKIP & rem F10
 if %KEY% == 393 call :MODCHAR -1 & goto SKIP & rem ctrl-F11
 if %KEY% == 394 call :MODCHAR 1 & goto SKIP & rem ctrl-F12
 if %KEY% == 389 set KEY=-1 & set /a MFUNC1+=1&if !MFUNC1! geq 4 set MFUNC1=1 & rem F11
@@ -256,12 +256,13 @@ cmdwiz getcursorpos x
 set X=!ERRORLEVEL!
 cmdwiz getcursorpos y
 set Y=!ERRORLEVEL!
+if not "%2"=="" set FNAME=%2&goto GOTNAME
 gotoxy 1 %YBOUND% "                                                                                                                                      "
 gotoxy 1 %YBOUND%
-if not "%2"=="" set FNAME=%2&goto GOTNAME
 set FNAME=&set /P FNAME=Load file(omit .gxy): 
 gotoxy %X% %Y%
 for %%a in (%FNAME%) do set FNAME="%%~da%%~pa%%~na.gxy"&if not exist !FNAME! call :PRINTSEPARATOR&goto :eof
+goto :eof
 :GOTNAME
 set inf=
 for /F "tokens=* usebackq" %%i in (%FNAME%) do set inf="%%i"
