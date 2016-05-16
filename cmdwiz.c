@@ -341,7 +341,7 @@ int main(int argc, char **argv) {
 	
 	if (stricmp(argv[1],"cache") == 0) {
 		FILE *ifp, *ifp2;
-		char *dummy, *fch;
+		char *dummy, *fch, *dum_p;
 		int fmsize = 1048576 * 16;
 				
 		if (argc < 3) { printf("\nUsage: cmdwiz cache [filelist]\n"); return 0; }
@@ -354,8 +354,9 @@ int main(int argc, char **argv) {
 		do {
 			fch = fgets(dummy, fmsize, ifp);
 			if (fch) {
-				dummy[strlen(dummy)-1] = 0;
-				ifp2 = fopen(dummy, "r");
+				dummy[strlen(dummy)-1] = 0; dum_p = dummy;
+				if (*dum_p == '"' && dummy[strlen(dummy)-1]=='"') { dummy[strlen(dummy)-1] = 0; dum_p++; }
+				ifp2 = fopen(dum_p, "r");
 				if (ifp2) {
 					fread(dummy, 1, fmsize, ifp2);
 					fclose(ifp2);
