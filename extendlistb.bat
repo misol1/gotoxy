@@ -1,3 +1,5 @@
+:: Keys free to extend: a,g,h,l,n,u,w,z,  A,G,H,J,K,L,N,O,P,Q,R,W,X,Z,  all special keys except 1-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
+
 @echo off
 if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP
 if "%~1" == "_SET_COLORS" goto SETCOLORS
@@ -6,26 +8,31 @@ set EDITCMD2=npp.bat
 set GCMD=g
 set EXTVIEW=less -f
 
-if %KEY% == 74 if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1 & rem J
+if %LKEY% == "J" if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1
 
-if %KEY% == 119 call listb.bat _GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /a /-p /b|grep -i -F !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem w
-if %KEY% == 87 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|%EXTVIEW%& exit /b 1 & goto :eof & rem W
-if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call listb.bat _GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof & rem ^W
+if %LKEY% == "w" call listb.bat _GETANSWER "Search for file:"& if not "!ANSWER!"=="" cls&dir /s /a /-p /b|grep -i -F !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof
+if %LKEY% == "W" call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" cls&grep -n -i "!ANSWER!" *.*|%EXTVIEW%& exit /b 1 & goto :eof
+:: ^W
+if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER!"=="" set FANSW=!ANSWER!&call listb.bat _GETANSWER "File types:"& if not "!ANSWER!"=="" cls&grep -n -i "!FANSW!" !ANSWER!|%EXTVIEW%& exit /b 1 & goto :eof
 
-if %KEY% == 110 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%! & rem n
-if %KEY% == 78 call listb.bat _GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER! & rem N
+if %LKEY% == "n" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%!
+if %LKEY% == "N" call listb.bat _GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER!
 
-if %KEY% == 103 call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&%GCMD% !ANSWER!& exit /b 2 & goto :eof & rem g
+if %LKEY% == "g" call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&%GCMD% !ANSWER!& exit /b 2 & goto :eof
 
-if %KEY% == 8 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof & rem ^H
+:: ^H
+if %KEY% == 8 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof
 
-if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _YESNO "Really wipe out directory?(y/n) " & if "!ANSWER!"=="Y" cmd /C rd /Q /S !FO%CURRPOS%!& exit /b 3 & goto :eof & rem ^D
+:: ^D
+if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _YESNO "Really wipe out directory?(y/n) " & if "!ANSWER!"=="Y" cmd /C rd /Q /S !FO%CURRPOS%!& exit /b 3 & goto :eof
 
-if %KEY% == 1 call :SET_ATTRIBS & exit /b 0 & goto :eof & rem ^A
+:: ^A
+if %KEY% == 1 call :SET_ATTRIBS & exit /b 0 & goto :eof
 
+:: ^X
 if %KEY% == 24 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _GETANSWER "Copy to (# for swap folder):"& if not "!ANSWER!"=="" call :XCOPY "!ANSWER!"& exit /b 3 & goto :eof & rem ^X
 
-if not %KEY% == 97 goto NOT_a & rem a
+if not %LKEY% == "a" goto NOT_a
 if "!FT%CURRPOS%!"=="/" goto :eof
 set XTENSION=%~x1
 set XFILE=%~n1
@@ -46,15 +53,16 @@ cls
 exit /b 1
 
 :NOT_a
-if not %KEY% == 122 goto NOT_z & rem z
+if not %LKEY% == "z" goto NOT_z
 set XTENSION=%~x1
 if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" exit /b 0 & goto :eof
 cls
 unzip %1
+cmdwiz getch
 exit /b 3
 
 :NOT_z
-if not %KEY% == 90 goto NOT_SHIFTz & rem Z
+if not %LKEY% == "Z" goto NOT_SHIFTz
 call listb.bat _COUNTITEMS CNT Y& if !CNT! lss 1 call listb.bat _SHOWBOTTOMBAR "No items selected." & exit /b 0 & goto :eof
 call listb.bat _GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
 cls

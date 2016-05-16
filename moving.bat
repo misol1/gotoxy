@@ -57,7 +57,6 @@ set /a SC+=6 & if !SC! geq 720 set /A SC=!SC!-720
 set /a CC+=6 & if !CC! geq 720 set /A CC=!CC!-720
 set /a SC2+=5 & if !SC2! geq 720 set /A SC2=!SC2!-720
 set /a SC3+=3 & if !SC3! geq 720 set /A SC3=!SC3!-720
-set /a CNT+=1 & set /a CNTEMP=!CNT! %% 20 & if !CNTEMP!==0 cmdwiz getch nowait
 set /a TOGG=1-%TOGG%
 goto REP
 

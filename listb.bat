@@ -46,6 +46,8 @@ set HLPC1=\BU
 set HLPC2=\7U
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SET_COLORS
 
+set SCHR="()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\] _ abcdefghijklmnopqrstuvwxyz{|}~"
+
 set MOUSESUPPORT=0
 if "%~6" == "Y" set MOUSESUPPORT=1
 if "%~6" == "y" set MOUSESUPPORT=1
@@ -81,69 +83,70 @@ if %UPDATEBOTTOM%==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
 
 if %KEY% == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
 
-cmdwiz getkeystate alt>nul
-set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOALTPRESSED
+set LKEY=""
 set OR=0&(if %KEY% gtr 126 set OR=1)&(if %KEY% lss 40 set OR=1)&if !OR!==1 goto NOALTPRESSED
 set /A MKEY=%KEY%-40+1
-set SCHR="() +,-./0123456789:; =  @ABCDEFGHIJKLMNOPQRSTUVWXYZ[ ] _ abcdefghijklmnopqrstuvwxyz{ }~"
-set CHAR=!SCHR:~%MKEY%,1!&set SCHR=
+set LKEY="!SCHR:~%MKEY%,1!"
+
+cmdwiz getkeystate alt>nul
+set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOALTPRESSED
 set /a TC=%CURRPOS%+1
-for /L %%a in (%TC%,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if !FTP!==%CHAR% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
-for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if !FTP!==%CHAR% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
+for /L %%a in (%TC%,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if "!FTP!"==%LKEY% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
+for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if "!FTP!"==%LKEY% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
 goto MAINLOOP
 :NOALTPRESSED
 
 if %KEY% == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN (folder)
 if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" cls&set ANSWER=%VIEWCMD%&call :SPLITANSWER &cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :SHOWLIST R & rem RETURN (files)
 
-if %KEY% == 60 call :GOTOPARENT & rem <
-if %KEY% == 120 goto EXITLIST & rem x
-if %KEY% == 113 goto EXITLIST & rem q
-if %KEY% == 27 goto EXITLIST & rem ESC
-if %KEY% == 121 set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST & rem y
-if %KEY% == 115 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmd /C "!ANSWER!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem s
-if %KEY% == 83 call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz showcursor 0&cmd /C "!ANSWER!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem S
-if %KEY% == 6 call :GETANSWER "Search for:" STRIPQUOTES& if not "!ANSWER!"=="" call :FINDOP & rem ^F
-if %KEY% == 111 call :SORTOP & rem o
-if %KEY% == 63 call :SHOWHELP & rem ?
 if %KEY% == 315 call :SHOWHELP & rem F1
-if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-5
-if %KEY% == 112 %NEWCMDWINDOW% & rem p
+if %KEY% == 27 goto EXITLIST & rem ESC
+if %KEY% == 6 call :GETANSWER "Search for:" STRIPQUOTES& if not "!ANSWER!"=="" call :FINDOP & rem ^F
+if %LKEY% == "?" call :SHOWHELP
+if %LKEY% == "x" goto EXITLIST
+if %LKEY% == "q" goto EXITLIST
+if %LKEY% == "y"  set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST
+if %LKEY% == "s" call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmd /C "!ANSWER!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "S" call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz showcursor 0&cmd /C "!ANSWER!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "o" call :SORTOP
+if %LKEY% == "p" %NEWCMDWINDOW%
+if %LKEY% == "<" call :GOTOPARENT
+if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-9
 
-if %KEY% == 105 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST & rem i
-if %KEY% == 106 if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem j
-if %KEY% == 73 call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!"=="" call :SPLITANSWER &cls&cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST & rem I
-if %KEY% == 101 if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%! & rem e
-if %KEY% == 69 call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem E
-if %KEY% == 102 if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C /A /-P !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!& rem f
-if %KEY% == 102 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." cmd /C dir /-P /A /-C>%MYTEMP%out.dat&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (bit of a hack)
-if %KEY% == 70 call :SHOWBOTTOMBAR !FO%CURRPOS%! & rem F
-if %KEY% == 100 if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST & rem d
-if %KEY% == 114 call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST & rem r
-if %KEY% == 99 if not "!FT%CURRPOS%!"=="/" call :GETANSWER "Copy file to:" STRIPQUOTES& if not "!ANSWER!"=="" call :COPYOP !FO%CURRPOS%! "!ANSWER!" copy Copied " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem c
-if %KEY% == 109 if not !FO%CURRPOS%!==".." call :GETANSWER "Move file/folder to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :COPYOP !FO%CURRPOS%! "!ANSWER!" move Moved " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST & rem m
-if %KEY% == 89 if not "!FT%CURRPOS%!"=="/" if not !DIR%DIROP%!=="%CD%" call :COPYOP !FO%CURRPOS%! !DIR%DIROP%! copy Copied " to alternate path." & rem Y
+if %LKEY% == "i" if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST
+if %LKEY% == "j" if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "I" call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!"=="" call :SPLITANSWER &cls&cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "e" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%!
+if %LKEY% == "E" call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "f" if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C /A /-P !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!
+if %LKEY% == "f" if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." cmd /C dir /-P /A /-C>%MYTEMP%out.dat&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (bit of a hack)
+if %LKEY% == "F" call :SHOWBOTTOMBAR !FO%CURRPOS%!
+if %LKEY% == "d" if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "r" call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "c" if not "!FT%CURRPOS%!"=="/" call :GETANSWER "Copy file to:" STRIPQUOTES& if not "!ANSWER!"=="" call :COPYOP !FO%CURRPOS%! "!ANSWER!" copy Copied " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "m" if not !FO%CURRPOS%!==".." call :GETANSWER "Move file/folder to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :COPYOP !FO%CURRPOS%! "!ANSWER!" move Moved " to !ANSWER!."& call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "k" call :GETANSWER "New folder:"& if not "!ANSWER!"=="" cmd /C mkdir !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "/" call :GETANSWER "Go to path:" STRIPQUOTES& if not "!ANSWER!"=="" call :SETPATHOP "!ANSWER!"
+if %LKEY% == "Y" if not "!FT%CURRPOS%!"=="/" if not !DIR%DIROP%!=="%CD%" call :COPYOP !FO%CURRPOS%! !DIR%DIROP%! copy Copied " to alternate path."
 if %KEY% == 25 if not !FO%CURRPOS%!==".." if not !DIR%DIROP%!=="%CD%" call :COPYOP !FO%CURRPOS%! !DIR%DIROP%! move Moved " to alternate path." & call :MAKEDIRLIST R&call :SHOWLIST & rem ^Y
-if %KEY% == 107 call :GETANSWER "New folder:"& if not "!ANSWER!"=="" cmd /C mkdir !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST & rem k
-if %KEY% == 47 call :GETANSWER "Go to path:" STRIPQUOTES& if not "!ANSWER!"=="" call :SETPATHOP "!ANSWER!" & rem /
 
+if %LKEY% == "D" call :MULTIDELOP
+if %LKEY% == "C" call :COUNTITEMS CNT& (if !CNT! lss 1 call :SHOWBOTTOMBAR "No files selected.") & if !CNT! geq 1 call :GETANSWER "Copy selected files to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP copy "!ANSWER!" SKIPYN
+if %LKEY% == "M" call :COUNTITEMS CNT Y& (if !CNT! lss 1 call :SHOWBOTTOMBAR "No files selected.") & if !CNT! geq 1 call :GETANSWER "Move selected files to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP move "!ANSWER!" SKIPYN
+if %LKEY% == "T" (if !DIR%DIROP%!=="%CD%" call :SHOWBOTTOMBAR "Both paths are the same.") & if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP copy !DIR%DIROP%!
+if %KEY% == 20 (if !DIR%DIROP%!=="%CD%" call :SHOWBOTTOMBAR "Both paths are the same.") & if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP move !DIR%DIROP%!& rem ^T
 if %KEY% == 9 call :MULTIOP & rem ^I
-if %KEY% == 68 call :MULTIDELOP & rem D
-if %KEY% == 84 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP copy !DIR%DIROP%!& rem T
-if %KEY% == 20 if not !DIR%DIROP%!=="%CD%" call :MULTICOPYOP move !DIR%DIROP%!& rem ^T
-if %KEY% == 67 call :COUNTITEMS CNT& if !CNT! geq 1 call :GETANSWER "Copy selected files to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP copy "!ANSWER!" SKIPYN & rem C
-if %KEY% == 77 call :COUNTITEMS CNT Y& if !CNT! geq 1 call :GETANSWER "Move selected files to:" STRIPQUOTES& if not "!ANSWER!"=="" if exist "!ANSWER!\" call :MULTICOPYOP move "!ANSWER!" SKIPYN & rem M
 
-if %KEY% == 118 if not !FO%CURRPOS%!==".." call :PUTINCB 3 &call :SHOWBOTTOMBAR "Cleared clipboard and added item."& rem v
-if %KEY% == 86 if not !FO%CURRPOS%!==".." call :PUTINCB 4 &call :SHOWBOTTOMBAR "Added item to clipboard."& rem V
-if %KEY% == 98 call :COUNTITEMS CNT Y & if !CNT! geq 1 call :PUTINCB 1 &call :SHOWBOTTOMBAR "Cleared clipboard and added item(s)."& rem b
-::if %KEY% == 22 call :COUNTITEMS CNT Y & if !CNT! geq 1 call :PUTINCB 2 &call :SHOWBOTTOMBAR "Added item(s) to clipboard."& rem ^V
-if %KEY% == 66 call :CLIPBOARDCOPYOP copy& rem B
+if %LKEY% == "v" if not !FO%CURRPOS%!==".." call :PUTINCB 3 &call :SHOWBOTTOMBAR "Cleared clipboard and added item."
+if %LKEY% == "V" if not !FO%CURRPOS%!==".." call :PUTINCB 4 &call :SHOWBOTTOMBAR "Added item to clipboard."
+if %LKEY% == "b" call :COUNTITEMS CNT Y & (if !CNT! lss 1 call :SHOWBOTTOMBAR "No files selected.") & if !CNT! geq 1 call :PUTINCB 1 &call :SHOWBOTTOMBAR "Cleared clipboard and added item(s)."
+if %LKEY% == "B" call :CLIPBOARDCOPYOP copy
 if %KEY% == 2 call :CLIPBOARDCOPYOP move& rem ^B
+::if %KEY% == 22 call :COUNTITEMS CNT Y & (if !CNT! lss 1 call :SHOWBOTTOMBAR "No files selected.") & if !CNT! geq 1 call :PUTINCB 2 &call :SHOWBOTTOMBAR "Added item(s) to clipboard."& rem ^V
 
 if not %EXTEND% == "" if exist %EXTEND% call :EXTENDOP
 
-if %KEY% == 85 call :MAKEDIRLIST&call :SHOWLIST & rem U
+if %LKEY% == "U" call :MAKEDIRLIST&call :SHOWLIST
 
 goto MAINLOOP
 
@@ -288,7 +291,7 @@ goto :eof
 :CLEARSELECTED
 for /L %%a in (0,1,%FCOUNTSUB%) do set FS%%a=
 goto :eof
-	
+
 
 :COPYOP
 set FPATH=%2
@@ -330,7 +333,7 @@ cmdwiz stringlen "%CD%"&set LEN=!ERRORLEVEL!
 if %LEN% geq 4 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=/&set /a CNT+=1
 dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
-for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set /a CNT+=1
+for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=&set /a CNT+=1
 
 set /a FCOUNT=%CNT%
 set /a FCOUNTSUB=%CNT%-1
@@ -345,7 +348,7 @@ set /a PAGE=%CURRPOS%/(%COLSPERSCR%*%LH%)
 if not %PAGE% == %OLDPAGE% set MODE=&set OLDPAGE=%PAGE%
 set X=0
 set Y=1
-set CX=%COLS%/%COLSPERSCR%
+set /a CX=%COLS%/%COLSPERSCR%
 set /a CXM=%CX%-1
 set /a CNT=%PAGE%*(%COLSPERSCR%*%LH%)
 set CC=0
