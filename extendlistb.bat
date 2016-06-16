@@ -1,4 +1,4 @@
-:: Keys free to extend: a,g,h,l,n,u,w,z,  A,G,H,J,K,L,N,O,P,Q,R,W,X,Z,  all special keys except 1-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
+:: Keys free to extend: aghlnuwz, AGHJKLNOPQRWXZ, all special keys except ^B,^C,^F,^H,^L,^M,^T,^Y, 1-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
 
 @echo off
 if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP
@@ -21,8 +21,8 @@ if %LKEY% == "N" call listb.bat _GETANSWER "Edit file:"& if not "!ANSWER!"=="" c
 
 if %LKEY% == "g" call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&%GCMD% !ANSWER!& exit /b 2 & goto :eof
 
-:: ^H
-if %KEY% == 8 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof
+:: ^L
+if %KEY% == 12 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof
 
 :: ^D
 if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _YESNO "Really wipe out directory?(y/n) " & if "!ANSWER!"=="Y" cmd /C rd /Q /S !FO%CURRPOS%!& exit /b 3 & goto :eof
@@ -31,7 +31,7 @@ if %KEY% == 4 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat 
 if %KEY% == 1 call :SET_ATTRIBS & exit /b 0 & goto :eof
 
 :: ^X
-if %KEY% == 24 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _GETANSWER "Copy to (# for swap folder):"& if not "!ANSWER!"=="" call :XCOPY "!ANSWER!"& exit /b 3 & goto :eof & rem ^X
+if %KEY% == 24 if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." call listb.bat _GETANSWER "Copy to (# for swap folder):"& if not "!ANSWER!"=="" call :XCOPY "!ANSWER!"& exit /b 3 & goto :eof
 
 if not %LKEY% == "a" goto NOT_a
 if "!FT%CURRPOS%!"=="/" goto :eof
@@ -102,7 +102,7 @@ goto :eof
 :SHOWHELP
 set EXTHLPC1=%HLPC1%
 set EXTHLPC2=%HLPC2%
-gotoxy k k "\n%EXTHLPC1%a: %EXTHLPC2%show file based on extension\n%EXTHLPC1%n/N: %EXTHLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %EXTHLPC2%zip selected items / unzip file\n%EXTHLPC1%w: %EXTHLPC2%recursively search for file\n%EXTHLPC1%W/^W: %EXTHLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %EXTHLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %EXTHLPC2%specify go path\n%EXTHLPC1%^H: %EXTHLPC2%copy specified to current path\n%EXTHLPC1%^D: %EXTHLPC2%recursively delete folder\n%EXTHLPC1%^A: %EXTHLPC2%show/set item attributes\n%EXTHLPC1%^X: %EXTHLPC2%copy (recursively) folder to specified place"
+gotoxy k k "\n%EXTHLPC1%a: %EXTHLPC2%show file based on extension\n%EXTHLPC1%n/N: %EXTHLPC2%edit current/specified file\n%EXTHLPC1%Z/^Z: %EXTHLPC2%zip selected items / unzip file\n%EXTHLPC1%w: %EXTHLPC2%recursively search for file\n%EXTHLPC1%W/^W: %EXTHLPC2%search for specified text in all/specified files\n%EXTHLPC1%J: %EXTHLPC2%invoke file without clearing screen\n%EXTHLPC1%g: %EXTHLPC2%specify go path\n%EXTHLPC1%^L: %EXTHLPC2%copy specified to current path\n%EXTHLPC1%^D: %EXTHLPC2%recursively delete folder\n%EXTHLPC1%^A: %EXTHLPC2%show/set item attributes\n%EXTHLPC1%^X: %EXTHLPC2%copy (recursively) folder to specified place"
 goto :eof
 
 
