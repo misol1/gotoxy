@@ -108,23 +108,22 @@ goto :eof
 
 :SETCOLORS
 set CURRCOL=1\F1
-goto :eof
-set BARCOL=4
-set BARTEXTCOL=F
-set BARINFOCOL=0
-set CURRCOL=C\FC
-set FILECOL=u
-set DIRCOL=C
-set SELCOL=E
-set PATHNOFCOL=E
-set SELCHAR=\g07
-set HLPC1=\CU
-set HLPC2=\7U
+::set BARCOL=4
+::set BARTEXTCOL=F
+::set BARINFOCOL=0
+::set CURRCOL=C\FC
+::set FILECOL=u
+::set DIRCOL=C
+::set SELCOL=E
+::set PATHNOFCOL=E
+::set SELCHAR=\g07
+::set HLPC1=\CU
+::set HLPC2=\7U
 goto :eof
 
 
 :SETVIEWERS
-set VIEWCMD=less -f
-set EDITCMD=b
-set NEWCMDWINDOW=start dosgo.bat
+::set VIEWCMD=less -f
+::set EDITCMD=b
+::set NEWCMDWINDOW=start dosgo.bat
 goto :eof
