@@ -7,8 +7,8 @@ cmdwiz getconsoledim sw
 set L_W=%ERRORLEVEL%
 set L_OLDW=%L_W%
 ::set L_W=80&set DIM_MOD=1
-if not "%~2" == "" set L_W=%~2&set DIM_MOD=1
 if %L_W% lss 80 set L_W=80&set DIM_MOD=1
+if not "%~2" == "" set L_W=%~2&set DIM_MOD=1
 
 cmdwiz getconsoledim h
 set L_OLDBH=%ERRORLEVEL%
@@ -17,6 +17,7 @@ cmdwiz getconsoledim sh
 set L_H=%ERRORLEVEL%
 set L_OLDH=%L_H%
 ::set L_H=50&set DIM_MOD=1
+if %L_H% lss 50 set L_H=50&set DIM_MOD=1
 if not "%~3" == "" set L_H=%~3&set DIM_MOD=1
 
 set /a L_COLUMNS=%L_W%/20
