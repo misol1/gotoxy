@@ -3,6 +3,7 @@
 @echo off
 if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP
 if "%~1" == "_SET_COLORS" goto SETCOLORS
+if "%~1" == "_SET_VIEWERS" goto SETVIEWERS
 
 set EDITCMD2=npp.bat
 set GCMD=g
@@ -119,4 +120,11 @@ set PATHNOFCOL=E
 set SELCHAR=\g07
 set HLPC1=\CU
 set HLPC2=\7U
+goto :eof
+
+
+:SETVIEWERS
+set VIEWCMD=less -f
+set EDITCMD=b
+set NEWCMDWINDOW=start dosgo.bat
 goto :eof

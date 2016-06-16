@@ -1120,8 +1120,8 @@ int main(int argc, char **argv) {
 						0,            // conversion behavior
 						szArglist[3], // source UTF-16 string
 						wlen+1,       // total source string length, in WCHAR’s, including end-of-string
-						u8buf,        // destination buffer
-						MAX_BUF_SIZE, // destination buffer size, in bytes
+						u8buf,
+						MAX_BUF_SIZE,
 						NULL, NULL
 						);
 					if (result == 0 && u8buf) {

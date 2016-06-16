@@ -278,7 +278,7 @@ void CopyBlock(int x, int y, int w, int h, int dx, int dy) {
 int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, char *output) {
 	int res = 0;
 	if (bKeyAndMouse)
-		res = (mer.dwMousePosition.X << 7) | (mer.dwMousePosition.Y << 14);
+		res = (mer.dwMousePosition.X << 7) | (mer.dwMousePosition.Y << 15);
 	else
 		res = (mer.dwMousePosition.X << 10) | (mer.dwMousePosition.Y << 19);
 
@@ -573,7 +573,7 @@ int main(int argc, char **argv) {
 
 			if (k!=-1) {
 				if (bKeyAndMouse)
-					res = (res > 0? res : 0) | (k<<21);
+					res = (res > 0? res : 0) | (k<<22);
 				else
 					res = 1|(k<<1);
 			}

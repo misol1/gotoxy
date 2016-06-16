@@ -7,7 +7,6 @@ if "%~1"=="_COUNTITEMS" call :COUNTITEMS %2 %3&goto :eof
 
 setlocal ENABLEDELAYEDEXPANSION
 cmdwiz showcursor 0
-cmdwiz getconsoledim h&set OLDH=!ERRORLEVEL!
 set COLS=80&if not "%2" == "" set COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set LINES=%3&if !LINES! lss 20 set LINES=20
 set COLSPERSCR=4&if not "%4" == "" set COLSPERSCR=%4&(if !COLSPERSCR! gtr 9 set COLSPERSCR=9)&if !COLSPERSCR! lss 1 set COLSPERSCR=1
@@ -49,17 +48,13 @@ if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SET_COLORS
 set SCHR="()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\] _ abcdefghijklmnopqrstuvwxyz{|}~"
 
 set MOUSESUPPORT=0
-if "%~6" == "Y" set MOUSESUPPORT=1
-if "%~6" == "y" set MOUSESUPPORT=1
+if /I "%~6" == "Y" set MOUSESUPPORT=1
 if %MOUSESUPPORT%==1 cmdwiz quickedit 0
 
-set VIEWCMD=less -f
-set EDITCMD=b
-set NEWCMDWINDOW=start dosgo.bat
-
-::set VIEWCMD="more # ^&cmdwiz getch"
-::set EDITCMD=start notepad
-::set NEWCMDWINDOW=start
+set VIEWCMD="more # ^&cmdwiz getch"
+set EDITCMD=start notepad
+set NEWCMDWINDOW=start
+if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SET_VIEWERS
 
 call :MAKEDIRLIST
 call :SHOWLIST
@@ -68,7 +63,7 @@ call :SHOWLIST
 cmdwiz getch_and_mouse>nul
 set MR=%ERRORLEVEL%
 if %MR% == -1 goto MAINLOOP
-set /a KEY=(%MR%^>^>21)
+set /a KEY=(%MR%^>^>22)
 if %MOUSESUPPORT%==1 set /a MT=%MR% ^& 1 &if !MT! == 1 call :PROCESS_MOUSE & if !DBLCL!==0 if !KEY!==0 goto MAINLOOP
 
 if %KEY% == 336 set OLDPOS=%CURRPOS%&set /a CURRPOS+=1 & call :UPDATELIST & goto MAINLOOP & rem DOWN
@@ -152,7 +147,6 @@ goto MAINLOOP
 
 :EXITLIST
 cmdwiz showcursor 1
-cmdwiz setbuffersize %OLDCOLS% %OLDH%
 if %MOUSESUPPORT%==1 cmdwiz quickedit 1
 set /a LINES-=1
 gotoxy 0 !LINES!
@@ -493,8 +487,8 @@ set /a MT=%MR% ^& 8 &if !MT! geq 1 set DL=2
 set /a MT=%MR% ^& 16 &if !MT! geq 1 set DR=2
 set /a MT=%MR% ^& 32 &if !MT! geq 1 set /a CURRPOS+=%LH%*%COLSPERSCR%
 set /a MT=%MR% ^& 64 &if !MT! geq 1 set /a CURRPOS-=%LH%*%COLSPERSCR%
-set /a MX=(%MR%^>^>7) ^& 127
-set /a MY=(%MR%^>^>14) ^& 127
+set /a MX=(%MR%^>^>7) ^& 255
+set /a MY=(%MR%^>^>15) ^& 127
 
 if %DL% == 0 if %DR% == 0 goto NOPRESS
 set /a PAGE=%CURRPOS%/(%COLSPERSCR%*%LH%)

@@ -59,7 +59,7 @@ goto END
 cmdwiz getch_and_mouse>nul
 set MR=%ERRORLEVEL%
 if %MR%==-1 goto NOINPUT3
-set /a KEY=(%MR%^>^>21)
+set /a KEY=(%MR%^>^>22)
 set /a MT=%MR% ^& 1 &if !MT! == 0 goto NOINPUT3
 set /a MT=%MR% ^& 2 &if !MT! geq 1 set DL=1
 set /a MT=%MR% ^& 2 &if !MT! equ 0 set DL=0
@@ -67,8 +67,8 @@ set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1
 set /a MT=%MR% ^& 4 &if !MT! equ 0 set DR=0
 set /a MT=%MR% ^& 32 &if !MT! geq 1 set /a COL-=1&if !COL! lss 1 set COL=15
 set /a MT=%MR% ^& 64 &if !MT! geq 1 set /a COL+=1&if !COL! geq 16 set COL=1
-set /a MX=(%MR%^>^>7) ^& 127
-set /a MY=(%MR%^>^>14) ^& 127
+set /a MX=(%MR%^>^>7) ^& 255
+set /a MY=(%MR%^>^>15) ^& 127
 if %DR% geq 1 gotoxy %MX% %MY% " " 0 0
 if %DL% geq 1 gotoxy %MX% %MY% "." 15 %COL%
 :NOINPUT3
