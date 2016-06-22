@@ -54,7 +54,7 @@ cls
 exit /b 1
 
 :NOT_a
-if not %LKEY% == "z" goto NOT_z
+if not %KEY% == 26 goto NOT_CTRLz
 set XTENSION=%~x1
 if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" exit /b 0 & goto :eof
 cls
@@ -62,7 +62,7 @@ unzip %1
 cmdwiz getch
 exit /b 3
 
-:NOT_z
+:NOT_CTRLz
 if not %LKEY% == "Z" goto NOT_SHIFTz
 call listb.bat _COUNTITEMS CNT Y& if !CNT! lss 1 call listb.bat _SHOWBOTTOMBAR "No items selected." & exit /b 0 & goto :eof
 call listb.bat _GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
