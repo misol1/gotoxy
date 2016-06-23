@@ -1,4 +1,4 @@
-:: Keys free to extend: aghlnuwz, AGHJKLNOPQRWXZ, all special keys except ^B,^C,^F,^H,^L,^M,^T,^Y, 1-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
+:: Keys free to extend: aghlnuwz, AGHJKLNOPQRWXZ, all special keys except ^B,^C,^F,^H,^L,^M,^T,^Y, 0-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
 
 @echo off
 if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP

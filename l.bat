@@ -23,6 +23,7 @@ if not "%~3" == "" set L_H=%~3&set DIM_MOD=1
 set /a L_COLUMNS=%L_W%/20
 if %L_COLUMNS% lss 1 set L_COLUMNS=1
 if %L_COLUMNS% gtr 9 set L_COLUMNS=9
+set /A L_COLUMNS=-%L_COLUMNS%
 ::set L_COLUMNS=4
 if not "%~4" == "" set L_COLUMNS=%~4
 
