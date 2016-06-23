@@ -4,11 +4,15 @@ cmdwiz showcursor 0
 
 set XW=80
 set YH=40
+
+cls
+mode con COLS=%XW% lines=%YH%
+for /F "Tokens=1 delims==" %%v in ('set') do if not %%v==YH if not %%v==XW set "%%v="
 set /A YHA=%YH%+1
 
-mode con COLS=%XW% lines=%YH%
 ::set CHESS=\M4{\M6{\M8{\F9 \F1         \70          \\}\n\}\M6{\M8{\70          \F9 \F1         \\}\n\}}
 set CHESS=\M4{\M6{\F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \n\}\M6{\70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \70          \F9 \F1         \n\}}
+set /A YHA=%YH%+1
 
 call font3.bat
 set /a ADDW=%CHARW%-0
@@ -101,9 +105,9 @@ if %KEY% == 27 goto OUT
 goto LOOP
 :OUT
 
+endlocal
 mode con lines=50 cols=80
 cls
-endlocal
 cmdwiz showcursor 1
 goto :eof
 
