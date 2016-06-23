@@ -11,6 +11,7 @@ set COLS=80&if not "%2" == "" set /A COLS=%2&if !COLS! lss 80 set COLS=80
 set LINES=50&if not "%3" == "" set /A LINES=%3&if !LINES! lss 20 set LINES=20
 set ADAPTCPS=0&set MAXCPS=0
 set COLSPERSCR=4&if not "%4" == "" set COLSPERSCR=%4&(if !COLSPERSCR! lss 0 set ADAPTCPS=1&set MAXCPS=-!COLSPERSCR!&set COLSPERSCR=-!COLSPERSCR!)&(if !COLSPERSCR! gtr 9 set COLSPERSCR=9)&if !COLSPERSCR! lss 1 set COLSPERSCR=1
+if %MAXCPS%==0 set MAXCPS=%COLSPERSCR%
 cls
 mode con lines=%LINES% cols=%COLS%
 set OLDCOLS=%COLS%
@@ -109,7 +110,7 @@ if %LKEY% == "p" %NEWCMDWINDOW%
 if %LKEY% == "<" call :GOTOPARENT
 if %KEY% == 8 call :GOTOPARENT & rem BACKSPACE/^H
 if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-9
-if %LKEY% == "0" set /A ADAPTCPS=1-%ADAPTCPS%&(if !ADAPTCPS!==0 set MAXCPS=0)&(if !ADAPTCPS!==1 set MAXCPS=%COLSPERSCR%)&call :CALCNOFCOLUMNS&call :SHOWLIST
+if %LKEY% == "0" set /A ADAPTCPS=1-%ADAPTCPS%&call :CALCNOFCOLUMNS&call :SHOWLIST
 
 if %LKEY% == "i" if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST
 if %LKEY% == "j" if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
