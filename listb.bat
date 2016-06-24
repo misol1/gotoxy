@@ -215,7 +215,7 @@ goto :eof
 
 
 :PAUSE
-gotoxy k k "%1Press a key to continue..." 7 0 c
+gotoxy k k "%1Press a key to continue..." u 0 c
 cmdwiz getch
 goto :eof
 
