@@ -31,7 +31,7 @@ set FCOUNTSUB=0
 set SORT=N
 set EXTEND=""&if not "%~5" == "" set EXTEND="%~5"
 set CLIPB=
-set HDIV=0
+set HDIV=1
 
 set BARCOL=3
 set BARTEXTCOL=F
@@ -355,6 +355,7 @@ set X=0
 set Y=1
 set /a CX=%COLS%/%COLSPERSCR%
 set /a CXM=%CX%-1-%HDIV%
+set /a CXMM=%CXM%-1
 set /a CNT=%PAGE%*(%COLSPERSCR%*%LH%)
 set CC=0
 set SHOWS=""
@@ -369,7 +370,8 @@ call :SHOWTOPBAR
 if %HDIV%==1 set /A NOFCP=%COLSPERSCR%-1&(if !NOFCP! lss 1 set NOFCP=1)&set BARS=""&for /L %%a in (1,1,!NOFCP!) do set /A X=%%a*%CX%-1 & set BARS="!BARS:~1,-1!\p!X!;1;\M%LH%{\gb3\n}"
 if %HDIV%==1 gotoxy 0 0 %BARS% %BARCOL% 0 x&set BARS=
 
-set X=0&for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:~1,-1!!FT%%a!&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!FNAME:~0,%CXM%!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
+::set X=0&for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:~1,-1!!FT%%a!&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!FNAME:~0,%CXM%!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
+set X=0&for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!OUTF!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
 
 :OUTLOOP
 gotoxy 0 1 %SHOWS% %DIRCOL%
@@ -387,6 +389,7 @@ call :SHOWTOPBAR U
 set /a CNT=%PAGE%*(%COLSPERSCR%*%LH%)
 set CX=%COLS%/%COLSPERSCR%
 set /a CXM=%CX%-1-%HDIV%
+set /a CXMM=%CXM%-1
 set CC=0
 set SHOWS=""
 
@@ -400,7 +403,9 @@ set SEL= &if not "!FS%OLDPOS%!"=="" set SEL=!FS%OLDPOS%!
 set FNAME=!FO%OLDPOS%!
 set FNAME=!FNAME:^&=^^^&!
 set FNAME=%FNAME:~1,-1%!FT%OLDPOS%!
-set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
+set OUTF=!FNAME:~0,%CXM%!&if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~
+set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%%OUTF%%SEL%"
+::set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
 
 set /a N=%CURRPOS%-%CNT%
 set /a NX=(%N%/%LH%)
@@ -412,7 +417,9 @@ set SEL= &if not "!FS%CURRPOS%!"=="" set SEL=!FS%CURRPOS%!
 set FNAME=!FO%CURRPOS%!
 set FNAME=!FNAME:^&=^^^&!
 set FNAME=%FNAME:~1,-1%!FT%CURRPOS%!
-set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
+set OUTF=!FNAME:~0,%CXM%!&if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~
+set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%%OUTF%%SEL%"
+::set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
 
 gotoxy 0 0 %SHOWS% 0 0
 goto :eof

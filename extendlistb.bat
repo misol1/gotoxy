@@ -108,7 +108,7 @@ goto :eof
 
 :SETCOLORS
 set CURRCOL=1\F1
-set HDIV=1
+::set HDIV=0
 ::set BARCOL=4
 ::set BARTEXTCOL=F
 ::set BARINFOCOL=0
