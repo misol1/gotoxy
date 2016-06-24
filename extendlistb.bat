@@ -19,7 +19,7 @@ if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER
 if %LKEY% == "n" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%!
 if %LKEY% == "N" call listb.bat _GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER!
 
-if %LKEY% == "g" call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&%GCMD% !ANSWER!& exit /b 2 & goto :eof
+if %LKEY% == "g" call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&call %GCMD% !ANSWER!& exit /b 2 & goto :eof
 
 :: ^L
 if %KEY% == 12 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof

@@ -118,7 +118,7 @@ if %LKEY% == "I" call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!
 if %LKEY% == "e" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%!
 if %LKEY% == "E" call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "f" if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C /A /-P !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!
-if %LKEY% == "f" if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." cmd /C dir /-P /A /-C>%MYTEMP%out.dat&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (bit of a hack)
+if %LKEY% == "f" if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." cmd /C dir /-P /A /-C>%MYTEMP%out.dat&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (a hack)
 if %LKEY% == "F" call :SHOWBOTTOMBAR !FO%CURRPOS%!
 if %LKEY% == "d" if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "r" call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST
