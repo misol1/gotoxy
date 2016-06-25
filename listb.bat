@@ -113,8 +113,8 @@ if %KEY% == 8 call :GOTOPARENT & rem BACKSPACE/^H
 if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-9
 if %LKEY% == "0" set /A ADAPTCPS=1-%ADAPTCPS%&call :CALCNOFCOLUMNS&call :SHOWLIST
 
-if %LKEY% == "i" if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :SHOWLIST
-if %LKEY% == "j" if not "!FT%CURRPOS%!"=="/" cls&cmdwiz showcursor 1&cmd /C "!FO%CURRPOS%!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "i" if not "!FT%CURRPOS%!"=="/" call :LAUNCHFILE !FO%CURRPOS%!
+if %LKEY% == "j" if not "!FT%CURRPOS%!"=="/" call :LAUNCHFILE !FO%CURRPOS%! 1
 if %LKEY% == "I" call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!"=="" call :SPLITANSWER &cls&cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "e" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%!
 if %LKEY% == "E" call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST
@@ -495,6 +495,21 @@ set CNTI=0
 if "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" if not "!FT%%a!"=="/" set /a CNTI+=1
 if not "%2" == "" for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set /a CNTI+=1
 set %1=%CNTI%
+goto :eof
+
+
+:LAUNCHFILE
+set FND=0&for %%a in (.exe .com .bat .cmd) do cmdwiz stringfind %1 "%%a"&if !ERRORLEVEL! geq 0 set FND=1
+::if %FND% == 0 call :SHOWBOTTOMBAR "Launched %~1."
+if %FND% == 0 start ^"^" %1 & goto :eof
+
+cls&cmdwiz showcursor 1
+cmd /C %1
+call :PAUSE
+mode con lines=%LINES% cols=%COLS%
+cmdwiz showcursor 0
+if not "%2"=="" call :MAKEDIRLIST R
+call :SHOWLIST
 goto :eof
 
 
