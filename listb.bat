@@ -499,7 +499,7 @@ goto :eof
 
 
 :LAUNCHFILE
-set FND=0&for %%a in (.exe .com .bat .cmd) do cmdwiz stringfind %1 "%%a"&if !ERRORLEVEL! geq 0 set FND=1
+set FND=0&for %%a in (.exe .com .bat .cmd .EXE .COM .BAT .CMD) do cmdwiz stringfind %1 "%%a"&if !ERRORLEVEL! geq 0 set FND=1
 ::if %FND% == 0 call :SHOWBOTTOMBAR "Launched %~1."
 if %FND% == 0 start ^"^" %1 & goto :eof
 
