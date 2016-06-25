@@ -104,8 +104,8 @@ if %LKEY% == "?" call :SHOWHELP
 if %LKEY% == "x" goto EXITLIST
 if %LKEY% == "q" goto EXITLIST
 if %LKEY% == "y"  set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST
-if %LKEY% == "s" call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmd /C "!ANSWER!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
-if %LKEY% == "S" call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz showcursor 0&cmd /C "!ANSWER!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "s" call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz showcursor 1&cmd /C "!ANSWER!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "S" call :GETANSWER "Command:"& if not "!ANSWER!"=="" cls&cmdwiz showcursor 1&cmd /C "!ANSWER!"&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "o" call :SORTOP
 if %LKEY% == "p" %NEWCMDWINDOW%
 if %LKEY% == "<" call :GOTOPARENT
@@ -216,7 +216,7 @@ goto :eof
 
 
 :PAUSE
-gotoxy k k "%1Press a key to continue..." u 0 c
+gotoxy 0 k "%1Press a key to continue..." u 0 c
 cmdwiz getch
 goto :eof
 
@@ -505,7 +505,7 @@ if %FND% == 0 start ^"^" %1 & goto :eof
 
 cls&cmdwiz showcursor 1
 cmd /C %1
-call :PAUSE
+call :PAUSE \n
 mode con lines=%LINES% cols=%COLS%
 cmdwiz showcursor 0
 if not "%2"=="" call :MAKEDIRLIST R
