@@ -49,6 +49,7 @@ void DebugPrintIS(int v);
 #define F_FORCE_FILE_INPUT 512
 #define F_FORCE_TEXT_INPUT 1024
 #define F_RETURN_KEY_INPUT 2048
+#define F_IGNORE_NEWLINE_CHAR 4096
 
 // Bit operations
 #define USE_EXISTING_FG 32
@@ -279,7 +280,7 @@ void ScrollUp(HANDLE h, int scrolldims[], int orgConsoleCol) {
 
 int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int flags, int wrapxpos, int orgConsoleCol, unsigned int startT) {
 	HANDLE hCurrHandle, hNewScreenBuffer = INVALID_HANDLE_VALUE;
-	int bufdims[4] = {0,0,80,25}, scrolldims[4] = {0,0,80,25}, newscrolldims[4], bNewHandle = 0, bCopyback = 0, bNewScrollDims = 0;
+	int bufdims[4] = {0,0,80,25}, scrolldims[4] = {0,0,80,25}, newscrolldims[4], bNewHandle = 0, bCopyback = 0, bNewScrollDims = 0, bIgnoreNewline = 0;
 	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
 	int transpChar = -1, transpFg = -1, transpBg = -1, fgBgCol;
 	int bForceFg = 0, bForceBg = 0, oldfc, oldbc;
@@ -315,6 +316,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	if (flags & F_WRAP0) wrap = F_WRAP0;
 	if (flags & F_WRAPSPRITE) wrap = F_WRAPSPRITE;
 	if (flags & F_RETURN_KEY_INPUT) keyWait = KEY_CHECK;
+	if (flags & F_IGNORE_NEWLINE_CHAR) bIgnoreNewline = 1;
 
 	if (fgCol < 0) { bForceFg = 1; fgCol = -fgCol; if (fgCol > 15 && fgCol < USE_EXISTING_FG) fgCol=0; }
 	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol < USE_EXISTING_FG) bgCol=0; }
@@ -677,10 +679,12 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 				if (transparentMode == 0 && ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
 					bCheckWrap = bHandleTransp = 1;
 				} else if (ch == 10) {
-					i++;
-					yp = 1;
-					if (wrap == F_WRAP0) newX = 0;
-					break;
+					if (!bIgnoreNewline) {
+						i++;
+						yp = 1;
+						if (wrap == F_WRAP0) newX = 0;
+						break;
+					}
 				} else if (ch == 9) {
 					newX=*x+j+4;
 					newX-=newX%4;
@@ -1032,7 +1036,7 @@ int main(int argc, char **argv) {
 	if (argc < 3 || argc > 8) {
 		printf("\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
+		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
 		return keyret;
 	}
 	
@@ -1063,6 +1067,7 @@ int main(int argc, char **argv) {
 			case 'F': flags |= F_FORCE_FILE_INPUT; break;
 			case 'T': flags |= F_FORCE_TEXT_INPUT; break;
 			case 'k': flags |= F_RETURN_KEY_INPUT; break;
+			case 'n': flags |= F_IGNORE_NEWLINE_CHAR; break;
 			}
 		}
 		wrapxpos = GetDim(h, DIM_WIDTH) - 1;

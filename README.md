@@ -42,7 +42,8 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray
 (3)   One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position,
       'w/W/z' to wrap/wordwrap/wrap-0 text, 'i' to ignore all control codes,
       's' to enable vertical scrolling, 'x' to enable support for expressions,
-      'k' to check for key press(es) and return last key value
+      'n' to ignore newline characters, 'k' to check for key press(es) and return last
+      key value
 (4)   Same as (2) for both values, but '-' to force is not supported. In addition, use
       'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for
       next color, '/' for previous color
