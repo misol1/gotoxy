@@ -10,6 +10,6 @@ call blocks5.bat xQ&fx.bat
 call blocks5.bat vX y y&fx.bat
 call fadeseq.bat&fx.bat
 call testmouse2.bat&fx.bat
-call interference3.bat&fx.bat
+call interference4.bat&fx.bat
 call flag3.bat&fx.bat
 call showimg2.bat emma.gxy 80 50 1&fx.bat
