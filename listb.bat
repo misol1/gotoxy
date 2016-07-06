@@ -501,6 +501,9 @@ set FND=0&for %%a in (.exe .com .bat .cmd .EXE .COM .BAT .CMD) do cmdwiz stringf
 ::if %FND% == 0 call :SHOWBOTTOMBAR "Launched %~1."
 if %FND% == 0 start ^"^" %1 & goto :eof
 
+cmdwiz getexetype %1
+if %ERRORLEVEL% == 3 start ^"^" %1 & goto :eof
+
 cls&cmdwiz showcursor 1
 cmd /C %1
 call :PAUSE \n

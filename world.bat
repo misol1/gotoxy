@@ -74,10 +74,10 @@ set /a CP=!RANDOM! %% !ENEW%CNT%!&if !CP!==0 set /A EDIR%CNT%=!RANDOM! %% 4
 set INSIDE=0
 if !EXP%CNT%! gtr %ML1% if !EXP%CNT%! lss %ML2% if !EYP%CNT%! gtr %ML3% if !EYP%CNT%! lss %ML4% set INSIDE=1
 if %INSIDE%==0 goto ESKIP
-if !EDIR%CNT%!==0 set /a CP=!EXP%CNT%!-1&cmdwiz inspectblock !CP! !EYP%CNT%! 1 4 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EXP%CNT%-=1&if !EXP%CNT%! lss 1 set EXP%CNT%=1
-if !EDIR%CNT%!==1 set /a CP=!EXP%CNT%!+5&cmdwiz inspectblock !CP! !EYP%CNT%! 1 4 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EXP%CNT%+=1&if !EXP%CNT%! geq %XL3% set EXP%CNT%=%XL3%
-if !EDIR%CNT%!==2 set /a CP=!EYP%CNT%!-1&cmdwiz inspectblock !EXP%CNT%! !CP! 5 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EYP%CNT%-=1&if !EYP%CNT%! lss %YL5% set EYP%CNT%=%YL5%
-if !EDIR%CNT%!==3 set /a CP=!EYP%CNT%!+4&cmdwiz inspectblock !EXP%CNT%! !CP! 5 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a EYP%CNT%+=1&if !EYP%CNT%! geq %YL4% set EYP%CNT%=%YL4%
+if !EDIR%CNT%!==0 set /a CP=!EXP%CNT%!-1&cmdwiz inspectblock !CP! !EYP%CNT%! 1 4 exclusive 20&if !ERRORLEVEL! gtr 0 set /a EXP%CNT%-=1&if !EXP%CNT%! lss 1 set EXP%CNT%=1
+if !EDIR%CNT%!==1 set /a CP=!EXP%CNT%!+5&cmdwiz inspectblock !CP! !EYP%CNT%! 1 4 exclusive 20&if !ERRORLEVEL! gtr 0 set /a EXP%CNT%+=1&if !EXP%CNT%! geq %XL3% set EXP%CNT%=%XL3%
+if !EDIR%CNT%!==2 set /a CP=!EYP%CNT%!-1&cmdwiz inspectblock !EXP%CNT%! !CP! 5 1 exclusive 20&if !ERRORLEVEL! gtr 0 set /a EYP%CNT%-=1&if !EYP%CNT%! lss %YL5% set EYP%CNT%=%YL5%
+if !EDIR%CNT%!==3 set /a CP=!EYP%CNT%!+4&cmdwiz inspectblock !EXP%CNT%! !CP! 5 1 exclusive 20&if !ERRORLEVEL! gtr 0 set /a EYP%CNT%+=1&if !EYP%CNT%! geq %YL4% set EYP%CNT%=%YL4%
 set /a MX=!EXP%CNT%!-%XP%&set /a MY=!EYP%CNT%!-%YP%&set WRLD="%WRLD:~1,-1%\p!MX!;!MY!%MONSTER%"&if !MX! gtr !HITX1! if !MY! gtr !HITY1! if !MX! lss !HITX2! if !MY! lss !HITY2! call :PLYHIT %CNT%&if !LIVES! lss 1 goto OUT
 :ESKIP
 set /a CNT-=1
@@ -91,10 +91,10 @@ set VKEYS=%ERRORLEVEL%
 set KDIR=0
 set /a FX=%XP%+%HXP%
 set /a FY=%YP%+%HYP%
-set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 set KDIR=1&set /a CP=%FX%-1&cmdwiz inspectblock !CP! !FY! 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP-=1&if !HXP! leq %XB1% set /a XP-=1 & set /a HXP+=1& if !XP! lss 0 set XP=0& set /a HXP-=1&if !HXP! lss 1 set HXP=1
-set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 set KDIR=2&set /a CP=%FX%+6&cmdwiz inspectblock !CP! !FY! 1 3 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HXP+=1&if !HXP! geq %XB2% set /a XP+=1 & set /a HXP-=1& if !XP! gtr %XL1% set XP=%XL1%& set /a HXP+=1&if !HXP! geq %XL2% set HXP=%XL2%
-set /a KS=%VKEYS% ^& 4 & if !KS! geq 1 set KDIR=3&set /a CP=%FY%-1&cmdwiz inspectblock !FX! !CP! 6 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HYP-=1&if !HYP! leq %YB1% set /a YP-=1 & set /a HYP+=1& if !YP! lss %YL3% set YP=%YL3%& set /a HYP-=1&if !HYP! lss 1 set HYP=1
-set /a KS=%VKEYS% ^& 8 & if !KS! geq 1 set KDIR=4&set /a CP=%FY%+3&cmdwiz inspectblock !FX! !CP! 6 1 exclusive 32&if !ERRORLEVEL! gtr 0 set /a HYP+=1&if !HYP! geq %YB2% set /a YP+=1 & set /a HYP-=1& if !YP! gtr %YL1% set YP=%YL1%& set /a HYP+=1&if !HYP! geq %YL2% set HYP=%YL2%
+set /a KS=%VKEYS% ^& 1 & if !KS! geq 1 set KDIR=1&set /a CP=%FX%-1&cmdwiz inspectblock !CP! !FY! 1 3 exclusive 20&if !ERRORLEVEL! gtr 0 set /a HXP-=1&if !HXP! leq %XB1% set /a XP-=1 & set /a HXP+=1& if !XP! lss 0 set XP=0& set /a HXP-=1&if !HXP! lss 1 set HXP=1
+set /a KS=%VKEYS% ^& 2 & if !KS! geq 1 set KDIR=2&set /a CP=%FX%+6&cmdwiz inspectblock !CP! !FY! 1 3 exclusive 20&if !ERRORLEVEL! gtr 0 set /a HXP+=1&if !HXP! geq %XB2% set /a XP+=1 & set /a HXP-=1& if !XP! gtr %XL1% set XP=%XL1%& set /a HXP+=1&if !HXP! geq %XL2% set HXP=%XL2%
+set /a KS=%VKEYS% ^& 4 & if !KS! geq 1 set KDIR=3&set /a CP=%FY%-1&cmdwiz inspectblock !FX! !CP! 6 1 exclusive 20&if !ERRORLEVEL! gtr 0 set /a HYP-=1&if !HYP! leq %YB1% set /a YP-=1 & set /a HYP+=1& if !YP! lss %YL3% set YP=%YL3%& set /a HYP-=1&if !HYP! lss 1 set HYP=1
+set /a KS=%VKEYS% ^& 8 & if !KS! geq 1 set KDIR=4&set /a CP=%FY%+3&cmdwiz inspectblock !FX! !CP! 6 1 exclusive 20&if !ERRORLEVEL! gtr 0 set /a HYP+=1&if !HYP! geq %YB2% set /a YP+=1 & set /a HYP-=1& if !YP! gtr %YL1% set YP=%YL1%& set /a HYP+=1&if !HYP! geq %YL2% set HYP=%YL2%
 set /a KS=%VKEYS% ^& 16 & if !KS! geq 1 if !ATTACKRELEASE!==1 if !ATTACK!==0 set ATTACK=15&set ATTACKRELEASE=0&if %KDIR% gtr 0 call :ATTACKFOREST
 if !KS! == 0 if !ATTACK!==0 set ATTACKRELEASE=1
 set /a KS=%VKEYS% ^& 32

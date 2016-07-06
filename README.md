@@ -3,7 +3,7 @@ Windows command line input/output tools, for text based games/utils by Mikael So
 
 Sorry about the current lack of documentation; have a look at the example files and all will be (kind of) clear...
 
-Notable examples: Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll2, Blocks6
+Notable examples: L/Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll3, Blocks6
 
 
 gotoxy.exe
@@ -69,7 +69,7 @@ Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate
                flushkeys quickedit getmouse getch_or_mouse getch_and_mouse
                getcharat getcolorat showcursor getcursorpos saveblock copyblock
                moveblock inspectblock playsound delay stringfind stringlen 
-               gettime await cache] [params]
+               gettime await getexetype cache] [params]
 					
-Use cmdwiz 'operation' for information on arguments
+Use "cmdwiz operation /?" for info on arguments and return values
 ```
