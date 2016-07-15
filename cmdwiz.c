@@ -676,10 +676,15 @@ int main(int argc, char **argv) {
 		int index = 0;
 		char *cp;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring] [findstring] [startindex]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return 0; }
-		if (argc > 3) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return -1; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring] [findstring] [startindex] [noCase]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return 0; }
+		if (argc > 4) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return -1; }
+		if (argc > 5) { 
+			int i;
+			for (i = 0; i < strlen(argv[2]); i++) argv[2][i] = toupper(argv[2][i]);
+			for (i = 0; i < strlen(argv[3]); i++) argv[3][i] = toupper(argv[3][i]);
+		}
 
-		cp = strstr(&(argv[2][index]), argv[3]);
+		cp = strstr(&(argv[2][index]), argv[3]);		
 		if (!cp) return -1;
 		return (int)(cp - (char *)argv[2]);
 	}
