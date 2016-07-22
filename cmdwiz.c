@@ -36,8 +36,8 @@ int GetDim(int dim) {
 void GetXY(int *x, int *y) {
 	CONSOLE_SCREEN_BUFFER_INFO  csbInfo;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbInfo);
-	*x = csbInfo.dwCursorPosition.X;
-	*y = csbInfo.dwCursorPosition.Y;
+	if (x) *x = csbInfo.dwCursorPosition.X;
+	if (y) *y = csbInfo.dwCursorPosition.Y;
 }
 
 #define CHARPROP_CHAR 1
@@ -147,6 +147,24 @@ char DecToHex(int i) {
 	return i;
 }
 
+void GotoXY(HANDLE h, int x, int y) {
+	COORD coord;
+	BOOL res;
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
+	coord.X = x;
+	coord.Y = y;
+	res = SetConsoleCursorPosition(h, coord);
+	if (res == 0) {
+		int mX, mY;
+		mX = GetDim(BUFW);
+		if (coord.X >= mX) coord.X = mX-1;
+		mY = GetDim(BUFH);
+		if (coord.Y >= mY) coord.Y = mY-1;
+		SetConsoleCursorPosition(h, coord);
+	}
+}
+
 char *GetAttribs(WORD attributes, char *utp, int transpChar, int transpBg, int transpFg) {
 	int i;
 	utp[0] = '\\';
@@ -172,7 +190,10 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	unsigned char ch;
 	char fName[512];
 
-	sprintf(fName, "%s.gxy", filename);
+	if (bEncode == 3)
+		sprintf(fName, "%s.txt", filename);
+	else
+		sprintf(fName, "%s.gxy", filename);
 	ofp = fopen(fName, "w");
 	if (!ofp) return 1;
 
@@ -182,10 +203,10 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return 2;
 	if (x+w > screenBufferInfo.dwSize.X || w < 1) return 2;
 
-	output = (char*) malloc(BUF_SIZE);
+	output = (char*) malloc(10 * w*h);
 	if (!output) return 3;
 	output[0] = 0;
-	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * STR_SIZE);
+	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * w*h);
 	if (!str) {
 		free(output);
 		return 3;
@@ -193,19 +214,39 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 
 	a.X = w;
 	a.Y = h;
-
+/*
 	r.Left = x;
 	r.Top = y;
 	r.Right = x + w;
 	r.Bottom = y + h;
 	ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str, a, b, &r);
-
+*/
+	
+	// Stupid bug in ReadConsoleOutput doesn't seem to read more than ~15680 chars, then it's all garbled characters!! Have to read in smaller blocks
+	{
+		int i, j, k, l;
+		l = 15000 / w;
+		i = h / l;
+		for (j = 0; j <= i; j++) {
+			r.Left = x;
+			r.Top = j*l+y;
+			r.Right = w+x;
+			if (i == j) k = h % l; else k = l;
+			r.Bottom = j*l+k+y;
+			a.X = w;
+			a.Y = k;
+			ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str+j*l*w, a, b, &r);
+		}
+	}	
+	
 	for (j=0; j < h; j++) {
 		output[0]=0;
 		for (i=0; i < w; i++) {
 			ch = str[i + j*w].Char.AsciiChar;
 			if ((ch==transpChar && transpChar >-1) && (transpFg == -1 || transpFg == (str[i + j*w].Attributes & 0xf))  && (transpBg == -1 || transpBg == ((str[i + j*w].Attributes>>4) & 0xf)) ) {
 				charS[0] = '\\'; charS[1]='-'; charS[2]=0;
+			} else if (bEncode == 3) {
+				charS[0] = ch; charS[1]=0;
 			}
 			else if (bEncode || ch=='\\') {
 				if (bEncode > 1 || !(ch ==32 || (ch >='0' && ch <='9') || (ch >='A' && ch <='Z') || (ch >='a' && ch <='z'))) {
@@ -220,14 +261,13 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 			} else {
 				charS[0] = ch; charS[1]=0;
 			}
-
-			if (oldAttrib == str[i + j*w].Attributes)
+			if (oldAttrib == str[i + j*w].Attributes || bEncode == 3)
 				sprintf(output, "%s%s", output, charS);
 			else
 				sprintf(output, "%s%s%s", output, GetAttribs(str[i + j*w].Attributes, attribS, transpChar, transpBg, transpFg), charS);
 			oldAttrib = str[i + j*w].Attributes;
 		}
-		fprintf(ofp, "%s\\n", output);
+		if (bEncode == 3) fprintf(ofp, "%s\n", output); else fprintf(ofp, "%s\\n", output);
 	}
 
 	free(str);
@@ -340,7 +380,7 @@ int main(int argc, char **argv) {
 	int delayVal = 0;
 	int bInfo = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos printf saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
@@ -737,10 +777,11 @@ int main(int argc, char **argv) {
 		int encodeMode = 1;
 		int transpChar = -1, transpFg = -1, transpBg = -1;
 
-		if (argc < 7 || bInfo) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode] [transparent char] [transparent bgcolor] [transparent fgcolor]\n\nRETURN: 0 on success, 1 for file write error, 2 for invalid block\n"); return 0; }
+		if (argc < 7 || bInfo) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode|txt] [transparent char] [transparent bgcolor] [transparent fgcolor]\n\nRETURN: 0 on success, 1 for file write error, 2 for invalid block\n"); return 0; }
 		if (argc>7) {
 			if (argv[7][0]=='n') encodeMode = 0;
 			if (argv[7][0]=='f') encodeMode = 2;
+			if (argv[7][0]=='t') encodeMode = 3;
 		}
 		if (argc>8) {
 			if (argv[8][1]==0)
@@ -755,6 +796,50 @@ int main(int argc, char **argv) {
 		if (result == 1) printf("Error: Could not write file\n");
 		if (result == 2) printf("Error: Invalid block\n");
 		return result;
+	}
+	else if (stricmp(argv[1],"setcursorpos") == 0) {
+      int xp, yp;
+		
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setcursorpos [x|keep y|keep]\n"); return 0; }
+		xp = atoi(argv[2]);
+		yp = atoi(argv[3]);
+		if (argv[2][0] == 'k') { GetXY(&xp, NULL); }
+		if (argv[3][0] == 'k') { GetXY(NULL, &yp); }
+		GotoXY(GetStdHandle(STD_OUTPUT_HANDLE), xp, yp);
+		return 0;
+	}
+	else if (stricmp(argv[1],"printf") == 0) {
+		char *token;
+		int i = 0, bFirst = 0;
+		
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz printf [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return 0; }
+		if (argv[2][0] == '\\') bFirst=1;
+		
+		for (i = 0; i < strlen(argv[2]); i++) {
+			if (argv[2][i] == '\\' && argv[2][i+1] == '\\')
+				argv[2][i+1] = 1;
+		}
+		
+		i = 0;
+		token = strtok(argv[2], "\\");
+		while (token) {
+			if (i > 0 || bFirst) {
+				switch(token[0]) {
+					case 'a': printf("\a"); token++; break;
+					case 'b': printf("\b"); token++; break;
+					case 'n': printf("\n"); token++; break;
+					case 'r': printf("\r"); token++; break;
+					case 1: printf("\\"); token++; break;
+					case 't': printf("\t"); token++; break;
+				}
+			}
+			printf(token);
+			
+			token = strtok(NULL, "\\");
+			i++;
+		}
+
+		return 0;
 	}
 	else {
 		printf("Error: unknown operation\n");

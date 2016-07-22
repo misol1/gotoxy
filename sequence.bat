@@ -1,6 +1,6 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
-if "%~1" == "" echo Usage: sequence file.seq [delay] [x] [y] [color] [bcol] [normal|reverse|bounce] [norep]&goto :eof
+if "%~1" == "" echo Usage: sequence file.seq [delay] [x] [y] [color] [bcol] [normal^|reverse^|bounce] [norep]&goto :eof
 cmdwiz showcursor 0
 
 set DELAY=10&if not "%2"=="" set DELAY=%2
