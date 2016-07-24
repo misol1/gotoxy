@@ -438,8 +438,11 @@ goto :eof
 
 
 :SHOWBOTTOMBAR
-if not "%~1"=="" gotoxy 0 %BARPOS% "%BAR:~1,-1%\p1;%BARPOS%;%~1" %BARINFOCOL% %BARCOL% & set UPDATEBOTTOM=1
+set MSG="%~1"
+set MSG=%MSG:\=/%
+if not "%~1"=="" gotoxy 0 %BARPOS% "%BAR:~1,-1%\p1;%BARPOS%;%MSG:~1,-1%" %BARINFOCOL% %BARCOL%& set UPDATEBOTTOM=1
 if "%~1"=="" set /a TP=%COLS%-14 & gotoxy 0 %BARPOS% "%BAR:~1,-1%\p!TP!;%BARPOS%;F1/? for help" %BARINFOCOL% %BARCOL%
+set MSG=
 goto :eof
 
 
