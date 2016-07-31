@@ -113,7 +113,7 @@ if %LKEY% == "o" call :SORTOP
 if %LKEY% == "p" %NEWCMDWINDOW%
 if %LKEY% == "<" call :GOTOPARENT
 if %KEY% == 8 call :GOTOPARENT & rem BACKSPACE/^H
-if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & (if %DETAILS%==1 (for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=)& set DETAILS=0& call :MAKEDIRLIST R&call :SHOWLIST) & (if %DETAILS%==0 call :SHOWLIST R) & rem 1-9
+if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & (if %DETAILS%==1 set DETAILS=0&for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=) & call :SHOWLIST R & rem 1-9
 if %LKEY% == "0" set /A ADAPTCPS=1-%ADAPTCPS%&if %DETAILS%==0 call :CALCNOFCOLUMNS&call :SHOWLIST
 
 if %LKEY% == "i" if not "!FT%CURRPOS%!"=="/" call :LAUNCHFILE !FO%CURRPOS%!
