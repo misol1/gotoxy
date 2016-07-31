@@ -342,7 +342,7 @@ for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FO!CNT!="%%a"&set FT!CNT!=&s
 if %DETAILS%==0 goto SKIPDETAILS
 set /a CNT2=0,FND=0
 dir /-p /a /-C /OG%SORT%>%MYTEMP%longfiles.dat 2>nul
-for /F "tokens=*" %%a in (%MYTEMP%longfiles.dat) do (if !FND!==0 cmdwiz stringfind "%%a " !FO0! & if not !errorlevel!==-1 set FND=1) & if !FND!==1 set FNAME="%%a"&set FL!CNT2!=!FNAME:\=/!&set /a CNT2+=1
+for /F "tokens=*" %%a in (%MYTEMP%longfiles.dat) do (if !FND!==0 cmdwiz stringfind "%%a " " !FO0:~1,-1!" & if not !errorlevel!==-1 set FND=1) & if !FND!==1 set FNAME="%%a"&set FL!CNT2!=!FNAME:\=/!&set /a CNT2+=1
 :SKIPDETAILS
 
 set /a FCOUNT=%CNT%
