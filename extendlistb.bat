@@ -1,4 +1,5 @@
 :: Keys free to extend: aghlnuwz, AGHJKLNOPQRWXZ, all special keys except ^B,^C,^F,^H,^L,^M,^T,^Y, 0-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
+:: Used in this file: a ^A ^D g J ^L n N w W ^W ^X Z ^Z
 
 @echo off
 if "%~1" == "_SHOW_EXTENDED_HELP" goto SHOWHELP
@@ -6,7 +7,6 @@ if "%~1" == "_SET_COLORS" goto SETCOLORS
 if "%~1" == "_SET_VIEWERS" goto SETVIEWERS
 
 set EDITCMD2=npp.bat
-set GCMD=g
 set EXTVIEW=less -f
 
 if %LKEY% == "J" if not "!FT%CURRPOS%!"=="/" cmd /C "!FO%CURRPOS%!"&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&exit /b 1
@@ -19,7 +19,7 @@ if %KEY% == 23 call listb.bat _GETANSWER "Search for in files:"& if not "!ANSWER
 if %LKEY% == "n" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%!
 if %LKEY% == "N" call listb.bat _GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER!
 
-if %LKEY% == "g" call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&call %GCMD% !ANSWER!& exit /b 2 & goto :eof
+if %LKEY% == "g" call listb.bat _GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&call g.bat !ANSWER!& exit /b 2 & goto :eof
 
 :: ^L
 if %KEY% == 12 call listb.bat _GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof
@@ -52,8 +52,9 @@ if /I "%XTENSION%"==".bmp" %1 & exit /b 0
 cls
 %EXTVIEW% %1
 exit /b 1
-
 :NOT_a
+
+:: ^Z
 if not %KEY% == 26 goto NOT_CTRLz
 set XTENSION=%~x1
 if not "%XTENSION%"==".zip" if not "%XTENSION%"==".ZIP" exit /b 0 & goto :eof
@@ -61,9 +62,9 @@ cls
 unzip %1
 cmdwiz getch
 exit /b 3
-
 :NOT_CTRLz
-if not %LKEY% == "Z" goto NOT_SHIFTz
+
+if not %LKEY% == "Z" goto NOT_Z
 call listb.bat _COUNTITEMS CNT Y& if !CNT! lss 1 call listb.bat _SHOWBOTTOMBAR "No items selected." & exit /b 0 & goto :eof
 call listb.bat _GETANSWER "Zip archive name:"& if "!ANSWER!"=="" exit /b 0 & goto :eof
 cls
@@ -73,7 +74,7 @@ for /L %%a in (0,1,%FCOUNTSUB%) do if not "!FS%%a!"=="" set ZCMD=!ZCMD! !FO%%a!
 cmdwiz getch
 exit /b 3
 
-:NOT_SHIFTz
+:NOT_Z
 
 exit /b -1
 goto :eof
@@ -107,8 +108,10 @@ goto :eof
 
 
 :SETCOLORS
-set CURRCOL=1\F1
 ::set HDIV=0
+::set DETAILS=1
+
+set CURRCOL=1\F1
 ::set BARCOL=4
 ::set BARTEXTCOL=F
 ::set BARINFOCOL=0

@@ -32,6 +32,7 @@ set SORT=N
 set EXTEND=""&if not "%~5" == "" set EXTEND="%~5"
 set CLIPB=
 set HDIV=1
+set DETAILS=0
 
 set BARCOL=3
 set BARTEXTCOL=F
@@ -101,6 +102,7 @@ if %KEY% == 315 call :SHOWHELP & rem F1
 if %KEY% == 27 goto EXITLIST & rem ESC
 if %KEY% == 6 call :GETANSWER "Search for:" STRIPQUOTES& if not "!ANSWER!"=="" call :FINDOP & rem ^F
 if %LKEY% == "?" call :SHOWHELP
+if %LKEY% == "+" (if !DETAILS!==1 for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=) & set /a DETAILS=1-%DETAILS% & call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "x" goto EXITLIST
 if %LKEY% == "q" goto EXITLIST
 if %LKEY% == "y"  set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST
@@ -110,8 +112,8 @@ if %LKEY% == "o" call :SORTOP
 if %LKEY% == "p" %NEWCMDWINDOW%
 if %LKEY% == "<" call :GOTOPARENT
 if %KEY% == 8 call :GOTOPARENT & rem BACKSPACE/^H
-if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & call :SHOWLIST R & rem 1-9
-if %LKEY% == "0" set /A ADAPTCPS=1-%ADAPTCPS%&call :CALCNOFCOLUMNS&call :SHOWLIST
+if %KEY% geq 49 if %KEY% leq 57 set /a COLSPERSCR=%KEY%-48 & (if %DETAILS%==1 (for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=)& set DETAILS=0& call :MAKEDIRLIST R&call :SHOWLIST) & (if %DETAILS%==0 call :SHOWLIST R) & rem 1-9
+if %LKEY% == "0" set /A ADAPTCPS=1-%ADAPTCPS%&if %DETAILS%==0 call :CALCNOFCOLUMNS&call :SHOWLIST
 
 if %LKEY% == "i" if not "!FT%CURRPOS%!"=="/" call :LAUNCHFILE !FO%CURRPOS%!
 if %LKEY% == "j" if not "!FT%CURRPOS%!"=="/" call :LAUNCHFILE !FO%CURRPOS%! 1
@@ -155,7 +157,7 @@ cmdwiz showcursor 1
 if %MOUSESUPPORT%==1 cmdwiz quickedit 1
 set /a LINES-=1
 gotoxy 0 !LINES!
-endlocal&if %KEY%==120 cd "%CD%"
+endlocal&if %LKEY%=="x" cd "%CD%"
 goto :eof
 
 
@@ -325,25 +327,35 @@ goto :eof
 
 :MAKEDIRLIST
 for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set FT%%a=&set FS%%a=
+if %DETAILS%==1 for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
+
 dir /-p /b /ad /O%SORT% >%MYTEMP%folders.dat 2>nul
 set CNT=0
 cmdwiz stringlen "%CD%"&set LEN=!ERRORLEVEL!
 if %LEN% geq 4 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
-for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=/&set /a CNT+=1
+for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FO!CNT!="%%a"&set FT!CNT!=/&set /a CNT+=1
 dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
-for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FNAME="%%a"&set FO!CNT!=!FNAME!&set FT!CNT!=&set /a CNT+=1
+for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FO!CNT!="%%a"&set FT!CNT!=&set /a CNT+=1
+
+if %DETAILS%==0 goto SKIPDETAILS
+set /a CNT2=0,FND=0
+dir /-p /a /-C /OG%SORT%>%MYTEMP%longfiles.dat 2>nul
+for /F "tokens=*" %%a in (%MYTEMP%longfiles.dat) do (if !FND!==0 cmdwiz stringfind "%%a " !FO0! & if not !errorlevel!==-1 set FND=1) & if !FND!==1 set FNAME="%%a"&set FL!CNT2!=!FNAME:\=/!&set /a CNT2+=1
+:SKIPDETAILS
 
 set /a FCOUNT=%CNT%
 set /a FCOUNTSUB=%CNT%-1
 set /a LH=%LINES%-2
 
 call :CALCNOFCOLUMNS
+if %DETAILS%==1 set COLSPERSCR=1
 goto :eof
 
 :CALCNOFCOLUMNS
 if %ADAPTCPS%==1 set /A COLSPERSCR=%FCOUNTSUB%/%LH%+1&if !COLSPERSCR! gtr %MAXCPS% set COLSPERSCR=%MAXCPS%
 goto :eof
+
 
 :SHOWLIST
 if %CURRPOS% lss 0 set CURRPOS=0
@@ -369,7 +381,7 @@ call :SHOWTOPBAR
 if %HDIV%==1 set /A NOFCP=%COLSPERSCR%-1&(if !NOFCP! lss 1 set NOFCP=1)&set BARS=""&for /L %%a in (1,1,!NOFCP!) do set /A X=%%a*%CX%-1 & set BARS="!BARS:~1,-1!\p!X!;1;\M%LH%{\gb3\n}"
 if %HDIV%==1 gotoxy 0 0 %BARS% %BARCOL% U x&set BARS=
 
-set X=0&for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!OUTF!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
+set X=0&for /L %%a in (%CNT%,1,%FMCOUNT%) do set BGCOL=U&(if %%a==%CURRPOS% set BGCOL=%CURRCOL%)&set FGCOL=%FILECOL%&(if "!FT%%a!"=="/" set FGCOL=%DIRCOL%)&set SEL= &(if not "!FS%%a!"=="" set SEL=!FS%%a!)&set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)&set SHOWS="!SHOWS:~1,-1!\!FGCOL!!BGCOL!!OUTF!!SEL!\n"&set /a Y+=1&set /a PTEMP=!Y! %% %PARTPRINT%&(if !PTEMP!==0 gotoxy 0 1 !SHOWS! !DIRCOL!&set SHOWS="")&(if !Y! gtr %LH% set Y=1&set /a X+=%CX%&set SHOWS="!SHOWS:~1,-1!\p!X!;!Y!"& set /a CC+=1&if !CC! geq %COLSPERSCR% goto OUTLOOP)&set /a CNT+=1
 
 :OUTLOOP
 gotoxy 0 1 %SHOWS% %DIRCOL%
@@ -398,12 +410,8 @@ set /a NY=(%N% %% %LH%)+1
 
 set FGCOL=%FILECOL%U&if "!FT%OLDPOS%!"=="/" set FGCOL=%DIRCOL%U
 set SEL= &if not "!FS%OLDPOS%!"=="" set SEL=!FS%OLDPOS%!
-set FNAME=!FO%OLDPOS%!
-set FNAME=!FNAME:^&=^^^&!
-set FNAME=%FNAME:~1,-1%!FT%OLDPOS%!
-set OUTF=!FNAME:~0,%CXM%!&if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~
+for %%a in (%OLDPOS%) do set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)
 set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%%OUTF%%SEL%"
-::set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
 
 set /a N=%CURRPOS%-%CNT%
 set /a NX=(%N%/%LH%)
@@ -412,12 +420,8 @@ set /a NY=(%N% %% %LH%)+1
 
 set FGCOL=%FILECOL%%CURRCOL%&if "!FT%CURRPOS%!"=="/" set FGCOL=%DIRCOL%%CURRCOL%
 set SEL= &if not "!FS%CURRPOS%!"=="" set SEL=!FS%CURRPOS%!
-set FNAME=!FO%CURRPOS%!
-set FNAME=!FNAME:^&=^^^&!
-set FNAME=%FNAME:~1,-1%!FT%CURRPOS%!
-set OUTF=!FNAME:~0,%CXM%!&if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~
+for %%a in (%CURRPOS%) do set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)
 set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%%OUTF%%SEL%"
-::set SHOWS="%SHOWS:~1,-1%\p%NX%;%NY%\%FGCOL%!FNAME:~0,%CXM%!%SEL%"
 
 gotoxy 0 0 %SHOWS% 0 0
 goto :eof
@@ -481,7 +485,7 @@ goto :eof
 :SHOWHELP
 cls
 gotoxy 0 0 "%BAR:~1,-1%\p1;0LISTb Help" %BARTEXTCOL% %BARCOL%
-gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-9/0: %HLPC2%number of columns per screen / adaptive columns on/off\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%</BS: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy/move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [width] [height] [-][columns] [extendfile] [mouse]\n" 0 0 c
+gotoxy 1 2 "%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-9/0/+: %HLPC2%columns per screen / adaptive columns on/off / details on/off\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%</BS: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space/^Space: %HLPC2%select file/folder / deselect all items\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%D: %HLPC2%delete selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy/move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [width] [height] [-][columns] [extendfile] [mouse]\n" 0 0 c
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _SHOW_EXTENDED_HELP
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP
