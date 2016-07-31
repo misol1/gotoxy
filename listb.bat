@@ -12,6 +12,7 @@ set LINES=50&if not "%3" == "" set /A LINES=%3&if !LINES! lss 20 set LINES=20
 set ADAPTCPS=0&set MAXCPS=0
 set COLSPERSCR=4&if not "%4" == "" set COLSPERSCR=%4&(if !COLSPERSCR! lss 0 set ADAPTCPS=1&set /A MAXCPS=-!COLSPERSCR!&set /A COLSPERSCR=-!COLSPERSCR!)&(if !COLSPERSCR! gtr 9 set COLSPERSCR=9)&if !COLSPERSCR! lss 1 set COLSPERSCR=1
 if %MAXCPS%==0 set MAXCPS=%COLSPERSCR%
+set OLDCOLSPERSCR=%COLSPERSCR%
 cls
 mode con lines=%LINES% cols=%COLS%
 set OLDCOLS=%COLS%
@@ -102,7 +103,7 @@ if %KEY% == 315 call :SHOWHELP & rem F1
 if %KEY% == 27 goto EXITLIST & rem ESC
 if %KEY% == 6 call :GETANSWER "Search for:" STRIPQUOTES& if not "!ANSWER!"=="" call :FINDOP & rem ^F
 if %LKEY% == "?" call :SHOWHELP
-if %LKEY% == "+" (if !DETAILS!==1 for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=) & set /a DETAILS=1-%DETAILS% & call :MAKEDIRLIST R&call :SHOWLIST
+if %LKEY% == "+" (if !DETAILS!==1 for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=) & set /a DETAILS=1-%DETAILS% & (if !DETAILS!==1 set OLDCOLSPERSCR=%COLSPERSCR%) & (if !DETAILS!==0 set COLSPERSCR=%OLDCOLSPERSCR%) & call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "x" goto EXITLIST
 if %LKEY% == "q" goto EXITLIST
 if %LKEY% == "y"  set DIR%DIRP%="%CD%"&set /a DIRP=1-%DIRP% & cd /D !DIR%DIROP%! &set /a DIROP=1-!DIRP!&call :MAKEDIRLIST&call :SHOWLIST
