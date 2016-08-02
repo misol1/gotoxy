@@ -121,8 +121,8 @@ if %LKEY% == "j" if not "!FT%CURRPOS%!"=="/" call :LAUNCHFILE !FO%CURRPOS%! 1
 if %LKEY% == "I" call :GETANSWER "Action, # inserts filename:"& if not "!ANSWER!"=="" call :SPLITANSWER &cls&cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :PAUSE \n&mode con lines=%LINES% cols=%COLS%&cmdwiz showcursor 0&call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "e" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD% !FO%CURRPOS%!
 if %LKEY% == "E" call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD% !ANSWER! & call :MAKEDIRLIST R&call :SHOWLIST
-if %LKEY% == "f" if not "!FT%CURRPOS%!"=="/" cmd /C dir /-C /A /-P !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!
-if %LKEY% == "f" if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." cmd /C dir /-P /A /-C>%MYTEMP%out.dat&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (a hack)
+if %LKEY% == "f" if not "!FT%CURRPOS%!"=="/" set OLDDIRCMD=%DIRCMD%& set DIRCMD=& cmd /C dir /-C /A !FO%CURRPOS%!|find !FO%CURRPOS%!>%MYTEMP%out.dat&set DIRCMD=!OLDDIRCMD!&set OLDDIRCMD=&for /F "tokens=*" %%a in (%MYTEMP%out.dat) do set INF="%%a "&call :SHOWBOTTOMBAR !INF!
+if %LKEY% == "f" if "!FT%CURRPOS%!"=="/" if not !FO%CURRPOS%!==".." set OLDDIRCMD=%DIRCMD%& set DIRCMD=&cmd /C dir /A /-C>%MYTEMP%out.dat&set DIRCMD=!OLDDIRCMD!&set OLDDIRCMD=&for /F "tokens=1,2,3*" %%a in (%MYTEMP%out.dat) do if "%%d"==!FO%CURRPOS%! set INF="%%a  %%b    %%c          %%d"&call :SHOWBOTTOMBAR !INF!& rem f for folder (a hack)
 if %LKEY% == "F" call :SHOWBOTTOMBAR !FO%CURRPOS%!
 if %LKEY% == "d" if not "!FT%CURRPOS%!"=="/" call :YESNO "Really delete?(y/n) " & if "!ANSWER!"=="Y" cmd /C del !FO%CURRPOS%!&call :MAKEDIRLIST R&call :SHOWLIST
 if %LKEY% == "r" call :GETANSWER "Rename to:"& if not "!ANSWER!"=="" rename !FO%CURRPOS%! "!ANSWER!"&call :MAKEDIRLIST R&call :SHOWLIST
@@ -331,19 +331,25 @@ for /L %%a in (0,1,%FCOUNTSUB%) do set FO%%a=&set FT%%a=&set FS%%a=
 if %DETAILS%==1 for /L %%a in (0,1,%FCOUNTSUB%) do set FL%%a=
 if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 
-dir /-p /b /ad /O%SORT% >%MYTEMP%folders.dat 2>nul
+set OLDDIRCMD=%DIRCMD%
+set DIRCMD=
+
+dir /b /ad /O%SORT% >%MYTEMP%folders.dat 2>nul
 set CNT=0
 cmdwiz stringlen "%CD%"&set LEN=!ERRORLEVEL!
 if %LEN% geq 4 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FO!CNT!="%%a"&set FT!CNT!=/&set /a CNT+=1
-dir /-p /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
+dir /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
 for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FO!CNT!="%%a"&set FT!CNT!=&set /a CNT+=1
 
 if %DETAILS%==0 goto SKIPDETAILS
 set /a CNT2=0,FND=0
-dir /-p /a /-C /OG%SORT%>%MYTEMP%longfiles.dat 2>nul
+dir /a /-C /OG%SORT%>%MYTEMP%longfiles.dat 2>nul
 for /F "tokens=*" %%a in (%MYTEMP%longfiles.dat) do (if !FND!==0 cmdwiz stringfind "%%a " " !FO0:~1,-1!" & if not !errorlevel!==-1 set FND=1) & if !FND!==1 set FNAME="%%a"&set FL!CNT2!=!FNAME:\=/!&set /a CNT2+=1
 :SKIPDETAILS
+
+set DIRCMD=%OLDDIRCMD%
+set OLDDIRCMD=
 
 set /a FCOUNT=%CNT%
 set /a FCOUNTSUB=%CNT%-1
