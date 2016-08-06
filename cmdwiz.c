@@ -6,6 +6,12 @@
 #include <conio.h>
 #include <shellapi.h>
 
+// Add?
+// 1. Window set/get position
+// 2. Showbitmap
+// 3. Window Set_transparency
+// 4. Set/get font
+
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32
 
 #define BUFW 0

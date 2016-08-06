@@ -334,17 +334,17 @@ if not "%1"=="R" set CURRPOS=0&set OLDPOS=0&set OLDPAGE=0
 set OLDDIRCMD=%DIRCMD%
 set DIRCMD=
 
-dir /b /ad /O%SORT% >%MYTEMP%folders.dat 2>nul
+dir /b /ad-l /O%SORT% >%MYTEMP%folders.dat 2>nul
 set CNT=0
 cmdwiz stringlen "%CD%"&set LEN=!ERRORLEVEL!
 if %LEN% geq 4 set FO!CNT!=".."&set FT!CNT!=/&set /a CNT+=1
 for /F "tokens=*" %%a in (%MYTEMP%folders.dat) do set FO!CNT!="%%a"&set FT!CNT!=/&set /a CNT+=1
-dir /b /a-d /O%SORT%>%MYTEMP%files.dat 2>nul
+dir /b /a-d-l /O%SORT%>%MYTEMP%files.dat 2>nul
 for /F "tokens=*" %%a in (%MYTEMP%files.dat) do set FO!CNT!="%%a"&set FT!CNT!=&set /a CNT+=1
 
 if %DETAILS%==0 goto SKIPDETAILS
 set /a CNT2=0,FND=0
-dir /a /-C /OG%SORT%>%MYTEMP%longfiles.dat 2>nul
+dir /a-l /-C /OG%SORT%>%MYTEMP%longfiles.dat 2>nul
 for /F "tokens=*" %%a in (%MYTEMP%longfiles.dat) do (if !FND!==0 cmdwiz stringfind "%%a " " !FO0:~1,-1!" & if not !errorlevel!==-1 set FND=1) & if !FND!==1 set FNAME="%%a"&set FL!CNT2!=!FNAME:\=/!&set /a CNT2+=1
 :SKIPDETAILS
 
