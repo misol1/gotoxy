@@ -2,7 +2,8 @@
 setlocal ENABLEDELAYEDEXPANSION
 mode con lines=50 cols=80
 cmdwiz showcursor 0
-cmdwiz quickedit 0
+cmdwiz getquickedit & set QE=!errorlevel!
+cmdwiz setquickedit 0
 color 07
 cls
 
@@ -41,6 +42,6 @@ if %TRAIL_I% geq %TRAIL_LEN% set /a TRAIL_I=0
 if not %KEY% == 27 goto LOOP
 
 del /Q mouse_out.txt>nul
+cmdwiz setquickedit %QE%
 endlocal
-cmdwiz quickedit 1
 cmdwiz showcursor 1

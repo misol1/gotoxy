@@ -1,7 +1,5 @@
-::Use tcc 32 bit version, currently not compatible with 64 bit
-gcc -o cmdwiz.exe cmdwiz.c -O2 -luser32 -lwinmm 
-::tcc -o cmdwiz.exe cmdwiz.c -luser32 -lwinmm 
+gcc -o cmdwiz.exe cmdwiz.c -O2 -luser32 -lwinmm -lgdi32
 @echo.
-tcc -o gotoxy.exe gotoxy.c
+gcc -o gotoxy.exe -O2 gotoxy.c
 @echo.
-tcc -DSUPPORT_EXTENDED -lshell32 -lwinmm -luser32 -o gotoxy_extended.exe gotoxy.c
+gcc -DSUPPORT_EXTENDED -O2 -lshell32 -lwinmm -luser32 -o gotoxy_extended.exe gotoxy.c

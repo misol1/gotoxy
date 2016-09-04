@@ -3,7 +3,8 @@ setlocal ENABLEDELAYEDEXPANSION
 mode con lines=50 cols=80
 color 07
 cls
-cmdwiz quickedit 0
+cmdwiz getquickedit & set QE=!errorlevel!
+cmdwiz setquickedit 0
 
 set DL=0
 set DR=0
@@ -76,5 +77,5 @@ if not %KEY% == 27 goto LOOP3
 
 
 :END
+cmdwiz setquickedit %QE%
 endlocal
-cmdwiz quickedit 1

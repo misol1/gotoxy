@@ -54,7 +54,7 @@ set SCHR="()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\] _ abcdefghijklm
 
 set MOUSESUPPORT=0
 if /I "%~6" == "Y" set MOUSESUPPORT=1
-if %MOUSESUPPORT%==1 cmdwiz quickedit 0
+if %MOUSESUPPORT%==1 cmdwiz getquickedit & set QE=!errorlevel!&cmdwiz setquickedit 0
 
 set VIEWCMD="more # ^&cmdwiz getch"
 set EDITCMD=start notepad
@@ -155,7 +155,7 @@ goto MAINLOOP
 
 :EXITLIST
 cmdwiz showcursor 1
-if %MOUSESUPPORT%==1 cmdwiz quickedit 1
+if %MOUSESUPPORT%==1 cmdwiz setquickedit %QE%
 set /a LINES-=1
 gotoxy 0 !LINES!
 endlocal&if %LKEY%=="x" cd "%CD%"

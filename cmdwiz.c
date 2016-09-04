@@ -1,18 +1,19 @@
 /* CmdWiz (c) 2015-16 Mikael Sollenborn */
 
+#ifndef WINVER
+#define WINVER 0x0502
+#endif
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0502
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
 #include <shellapi.h>
 
-// Add?
-// 1. Window set/get position
-// 2. Showbitmap
-// 3. Window Set_transparency
-// 4. Set/get font
-
-// Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32
+// Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32 -lgdi32
 
 #define BUFW 0
 #define BUFH 1
@@ -22,6 +23,32 @@
 #define CURRY 5
 
 #define INVALID_COORDINATE -999
+
+// Undocumented functions and structures
+// BEGIN
+DWORD WINAPI GetNumberOfConsoleFonts(VOID);
+DWORD WINAPI GetConsoleFontInfo(HANDLE hConsoleOutput,
+				BOOL bMaximumWindow,
+				DWORD nLength,
+				PCONSOLE_FONT_INFO lpConsoleFontInfo);
+BOOL WINAPI SetConsoleFont(HANDLE hConsoleOutput, DWORD nFont);
+// END
+
+typedef struct _CONSOLE_FONT_INFOEX {
+	ULONG cbSize;
+	DWORD nFont;
+	COORD dwFontSize;
+	UINT FontFamily;
+	UINT FontWeight;
+	WCHAR FaceName[LF_FACESIZE];
+} CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
+
+BOOL WINAPI SetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
+typedef BOOL(WINAPI * Func_SetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
+COORD WINAPI GetConsoleFontSize(HANDLE, DWORD);
+BOOL WINAPI GetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
+typedef BOOL(WINAPI * Func_GetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
+
 
 int GetDim(int dim) {
 	int retVal;
@@ -382,11 +409,182 @@ void printKeystates(int keys, int nofKeys) {
 	printf("%s\n", output);
 }
 
-int main(int argc, char **argv) {
-	int delayVal = 0;
-	int bInfo = 0;
+// Functions "f_SetConsoleTransparency" and "Fn_LoadBmp" borrowed from user "aGerman" at dostips.com
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys quickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos printf saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+BOOL f_SetConsoleTransparency(long percentage)
+{
+	HWND hWnd = NULL;
+	BYTE bAlpha = 0;
+	LONG lNewLong = 0;
+	hWnd = GetConsoleWindow();
+	if (hWnd && percentage > -1 && percentage < 101)
+	{
+		bAlpha = (BYTE)(2.55 * (100 - percentage) + 0.5);
+		lNewLong = GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED;
+		if (!SetWindowLong(hWnd, GWL_EXSTYLE, lNewLong)) return FALSE;
+		return SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
+	}
+	return FALSE;
+}
+
+int Fn_LoadBmp(char *szBmpPath, long x, long y, long z, long w, long h)
+{
+	HWND hWnd = NULL;
+	HDC hDc = NULL, hDcBmp = NULL;
+	HBITMAP hBmp1 = NULL, hBmp2 = NULL;
+	HGDIOBJ hGdiObj = NULL;
+	BITMAP bmp = {0};
+	int iRet = EXIT_FAILURE;
+
+	if ((hWnd = GetConsoleWindow()))
+	{
+		if ((hDc = GetDC(hWnd)))
+		{
+			if ((hDcBmp = CreateCompatibleDC(hDc)))
+			{
+				if ((hBmp1 = (HBITMAP)LoadImage(NULL, szBmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE)))
+				{
+					if (GetObject(hBmp1, sizeof(bmp), &bmp))
+					{
+						if (w == -1) {
+							if ((w = bmp.bmWidth * z / 100.0 + 0.5) <= 0 || (h = bmp.bmHeight * z / 100.0 + 0.5) <= 0)
+							{
+								w = bmp.bmWidth;
+								h = bmp.bmHeight;
+							}
+						} 
+						if ((hBmp2 = (HBITMAP)CopyImage((HANDLE)hBmp1, IMAGE_BITMAP, w, h, LR_COPYDELETEORG)))
+						{
+							if ((hGdiObj = SelectObject(hDcBmp, hBmp2)) && hGdiObj != HGDI_ERROR)
+							{
+								if (BitBlt(hDc, (int)x, (int)y, (int)w, (int)h, hDcBmp, 0, 0, SRCCOPY))
+									iRet = EXIT_SUCCESS;
+								DeleteObject(hGdiObj);
+							}
+							DeleteObject(hBmp2);
+						}
+					}
+					DeleteObject(hBmp1);
+				}
+				ReleaseDC(hWnd, hDcBmp);
+			}
+			ReleaseDC(hWnd, hDc);
+		}
+	}
+	return iRet;
+}
+
+// Function SetFont borrowed from user "carlos" at dostips.com
+
+#define MAX_TERMINAL_FONT_SIZES 127
+#define TERMINAL_FONTS 10
+int SetFont(int selected) {
+	CONSOLE_FONT_INFO font[MAX_TERMINAL_FONT_SIZES];
+	HANDLE hOut;
+	int fonts_count;
+	int index;
+
+	COORD terminal_font[TERMINAL_FONTS] = { {4, 6}, {6, 8}, {8, 8}, {16, 8}, {5, 12}, {7, 12}, {8, 12}, {16, 12}, {12, 16}, {10, 18}};
+
+	if ((selected < 0) || (selected >= TERMINAL_FONTS)) {
+		return 1;
+	}
+
+	fonts_count = GetNumberOfConsoleFonts();
+
+	if (fonts_count > MAX_TERMINAL_FONT_SIZES) {
+		fonts_count = MAX_TERMINAL_FONT_SIZES;
+	}
+
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleFontInfo(hOut, FALSE, fonts_count, font);
+
+	for (index = 0; index < fonts_count; ++index) {
+		font[index].dwFontSize =
+		GetConsoleFontSize(hOut, font[index].nFont);
+
+		if ((font[index].dwFontSize.X != terminal_font[selected].X) || (font[index].dwFontSize.Y != terminal_font[selected].Y)) {
+			continue;	//Index not found
+	   }
+
+		//Index found
+		HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
+
+		if (NULL != dllHandle) {
+			Func_SetCurrentConsoleFontEx SetCurrentConsoleFontEx_Ptr = (Func_SetCurrentConsoleFontEx) GetProcAddress(dllHandle, "SetCurrentConsoleFontEx");
+
+			if (NULL != SetCurrentConsoleFontEx_Ptr) {	//vista
+				CONSOLE_FONT_INFOEX font_info;
+
+				font_info.cbSize = sizeof(CONSOLE_FONT_INFOEX);
+				font_info.nFont = index;
+				font_info.dwFontSize.X = terminal_font[selected].X;
+				font_info.dwFontSize.Y = terminal_font[selected].Y;
+				font_info.FontFamily = 48;
+				font_info.FontWeight = 400;
+				wcscpy(font_info.FaceName, L"Terminal");
+
+				SetCurrentConsoleFontEx_Ptr(hOut, FALSE, &font_info);
+			}
+
+			FreeLibrary(dllHandle);
+	   }
+
+		SetConsoleFont(hOut, index);
+		break; //done
+	}
+	return 0;
+}
+
+
+int GetFont(PCONSOLE_FONT_INFOEX font_info) {
+	int ret = 1;
+	HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
+
+	if (NULL != dllHandle) {
+		Func_GetCurrentConsoleFontEx GetCurrentConsoleFontEx_Ptr = (Func_GetCurrentConsoleFontEx) GetProcAddress(dllHandle, "GetCurrentConsoleFontEx");
+
+		if (NULL != GetCurrentConsoleFontEx_Ptr) {	//vista
+			font_info->cbSize = sizeof(CONSOLE_FONT_INFOEX); // must set this manually, otherwise GetCurrentConsoleFontEx fails with error 87(bad params). Weird.
+			ret = GetCurrentConsoleFontEx_Ptr(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, font_info);
+			ret = 1 - ret;
+		}
+		FreeLibrary(dllHandle);
+	}
+		
+	return ret;
+}
+
+int SetFontFromFile(char *fname) {
+	HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
+	CONSOLE_FONT_INFOEX font_info;
+	int ret = 1;
+	FILE*ifp;
+	
+	ifp = fopen(fname, "rb");
+	if (!ifp) { printf("Error: Could not load font\n"); return ret; }
+	fread(&font_info, sizeof(CONSOLE_FONT_INFOEX), 1, ifp);
+	fclose(ifp);
+	
+	if (NULL != dllHandle) {
+		Func_SetCurrentConsoleFontEx SetCurrentConsoleFontEx_Ptr = (Func_SetCurrentConsoleFontEx) GetProcAddress(dllHandle, "SetCurrentConsoleFontEx");
+
+		if (NULL != SetCurrentConsoleFontEx_Ptr) {	//vista
+			ret = SetCurrentConsoleFontEx_Ptr(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &font_info);
+			ret = 1 - ret;
+			SetConsoleFont(GetStdHandle(STD_OUTPUT_HANDLE), font_info.nFont);
+		}
+	}
+			
+	FreeLibrary(dllHandle);
+	return ret;
+}
+
+
+int main(int argc, char **argv) {
+	int delayVal = 0, bInfo = 0;
+
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos printf saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
@@ -557,10 +755,10 @@ int main(int argc, char **argv) {
 		
 		return GetTickCount();
 	}
-	else if (stricmp(argv[1],"quickedit") == 0) {
+	else if (stricmp(argv[1],"setquickedit") == 0) {
 		DWORD fdwMode;
 		int i;
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz quickedit [0|1]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setquickedit [0|1]\n"); return 0; }
 		i = atoi(argv[2]);
 
 		GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &fdwMode);
@@ -572,6 +770,13 @@ int main(int argc, char **argv) {
 			fdwMode = fdwMode | ENABLE_QUICK_EDIT_MODE;
 
 		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), fdwMode);
+	}
+	else if (stricmp(argv[1],"getquickedit") == 0) {
+		DWORD fdwMode;
+		if (bInfo) { printf("\nUsage: cmdwiz getquickedit\n\nRETURN: 1 if quick edit is enabled, otherwise 0\n"); return 0; }
+		
+		GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &fdwMode);
+		return fdwMode & ENABLE_QUICK_EDIT_MODE ? 1 : 0;
 	}
 	else if (stricmp(argv[1],"getmouse") == 0 || stricmp(argv[1],"getch_or_mouse") == 0 || stricmp(argv[1],"getch_and_mouse") == 0) {
 		DWORD fdwMode, oldfdwMode, cNumRead, j; 
@@ -847,6 +1052,140 @@ int main(int argc, char **argv) {
 
 		return 0;
 	}
+	else if (stricmp(argv[1],"insertbmp") == 0) {
+		int x,y,z = 100, w = -1, h = -1;
+	
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]]\n\nRETURN: 0 on success, 1 if failed to load file\n"); return 0; }
+
+		x = atoi(argv[3]);
+		y = atoi(argv[4]);
+		if (argc > 5) z = atoi(argv[5]);
+		if (argc > 6) { w = atoi(argv[5]); h = atoi(argv[6]); }
+
+		if (Fn_LoadBmp(argv[2], x, y, z, w, h) == EXIT_SUCCESS) return 0; else return 1;
+	}
+	else if (stricmp(argv[1],"setwindowtransparency") == 0) {
+		int percentage = -1;
+		if (argc > 2) percentage = atoi(argv[2]);
+		
+		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100]\n"); return 0; }
+		
+		f_SetConsoleTransparency(percentage);
+		return 0;
+	}
+	else if (stricmp(argv[1],"setwindowpos") == 0) {
+		RECT bounds;
+		HWND hWnd;
+		int x, y;
+		hWnd = GetConsoleWindow();
+				
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x y]\n"); return 0; }
+		x = atoi(argv[2]);
+		y = atoi(argv[3]);
+		
+		if (hWnd) {
+			GetWindowRect(hWnd, &bounds);
+			SetWindowPos(hWnd, HWND_TOP, x, y, bounds.right-bounds.left, bounds.bottom-bounds.top, 0); // HWND_TOPMOST is "always on top"
+		}		
+		return 0;
+	}
+	else if (stricmp(argv[1],"getwindowbounds") == 0) {
+		RECT bounds;
+		HWND hWnd;
+		int pos = -1;
+		hWnd = GetConsoleWindow();
+				
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h]\n"); return 0; }
+		GetWindowRect(hWnd, &bounds);
+
+		if (argv[2][0] == 'y') return bounds.top;
+		if (argv[2][0] == 'w') return bounds.right - bounds.left;
+		if (argv[2][0] == 'h') return bounds.bottom - bounds.top;
+		return bounds.left;
+	}
+	else if (stricmp(argv[1],"gettitle") == 0) {
+		char title[256];
+		GetConsoleTitle(title, 255);
+		printf("%s\n", title);
+		return 0;
+	}
+	else if (stricmp(argv[1],"getdisplaydim") == 0) {
+		int bW = 0;
+
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n"); return 0; }
+		if (argv[2][0] == 'w') bW = 1;
+
+		return GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN);
+	}
+	else if (stricmp(argv[1],"setmousecursorpos") == 0) {
+		int x, y;
+		int click = 0;
+		INPUT Input = {0};
+
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x y] [l|r|d|u]\n"); return 0; }
+		x = atoi(argv[2]);
+		y = atoi(argv[3]);
+		if (argc > 4) { if (argv[4][0]=='l') click = 1; if (argv[4][0]=='r') click = 2; if (argv[4][0]=='d') click = 3; if (argv[4][0]=='u') click = 4; } 
+
+		SetCursorPos(x,y);
+
+		if (click > 0) {
+			if (click != 4) {
+				Input.type = INPUT_MOUSE;
+				Input.mi.dwFlags = click!=2? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
+				SendInput(1,&Input,sizeof(INPUT));
+			}
+
+			if (click != 3) {
+				ZeroMemory(&Input,sizeof(INPUT));
+				Input.type = INPUT_MOUSE;
+				Input.mi.dwFlags = click!=2? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
+				SendInput(1,&Input,sizeof(INPUT));
+			}
+		}
+		return 0;
+	}
+	else if (stricmp(argv[1],"getmousecursorpos") == 0) {
+		POINT pos;
+		int bX = 0;
+				
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getmousecursorpos [x|y]\n"); return 0; }
+		if (argv[2][0] == 'x') bX = 1;
+		
+		GetCursorPos(&pos);
+		return bX ? pos.x : pos.y;
+	}
+	else if (stricmp(argv[1],"setfont") == 0) {
+		int index = -1;
+		
+		if (argc > 2 && strlen(argv[2]) == 1) index = atoi(argv[2]);
+		if ((strlen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return 0; }
+
+		if (index == -1)
+			return SetFontFromFile(argv[2]);
+		else
+			return SetFont(index);
+	}
+	else if (stricmp(argv[1],"savefont") == 0) {
+		CONSOLE_FONT_INFOEX fontInfo;
+		FILE *ofp;
+		int res;
+		
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz savefont [filename]\n"); return 0; }
+
+		res = GetFont(&fontInfo);
+		
+		if (res) return 1;
+		
+		ofp = fopen(argv[2], "wb");
+		if (!ofp) { printf("Error: could not save font\n"); return 1; }
+		
+		fwrite(&fontInfo, sizeof(CONSOLE_FONT_INFOEX),1,ofp);
+		fclose(ofp);
+		
+		return 0;
+	}
+	// want operation to hide/show mouse cursor, but not possible in console window according to http://stackoverflow.com/questions/16110898/how-can-i-hide-the-mouse-cursor
 	else {
 		printf("Error: unknown operation\n");
 		return 0;

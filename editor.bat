@@ -39,7 +39,9 @@ gotoxy 0 0 %inf%
 :NOFILE
 call :PRINTSEPARATOR
 call :PRINTSTATUS
-cmdwiz quickedit 0
+
+cmdwiz getquickedit & set QE=!errorlevel!
+cmdwiz setquickedit 0
 cmdwiz showcursor 1
 
 :LOOP
@@ -145,9 +147,9 @@ set SAVEPY=-1
 if not %KEY% == 27 goto LOOP
 
 cls
+cmdwiz setquickedit !QE!
 endlocal
 if exist edcpp.gxy del /Q edcpp.gxy>nul
-cmdwiz quickedit 1
 goto :eof
 
 :DECTOHEX <in> <out> <noTrailZero>
