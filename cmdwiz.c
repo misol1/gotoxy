@@ -1159,7 +1159,7 @@ int main(int argc, char **argv) {
 		int index = -1;
 		
 		if (argc > 2 && strlen(argv[2]) == 1) index = atoi(argv[2]);
-		if ((strlen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return 0; }
+		if (argc < 3 || (strlen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return 0; }
 
 		if (index == -1)
 			return SetFontFromFile(argv[2]);
