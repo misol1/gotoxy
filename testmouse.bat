@@ -24,8 +24,8 @@ set /a MT=%MR% ^& 8 &if !MT! geq 1 echo Left Double click...
 set /a MT=%MR% ^& 16 &if !MT! geq 1 echo Right Double click...
 set /a MT=%MR% ^& 32 &if !MT! geq 1 echo Wheel down...
 set /a MT=%MR% ^& 64 &if !MT! geq 1 echo Wheel up...
-set /a MX=(%MR%^>^>10) ^& 511
-set /a MY=%MR%^>^>19
+set /a MX=(%MR%^>^>10) ^& 2047
+set /a MY=(%MR%^>^>21) ^& 1023
 echo %MX%,%MY%
 :NOINPUT
 cmdwiz getkeystate 27>nul
@@ -47,8 +47,8 @@ set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1
 set /a MT=%MR% ^& 4 &if !MT! equ 0 set DR=0
 set /a MT=%MR% ^& 32 &if !MT! geq 1 set /a COL-=1&if !COL! lss 1 set COL=15
 set /a MT=%MR% ^& 64 &if !MT! geq 1 set /a COL+=1&if !COL! geq 16 set COL=1
-set /a MX=(%MR%^>^>10) ^& 511
-set /a MY=%MR%^>^>19
+set /a MX=(%MR%^>^>10) ^& 2047
+set /a MY=(%MR%^>^>21) ^& 1023
 if %DR% geq 1 gotoxy %MX% %MY% " " 0 0
 if %DL% geq 1 gotoxy %MX% %MY% " " 0 %COL%
 :NOINPUT2

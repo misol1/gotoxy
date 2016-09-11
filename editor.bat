@@ -53,8 +53,8 @@ set /a MT=%MR% ^& 1 &if !MT! == 0 goto MOUSEINPUT
 set /a KEY=%MR%/2
 goto NOMOUSE
 :MOUSEINPUT
-set /a MX=(%MR%^>^>10) ^& 255
-set /a MY=%MR%^>^>19
+set /a MX=(%MR%^>^>10) ^& 2047
+set /a MY=(%MR%^>^>21) ^& 1023
 set /a MT=%MR% ^& 2 &if !MT! geq 1 set DL=1
 set /a MT=%MR% ^& 2 &if !MT! equ 0 set DL=0
 set /a MT=%MR% ^& 4 &if !MT! geq 1 set DR=1

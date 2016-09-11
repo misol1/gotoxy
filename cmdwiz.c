@@ -356,7 +356,7 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, char *output) {
 	if (bKeyAndMouse)
 		res = (mer.dwMousePosition.X << 7) | (mer.dwMousePosition.Y << 15);
 	else
-		res = (mer.dwMousePosition.X << 10) | (mer.dwMousePosition.Y << 19);
+		res = (mer.dwMousePosition.X << 10) | (mer.dwMousePosition.Y << 21);
 
 	switch(mer.dwEventFlags) {
 		case 0: case DOUBLE_CLICK: case MOUSE_MOVED:
@@ -584,7 +584,7 @@ int SetFontFromFile(char *fname) {
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos printf saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
@@ -657,10 +657,12 @@ int main(int argc, char **argv) {
 		return k;
 	}
 	else if (stricmp(argv[1],"flushkeys") == 0) {
+		if (bInfo) { printf("\nUsage: cmdwiz flushkeys\n"); return 0; }
+
 		while(kbhit())
 			getch();
 		return 0;
-	}	
+	}
 	else if (stricmp(argv[1],"getkeystate") == 0) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 		int i, j, k = 0;
@@ -702,7 +704,7 @@ int main(int argc, char **argv) {
 		return k;
 	}
 	else if (stricmp(argv[1],"playsound") == 0) {
-	if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename]\n"); return 0; }
+	if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename.wav]\n"); return 0; }
 		PlaySound(argv[2], NULL, 0x00020000L|0x0002); // SND_FILENAME | SND_NODEFAULT
 		return 0;
 	}
@@ -712,7 +714,7 @@ int main(int argc, char **argv) {
 		int i;
 		
 		if (argc < 4 || bInfo) {
-			printf("\nUsage: cmdwiz getcharat [x|k] [y|k]\n\nRETURN: Character ASCII value at position, -1 on failure\n");
+			printf("\nUsage: cmdwiz getcharat [x|k y|k]\n\nRETURN: Character ASCII value at position, -1 on failure\n");
 			return 0;
 		}
 		
@@ -731,7 +733,7 @@ int main(int argc, char **argv) {
 		int ox, oy;
 		int i;
 
-		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz getcolorat [fg|bg] [x|k] [y|k]\n\nRETURN: Color value at position, -1 on failure\n"); return 0; }
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz getcolorat [fg|bg x|k y|k]\n\nRETURN: Color value at position, -1 on failure\n"); return 0; }
 
 		GetXY(&ox, &oy);
 
@@ -791,9 +793,9 @@ int main(int argc, char **argv) {
 
 		if (bInfo) {
 			if (stricmp(argv[1],"getmouse") == 0) {
-				printf("\nUsage: cmdwiz getmouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event\n\nERRORLEVEL -1 on no input, or bitpattern following yyyyyyyyxxxxxxxxx---WwRLrl-  where - bits are ignored, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, and x/y are mouse coordinates\n");
+				printf("\nUsage: cmdwiz getmouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event\n\nERRORLEVEL -1 on no input, or bitpattern following yyyyyyyyyyxxxxxxxxxxx---WwRLrl-  where - bits are ignored, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, and x/y are mouse coordinates\n");
 			} else if (stricmp(argv[1],"getch_or_mouse") == 0) {
-				printf("\nUsage: cmdwiz getch_or_mouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event or key press\n\nERRORLEVEL -1 on no input, or bitpattern following yyyyyyyyxxxxxxxxx---WwRLrl0 for a MOUSE event where - bits are ignored, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, and x/y are mouse coordinates, OR kkkkkkkkkk1 for a KEY event where k is the key pressed\n");
+				printf("\nUsage: cmdwiz getch_or_mouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event or key press\n\nERRORLEVEL -1 on no input, or bitpattern following yyyyyyyyyyxxxxxxxxxxx---WwRLrl0 for a MOUSE event where - bits are ignored, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, and x/y are mouse coordinates, OR kkkkkkkkkk1 for a KEY event where k is the key pressed\n");
 			} else {
 				printf("\nUsage: cmdwiz getch_and_mouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event and key press\n\nERRORLEVEL -1 on no input, or bitpattern kkkkkkkkkyyyyyyyxxxxxxxxWwRLrlM where M is set if there was a Mouse event, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, x/y are mouse coordinates, and k is the KEY (0 means no key pressed)\n");			
 			}
@@ -1019,11 +1021,11 @@ int main(int argc, char **argv) {
 		GotoXY(GetStdHandle(STD_OUTPUT_HANDLE), xp, yp);
 		return 0;
 	}
-	else if (stricmp(argv[1],"printf") == 0) {
+	else if (stricmp(argv[1],"print") == 0) {
 		char *token;
 		int i = 0, bFirst = 0;
 		
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz printf [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz print [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return 0; }
 		if (argv[2][0] == '\\') bFirst=1;
 		
 		for (i = 0; i < strlen(argv[2]); i++) {
@@ -1095,7 +1097,7 @@ int main(int argc, char **argv) {
 		int pos = -1;
 		hWnd = GetConsoleWindow();
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h]\n\nRETURN: The requested value in ERRORLEVEL\n"); return 0; }
 		GetWindowRect(hWnd, &bounds);
 
 		if (argv[2][0] == 'y') return bounds.top;
@@ -1112,7 +1114,7 @@ int main(int argc, char **argv) {
 	else if (stricmp(argv[1],"getdisplaydim") == 0) {
 		int bW = 0;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return 0; }
 		if (argv[2][0] == 'w') bW = 1;
 
 		return GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN);
@@ -1149,7 +1151,7 @@ int main(int argc, char **argv) {
 		POINT pos;
 		int bX = 0;
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getmousecursorpos [x|y]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getmousecursorpos [x|y]\n\nRETURN: The requested mouse cursor position dimension in ERRORLEVEL\n"); return 0; }
 		if (argv[2][0] == 'x') bX = 1;
 		
 		GetCursorPos(&pos);

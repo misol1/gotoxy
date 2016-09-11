@@ -16,7 +16,7 @@ set /a WPX=%SW%/2-%PIXELW%/2,WPY=%SH%/2-%PIXELH%/2-20
 cmdwiz setwindowpos %WPX% %WPY%
 set /a YPOS=%PIXELH%/2-20, BMPHEIGHT=1
 cmdwiz setcursorpos 9 3
-cmdwiz printf "CONSOLAS 72"
+cmdwiz print "CONSOLAS 72"
 cmdwiz delay 3000
 cmdwiz showcursor 0
 
