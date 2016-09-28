@@ -928,7 +928,7 @@ int main(int argc, char **argv) {
 		BOOL result;
 		int retVal;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 1-100 (default 25)]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 1-100 (default 25)]\n\nRETURN: 0 if cursor was previously off, otherwise the previous show percentage\n"); return 0; }
 
 		result = GetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
 		if (!result)
@@ -995,7 +995,7 @@ int main(int argc, char **argv) {
 		char glyphs[128];
 		int i, inspChar;
 		
-		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz inspectblock [x y width height inclusive|exclusive char1] [char2] [char3] ...\n\nRETURN: Bit pattern, where char1 is bit 1, char 2 is bit 2, etc\n"); return 0; }
+		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz inspectblock [x y width height inclusive|exclusive char1] [char2] [char3] ...\n\nRETURN: Bit pattern, where char1 is bit 1, char 2 is bit 2, etc. -1 on error.\n"); return 0; }
 		for (i = 7; i < argc; i++) {
 			if (argv[i][1]==0)
 				inspChar = argv[i][0];

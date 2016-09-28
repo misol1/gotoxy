@@ -71,7 +71,8 @@ Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate
                setcursorpos printf saveblock copyblock moveblock inspectblock
                playsound delay stringfind stringlen gettime await getexetype 
                cache setwindowtransparency getwindowpos setwindowpos getdisplaydim
-               getmousecursorpos setmousecursorpos insertbmp savefont setfont] [params]
+               getmousecursorpos setmousecursorpos insertbmp savefont setfont
+               gettitle ] [params]
 					
 Use "cmdwiz operation /?" for info on arguments and return values
 ```
