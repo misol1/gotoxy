@@ -940,8 +940,11 @@ int main(int argc, char **argv) {
 		
 		c.bVisible = argv[2][0] == '0'? FALSE : TRUE;
 		c.dwSize = 25;
-		if (argc > 3)
+		if (argc > 3) {
 			c.dwSize = atoi(argv[3]);
+			if (c.dwSize < 1 || c.dwSize > 100)
+				c.dwSize = 25;
+		}
 		result = SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
 		if (!result)
 			return -1;
