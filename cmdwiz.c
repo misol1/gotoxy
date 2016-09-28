@@ -15,6 +15,14 @@
 
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32 -lgdi32
 
+// TODO: 1. Move: possible to specify "empty" character
+//		  (maybe not: 2. getwindowbounds, client area
+//		  (         : 3. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
+//      (         : 4. getwindowhandle "title" + setwindowpos/getwindowbounds/setwindowtransparency + new setwindowsize WITH that handle?)
+//			5. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
+//       6. Support UNICODE
+//			7. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+
 #define BUFW 0
 #define BUFH 1
 #define SCRW 2
@@ -34,6 +42,7 @@ DWORD WINAPI GetConsoleFontInfo(HANDLE hConsoleOutput,
 BOOL WINAPI SetConsoleFont(HANDLE hConsoleOutput, DWORD nFont);
 // END
 
+/* // no longer needed since defined in more current MinGw headers
 typedef struct _CONSOLE_FONT_INFOEX {
 	ULONG cbSize;
 	DWORD nFont;
@@ -42,11 +51,12 @@ typedef struct _CONSOLE_FONT_INFOEX {
 	UINT FontWeight;
 	WCHAR FaceName[LF_FACESIZE];
 } CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
+*/
 
-BOOL WINAPI SetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
+//BOOL WINAPI SetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 typedef BOOL(WINAPI * Func_SetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
-COORD WINAPI GetConsoleFontSize(HANDLE, DWORD);
-BOOL WINAPI GetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
+//COORD WINAPI GetConsoleFontSize(HANDLE, DWORD);
+//BOOL WINAPI GetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 typedef BOOL(WINAPI * Func_GetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 
 
@@ -116,20 +126,20 @@ int InspectBuffer(HANDLE hSrc, int x, int y, int w, int h, int bExclusive, unsig
    int retVal = 0, i, j, k, l;
 
 	GetConsoleScreenBufferInfo(hSrc, &screenBufferInfo);
-	if (y > screenBufferInfo.dwSize.Y || y < 0) return 0;
-	if (x > screenBufferInfo.dwSize.X || x < 0) return 0;
-	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return 0;
-	if (x+w > screenBufferInfo.dwSize.X || w < 1) return 0;
+	if (y > screenBufferInfo.dwSize.Y || y < 0) return -1;
+	if (x > screenBufferInfo.dwSize.X || x < 0) return -1;
+	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return -1;
+	if (x+w > screenBufferInfo.dwSize.X || w < 1) return -1;
 	
 	if (w == 0 || h == 0)
-		return 0;
+		return -1;
 	
 	if (bExclusive)
 		retVal = 1;
 	
 	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * w*h);
 	if (!str)
-		return 0;
+		return -1;
 
 	a.X = w;
 	a.Y = h;
@@ -584,7 +594,7 @@ int SetFontFromFile(char *fname) {
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont gettitle] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
@@ -714,7 +724,7 @@ int main(int argc, char **argv) {
 		int i;
 		
 		if (argc < 4 || bInfo) {
-			printf("\nUsage: cmdwiz getcharat [x|k y|k]\n\nRETURN: Character ASCII value at position, -1 on failure\n");
+			printf("\nUsage: cmdwiz getcharat [x|keep y|keep]\n\nRETURN: Character ASCII value at position, -1 on failure\n");
 			return 0;
 		}
 		
@@ -733,7 +743,7 @@ int main(int argc, char **argv) {
 		int ox, oy;
 		int i;
 
-		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz getcolorat [fg|bg x|k y|k]\n\nRETURN: Color value at position, -1 on failure\n"); return 0; }
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz getcolorat [fg|bg x|keep y|keep]\n\nRETURN: Color value at position, -1 on failure\n"); return 0; }
 
 		GetXY(&ox, &oy);
 
@@ -891,8 +901,7 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"copyblock") == 0) {
 		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz copyblock [x y width height newX newY]\n"); return 0; }
-		CopyBlock(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),atoi(argv[6]),atoi(argv[7]));
-		return 0;
+		return CopyBlock(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),atoi(argv[6]),atoi(argv[7]));
 	}
 	else if (stricmp(argv[1],"await") == 0) {
 		int startT, waitT;
@@ -916,20 +925,33 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"showcursor") == 0) {
 		CONSOLE_CURSOR_INFO c;
+		BOOL result;
+		int retVal;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 0-100 (default 25)]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 1-100 (default 25)]\n"); return 0; }
 
+		result = GetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+		if (!result)
+			return -1;
+		if (c.bVisible == FALSE)
+			retVal = 0;
+		else
+			retVal = c.dwSize;
+		
 		c.bVisible = argv[2][0] == '0'? FALSE : TRUE;
 		c.dwSize = 25;
 		if (argc > 3)
 			c.dwSize = atoi(argv[3]);
-		SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+		result = SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+		if (!result)
+			return -1;
+		return retVal;
 	}
 	else if (stricmp(argv[1],"stringfind") == 0) {
 		int index = 0;
 		char *cp;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring] [findstring] [startindex] [noCase]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return 0; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring findstring] [startindex] [noCase]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return 0; }
 		if (argc > 4) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return -1; }
 		if (argc > 5) { 
 			int i;
@@ -1027,12 +1049,11 @@ int main(int argc, char **argv) {
 		
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz print [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return 0; }
 		if (argv[2][0] == '\\') bFirst=1;
-		
+
 		for (i = 0; i < strlen(argv[2]); i++) {
 			if (argv[2][i] == '\\' && argv[2][i+1] == '\\')
 				argv[2][i+1] = 1;
 		}
-		
 		i = 0;
 		token = strtok(argv[2], "\\");
 		while (token) {
@@ -1044,9 +1065,10 @@ int main(int argc, char **argv) {
 					case 'r': printf("\r"); token++; break;
 					case 1: printf("\\"); token++; break;
 					case 't': printf("\t"); token++; break;
+					case '\"': printf("\""); token++; break;
 				}
 			}
-			printf(token);
+			printf("%s", token);
 			
 			token = strtok(NULL, "\\");
 			i++;
@@ -1077,18 +1099,17 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"setwindowpos") == 0) {
 		RECT bounds;
-		HWND hWnd;
 		int x, y;
-		hWnd = GetConsoleWindow();
-				
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x y]\n"); return 0; }
-		x = atoi(argv[2]);
-		y = atoi(argv[3]);
+		HWND hWnd = GetConsoleWindow();
+
+		if (!hWnd) return -1;
+		GetWindowRect(hWnd, &bounds);
 		
-		if (hWnd) {
-			GetWindowRect(hWnd, &bounds);
-			SetWindowPos(hWnd, HWND_TOP, x, y, bounds.right-bounds.left, bounds.bottom-bounds.top, 0); // HWND_TOPMOST is "always on top"
-		}		
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep]\n"); return 0; }
+		x = atoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
+		y = atoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
+		
+		SetWindowPos(hWnd, HWND_TOP, x, y, bounds.right-bounds.left, bounds.bottom-bounds.top, 0); // HWND_TOPMOST is "always on top"
 		return 0;
 	}
 	else if (stricmp(argv[1],"getwindowbounds") == 0) {
@@ -1106,8 +1127,11 @@ int main(int argc, char **argv) {
 		return bounds.left;
 	}
 	else if (stricmp(argv[1],"gettitle") == 0) {
-		char title[256];
-		GetConsoleTitle(title, 255);
+		char title[1024];
+
+		if (bInfo) { printf("\nUsage: cmdwiz gettitle\n\nRETURN: Prints the title of the console\n"); return 0; }		
+		
+		GetConsoleTitle(title, 1023);
 		printf("%s\n", title);
 		return 0;
 	}
@@ -1123,10 +1147,13 @@ int main(int argc, char **argv) {
 		int x, y;
 		int click = 0;
 		INPUT Input = {0};
+		POINT pos;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x y] [l|r|d|u]\n"); return 0; }
-		x = atoi(argv[2]);
-		y = atoi(argv[3]);
+		GetCursorPos(&pos);
+
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x|keep y|keep] [l|r|d|u]\n"); return 0; }
+		x = atoi(argv[2]); if (argv[2][0]=='k') x = pos.x;
+		y = atoi(argv[3]); if (argv[3][0]=='k') y = pos.y;
 		if (argc > 4) { if (argv[4][0]=='l') click = 1; if (argv[4][0]=='r') click = 2; if (argv[4][0]=='d') click = 3; if (argv[4][0]=='u') click = 4; } 
 
 		SetCursorPos(x,y);

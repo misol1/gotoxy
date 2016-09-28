@@ -5,8 +5,11 @@
 #include <string.h>
 #include <windows.h>
 #include <ctype.h>
+#include <conio.h>
 
 // Compilation with tcc(32 bit version) : tcc -lshell32 -lwinmm -luser32 -o gotoxy.exe gotoxy.c
+
+// TODO: Transparency (with \T switch) does not work with encoded characters in the input.
 
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED

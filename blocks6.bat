@@ -45,8 +45,8 @@ goto :eof
 
 
 :MAKE_SQ
-set /a YS=24+%RANDOM% %% 40
-set /a XS=16+%RANDOM% %% 35
+set /a YS=44+%RANDOM% %% 40
+set /a XS=26+%RANDOM% %% 35
 set /a YP=0-%YS%
 set /a XP=%RANDOM% %% (%XSIZE% - %XS% + 6) - 3
 set /a SC=9+%RANDOM% %% 6
@@ -57,8 +57,8 @@ set SQ="\f%P%\%FX%\M%YS%{!BL:~0,%XW%!\n}"
 goto :eof
 
 :MAKE_SQ2
-set /a YS2=16+%RANDOM% %% 25
-set /a XS2=40+%RANDOM% %% 60
+set /a YS2=24+%RANDOM% %% 25
+set /a XS2=60+%RANDOM% %% 60
 set /a XP2=-1-%XS2%
 set /a YP2=%RANDOM% %% (%YSIZE% - %YS2% + 6) - 3
 set /a SC2=9+%RANDOM% %% 6
