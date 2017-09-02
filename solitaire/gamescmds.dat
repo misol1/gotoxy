@@ -1,0 +1,3 @@
+call solitaire&games.bat
+call freecell&games.bat
+call golf&games.bat

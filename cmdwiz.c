@@ -1,4 +1,4 @@
-/* CmdWiz (c) 2015-16 Mikael Sollenborn */
+/* CmdWiz (c) 2015-17 Mikael Sollenborn */
 
 #ifndef WINVER
 #define WINVER 0x0502
@@ -15,13 +15,19 @@
 
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32 -lgdi32
 
-// TODO: 1. Move: possible to specify "empty" character
-//		  (maybe not: 2. getwindowbounds, client area
-//		  (         : 3. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
-//      (         : 4. getwindowhandle "title" + setwindowpos/getwindowbounds/setwindowtransparency + new setwindowsize WITH that handle?)
-//			5. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
-//       6. Support UNICODE
-//			7. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+// TODO:
+//		  (1. getwindowbounds, client area
+//		  (2. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
+//      (3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
+//			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
+//       5. Support UNICODE
+//			6. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+//			7. savevisualstate [name] / restorevisualstate (save cursor state, buffer size, cursor pos?, buffer content?, font, color, quickedit). default = delete temp file on restore
+//       8. Calc: use tinyexpr to calculate float expressions 
+//			9. Await/gettime : use the more precise "milliseconds_now"
+//			10. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			11. Several operations (showcursor etc) not working when running cmdgfx as output server. Possible to fix?
+
 
 #define BUFW 0
 #define BUFH 1
@@ -34,29 +40,10 @@
 
 // Undocumented functions and structures
 // BEGIN
-DWORD WINAPI GetNumberOfConsoleFonts(VOID);
-DWORD WINAPI GetConsoleFontInfo(HANDLE hConsoleOutput,
-				BOOL bMaximumWindow,
-				DWORD nLength,
-				PCONSOLE_FONT_INFO lpConsoleFontInfo);
 BOOL WINAPI SetConsoleFont(HANDLE hConsoleOutput, DWORD nFont);
 // END
 
-/* // no longer needed since defined in more current MinGw headers
-typedef struct _CONSOLE_FONT_INFOEX {
-	ULONG cbSize;
-	DWORD nFont;
-	COORD dwFontSize;
-	UINT FontFamily;
-	UINT FontWeight;
-	WCHAR FaceName[LF_FACESIZE];
-} CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
-*/
-
-//BOOL WINAPI SetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 typedef BOOL(WINAPI * Func_SetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
-//COORD WINAPI GetConsoleFontSize(HANDLE, DWORD);
-//BOOL WINAPI GetCurrentConsoleFontEx(HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 typedef BOOL(WINAPI * Func_GetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 
 
@@ -189,6 +176,43 @@ char DecToHex(int i) {
 	}
 	return i;
 }
+
+
+/* Windows ns high-precision sleep */
+BOOLEAN nanosleep(LONGLONG ns){
+    HANDLE timer;
+    LARGE_INTEGER li;
+
+    if(!(timer = CreateWaitableTimer(NULL, TRUE, NULL)))
+        return FALSE;
+    li.QuadPart = -ns;
+    if(!SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE)){
+        CloseHandle(timer);
+        return FALSE;
+    }
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+    return TRUE;
+}
+
+BOOLEAN millisleep(LONGLONG ms){
+	return nanosleep(ms * 10000);
+}
+
+long long milliseconds_now(void) {
+	static LARGE_INTEGER s_frequency;
+	static BOOL s_use_qpc;
+
+	s_use_qpc = QueryPerformanceFrequency(&s_frequency);
+	if (s_use_qpc) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		return (1000LL * now.QuadPart) / s_frequency.QuadPart;
+	} else {
+		return GetTickCount();
+	}
+}
+
 
 void GotoXY(HANDLE h, int x, int y) {
 	COORD coord;
@@ -437,7 +461,7 @@ BOOL f_SetConsoleTransparency(long percentage)
 	return FALSE;
 }
 
-int Fn_LoadBmp(char *szBmpPath, long x, long y, long z, long w, long h)
+int Fn_LoadBmp(char *szBmpPath, long x, long y, long z, long w, long h, DWORD dwRop)
 {
 	HWND hWnd = NULL;
 	HDC hDc = NULL, hDcBmp = NULL;
@@ -467,7 +491,7 @@ int Fn_LoadBmp(char *szBmpPath, long x, long y, long z, long w, long h)
 						{
 							if ((hGdiObj = SelectObject(hDcBmp, hBmp2)) && hGdiObj != HGDI_ERROR)
 							{
-								if (BitBlt(hDc, (int)x, (int)y, (int)w, (int)h, hDcBmp, 0, 0, SRCCOPY))
+								if (BitBlt(hDc, (int)x, (int)y, (int)w, (int)h, hDcBmp, 0, 0, dwRop))
 									iRet = EXIT_SUCCESS;
 								DeleteObject(hGdiObj);
 							}
@@ -479,70 +503,69 @@ int Fn_LoadBmp(char *szBmpPath, long x, long y, long z, long w, long h)
 				ReleaseDC(hWnd, hDcBmp);
 			}
 			ReleaseDC(hWnd, hDc);
+			ReleaseDC(hWnd, hDc);
 		}
 	}
 	return iRet;
 }
 
+/*
+void DrawSemiTransparentBitmap(CDC *pDstDC, int x, int y, int nWidth, int nHeight,
+    CDC* pSrcDC, int xSrc, int ySrc)
+{
+    CDC dcCompatible;
+    CBitmap *pBitmapOld;
+    CBitmap bm;
+    dcCompatible.CreateCompatibleDC(pDstDC);
+    bm.CreateCompatibleBitmap(pDstDC, nWidth, nHeight);
+    pBitmapOld = dcCompatible.SelectObject(&bm);
+    dcCompatible.FillSolidRect(CRect(0, 0, nWidth, nHeight), RGB(0x7F, 0x7F, 0x7F));
+    pDstDC->BitBlt(x, y, nWidth, nHeight, &dcCompatible, 0, 0, SRCAND);
+    dcCompatible.SelectObject(pBitmapOld);
+    pDstDC->BitBlt(x, y, nWidth, nHeight, pSrcDC, 0, 0, SRCPAINT);
+}
+*/
+
 // Function SetFont borrowed from user "carlos" at dostips.com
 
-#define MAX_TERMINAL_FONT_SIZES 127
 #define TERMINAL_FONTS 10
-int SetFont(int selected) {
-	CONSOLE_FONT_INFO font[MAX_TERMINAL_FONT_SIZES];
+int SetFont(int index) {
 	HANDLE hOut;
-	int fonts_count;
-	int index;
-
 	COORD terminal_font[TERMINAL_FONTS] = { {4, 6}, {6, 8}, {8, 8}, {16, 8}, {5, 12}, {7, 12}, {8, 12}, {16, 12}, {12, 16}, {10, 18}};
 
-	if ((selected < 0) || (selected >= TERMINAL_FONTS)) {
+	if ((index < 0) || (index >= TERMINAL_FONTS)) {
 		return 1;
 	}
 
-	fonts_count = GetNumberOfConsoleFonts();
-
-	if (fonts_count > MAX_TERMINAL_FONT_SIZES) {
-		fonts_count = MAX_TERMINAL_FONT_SIZES;
-	}
-
 	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	GetConsoleFontInfo(hOut, FALSE, fonts_count, font);
 
-	for (index = 0; index < fonts_count; ++index) {
-		font[index].dwFontSize =
-		GetConsoleFontSize(hOut, font[index].nFont);
+	HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
 
-		if ((font[index].dwFontSize.X != terminal_font[selected].X) || (font[index].dwFontSize.Y != terminal_font[selected].Y)) {
-			continue;	//Index not found
-	   }
+	if (NULL != dllHandle) {
+		Func_SetCurrentConsoleFontEx
+		SetCurrentConsoleFontEx_Ptr =
+		(Func_SetCurrentConsoleFontEx)
+		GetProcAddress(dllHandle, "SetCurrentConsoleFontEx");
 
-		//Index found
-		HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
+	    if (NULL != SetCurrentConsoleFontEx_Ptr) {	//vista
+			CONSOLE_FONT_INFOEX font_info;
 
-		if (NULL != dllHandle) {
-			Func_SetCurrentConsoleFontEx SetCurrentConsoleFontEx_Ptr = (Func_SetCurrentConsoleFontEx) GetProcAddress(dllHandle, "SetCurrentConsoleFontEx");
+			font_info.cbSize = sizeof(CONSOLE_FONT_INFOEX);
+			font_info.nFont = index;
+			font_info.dwFontSize.X = terminal_font[index].X;
+			font_info.dwFontSize.Y = terminal_font[index].Y;
+			font_info.FontFamily = 48;
+			font_info.FontWeight = 400;
+			wcscpy(font_info.FaceName, L"Terminal");
 
-			if (NULL != SetCurrentConsoleFontEx_Ptr) {	//vista
-				CONSOLE_FONT_INFOEX font_info;
-
-				font_info.cbSize = sizeof(CONSOLE_FONT_INFOEX);
-				font_info.nFont = index;
-				font_info.dwFontSize.X = terminal_font[selected].X;
-				font_info.dwFontSize.Y = terminal_font[selected].Y;
-				font_info.FontFamily = 48;
-				font_info.FontWeight = 400;
-				wcscpy(font_info.FaceName, L"Terminal");
-
-				SetCurrentConsoleFontEx_Ptr(hOut, FALSE, &font_info);
-			}
-
-			FreeLibrary(dllHandle);
-	   }
-
-		SetConsoleFont(hOut, index);
-		break; //done
+			SetCurrentConsoleFontEx_Ptr(hOut, FALSE, &font_info);
+		}
+		FreeLibrary(dllHandle);
 	}
+
+	SetConsoleFont(hOut, index);
+	CloseHandle(hOut);
+	
 	return 0;
 }
 
@@ -591,10 +614,198 @@ int SetFontFromFile(char *fname) {
 }
 
 
+void evaluateCol(char ch, int *bUsesColors, int *bUsesExtendedColor, int *bUsesUnknownCode) {
+	switch(ch) {
+		case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7':case '8':case '9':case 'u':case 'U': case 'k':
+		case 'a':case 'A':case 'b':case 'B':case 'c':case 'C':case 'd':case 'D':case 'e':case 'E':case 'f':case 'F':
+		{
+			*bUsesColors=1;
+			break;
+		}
+		case 'v':case 'V':case 'x':case 'X':case 'y':case 'Y':case 'z':case 'Z':case 'q':case 'Q':case 'h':case 'H':
+		case '+':case '/':
+		{
+			*bUsesExtendedColor=1;
+			break;
+		}				
+		default: {
+			*bUsesUnknownCode=1;
+		}	
+	}
+}
+
+int inspectGxy(char *fname, int bIgnoreCodes) {
+	char ch, *text;
+	int fr, i, inlen, maxW=-1, maxH=-1;
+	int x=0, y=0;
+	int bUsesColors=0, bUsesExtendedCode=0, bUsesExtendedColor=0, bHasTransparency=0, bUsesUnknownCode=0, bUsesCodes=0, bMeaninglessSize=0, bKeyWait=0, bHasDelay=0;
+	int bLastNewline=0;
+	FILE *ifp;
+
+	ifp=fopen(fname, "r");
+	if (ifp == NULL) {
+		return 1;
+	}
+	
+	text = (char *)malloc(5000 * 5000);
+	if (text == NULL)
+		return 2;
+
+	fr = fread(text, 1, 5000 * 5000, ifp);
+	text[fr] = 0;
+	fclose(ifp);
+	
+	inlen =strlen(text);
+	
+	for(i = 0; i < inlen; i++) {
+		ch = text[i];
+		bLastNewline=0;
+		
+		if (ch == '\\' && !bIgnoreCodes) {
+			i++;
+			ch = text[i];
+			bUsesCodes = 1;
+
+			switch(ch) {
+				case '-': {
+					bHasTransparency = 1;
+					x++;
+					break;
+				}
+				case 'g': {
+					i+=2;
+					x++;
+					break;
+				}
+				case '\\': {
+					x++;
+					break;
+				}
+				case 'r': {
+					break;
+				}
+				case 'n': {
+					if (x > maxW) maxW = x;
+					x = 0; y++;
+					bLastNewline=1;
+					break;
+				}
+				
+				case 'T': {
+					i+=5;
+					bUsesExtendedCode=1;
+					bHasTransparency = 1;
+					break;
+				}
+				
+				case 'R': {
+					bUsesExtendedCode=1;
+					break;
+				}
+				case 'K': {
+					bUsesExtendedCode=1;
+					bKeyWait=1;
+					break;
+				}
+				case 'p': case 'N': case 'I': case 'M': case 'o' : case 'O': case 'S': {
+					bUsesExtendedCode=1;
+					bMeaninglessSize=1;
+					break;
+				}
+				case 'G' : {
+					bUsesExtendedCode=1;
+					x++;
+					break;
+				}
+				case 'w' : case 'W': {
+					bUsesExtendedCode=1;
+					bHasDelay=1;
+					while(i < inlen && text[i] != ';')
+						i++;
+					break;
+				}
+				
+				//color
+				case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7':case '8':case '9':case 'u':case 'U': case 'k':
+				case 'a':case 'A':case 'b':case 'B':case 'c':case 'C':case 'd':case 'D':case 'e':case 'E':case 'f':case 'F':
+				{
+					bUsesColors=1;
+					i++;
+					evaluateCol(text[i], &bUsesColors, &bUsesExtendedColor, &bUsesUnknownCode);
+					break;
+				}
+				
+				case 'v':case 'V':case 'x':case 'X':case 'y':case 'Y':case 'z':case 'Z':case 'q':case 'Q':case 'h':case 'H':
+				case '+':case '/':
+				{
+					bUsesExtendedColor=1;
+					i++;
+					evaluateCol(text[i], &bUsesColors, &bUsesExtendedColor, &bUsesUnknownCode);
+					break;
+				}				
+				
+				default: {
+					bUsesUnknownCode=1;
+					i++;
+					evaluateCol(text[i], &bUsesColors, &bUsesExtendedColor, &bUsesUnknownCode);
+				}
+			}
+		} else {
+			if (y >= 5000) break;
+			
+			if (ch == 10) {
+				if (x > maxW) maxW = x;
+				x = 0; y++;
+				bLastNewline=1;
+			} else {
+				x++;
+			}
+		}
+	}
+	
+//	if (!bLastNewline || bIgnoreCodes)
+		y++;
+	maxH = y;
+	if (x > maxW) maxW = x;
+
+	printf("\n");
+	if (!bMeaninglessSize)
+		printf("Dimension: %d x %d\n\n", maxW, maxH);
+	else
+		printf("Unknown dimensions due to use of one or more of: \\p, \\N, \\I, \\M, \\o, \\O, \\S\n\n");
+
+	if (bUsesUnknownCode)
+		printf("! Unknown/faulty control codes: Yes\n");
+	if (bUsesCodes)
+		printf("Control codes: Yes\n");
+	else if (!bIgnoreCodes)
+		printf("No control codes (no \\ characters)\n");
+	if (bUsesExtendedCode)
+		printf("Extended control codes (gotoxy only): Yes\n");
+	if (bUsesColors)
+		printf("Color codes: Yes\n");
+	if (bUsesExtendedColor)
+		printf("Extended color codes (gotoxy only): Yes\n");
+	if (bHasTransparency)
+		printf("Transparency: Yes\n");
+	if (bKeyWait)
+		printf("Key press(es): Yes\n");
+	if (bHasDelay)
+		printf("Delay(s): Yes\n");
+	
+	if (!bIgnoreCodes)
+		printf("\n");
+	
+	free(text);
+
+	return 0;
+}
+
+
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont gettitle] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
@@ -630,7 +841,8 @@ int main(int argc, char **argv) {
 
 		delayVal=atoi(argv[2]);
 		if (delayVal < 1) return 0;
-		Sleep(delayVal);
+		millisleep(delayVal);
+		//Sleep(delayVal);
 	}
 	else if (stricmp(argv[1],"getconsoledim") == 0) {
 		int dim = BUFW;
@@ -714,9 +926,16 @@ int main(int argc, char **argv) {
 		return k;
 	}
 	else if (stricmp(argv[1],"playsound") == 0) {
-	if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename.wav]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename.wav]\n"); return 0; }
 		PlaySound(argv[2], NULL, 0x00020000L|0x0002); // SND_FILENAME | SND_NODEFAULT
 		return 0;
+	}
+	else if (stricmp(argv[1],"gxyinfo") == 0) {
+		int res;
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz gxyinfo [filename.gxy] [ignoreCodes]\n\nRETURN: 0 if file could be loaded, -1 on failure\n"); return 0; }
+	
+		res = inspectGxy(argv[2], argc > 3);
+		return res > 0? -1 : 0;
 	}
 	else if (stricmp(argv[1],"getcharat") == 0) {
 		int ox, oy;
@@ -881,7 +1100,7 @@ int main(int argc, char **argv) {
 		CONSOLE_SCREEN_BUFFER_INFO info;
 		int w, h;
 
-		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY]\n"); return 0; }
+		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY] [char] [fgcol] [bgcol]\n"); return 0; }
 		r.Left = atoi(argv[2]);
 		r.Top = atoi(argv[3]);
 		w = atoi(argv[4]);
@@ -895,7 +1114,30 @@ int main(int argc, char **argv) {
 		if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
 			chiFill.Attributes = info.wAttributes;
 		chiFill.Char.AsciiChar = ' ';
-		cl.Left=np.X; cl.Top=np.Y; cl.Right=np.X+w; cl.Bottom=np.Y+h; //not working (tried to copy instead of moving). Hence the NULL below.
+		
+		if (argc > 8) {
+			if (strlen(argv[8]) == 1)
+				chiFill.Char.AsciiChar = argv[8][0];
+			else
+				chiFill.Char.AsciiChar =  strtol(argv[8], NULL, 16);
+			
+			if (argc > 9) {
+				chiFill.Attributes = 0;
+				if (strlen(argv[9]) == 1 && strtol(argv[9], NULL, 16) > 0)
+					chiFill.Attributes = strtol(argv[9], NULL, 16);
+				else
+					chiFill.Attributes = atoi(argv[9]);
+				
+				if (argc > 10) {
+					if (strlen(argv[10]) == 1 && strtol(argv[10], NULL, 16) > 0)
+						chiFill.Attributes |= strtol(argv[10], NULL, 16) << 4;
+					else
+						chiFill.Attributes |= atoi(argv[10]) << 4;
+				}
+			}
+		}
+		
+		cl.Left=np.X; cl.Top=np.Y; cl.Right=np.X+w; cl.Bottom=np.Y+h; //not working (tried to copy instead of moving). Hence NULL below
 		ScrollConsoleScreenBuffer(GetStdHandle(STD_OUTPUT_HANDLE), &r, NULL, np, &chiFill);
 		return 0;
 	}
@@ -910,7 +1152,7 @@ int main(int argc, char **argv) {
 		waitT = atoi(argv[3]);
 
 		while (GetTickCount() < startT+waitT) {
-			Sleep(1);
+//			Sleep(1);
 		}
 	}
 	else if (stricmp(argv[1],"getconsolecolor") == 0) {
@@ -1015,7 +1257,7 @@ int main(int argc, char **argv) {
 		int encodeMode = 1;
 		int transpChar = -1, transpFg = -1, transpBg = -1;
 
-		if (argc < 7 || bInfo) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode|txt] [transparent char] [transparent bgcolor] [transparent fgcolor]\n\nRETURN: 0 on success, 1 for file write error, 2 for invalid block\n"); return 0; }
+		if (argc < 7 || bInfo) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode|txt] [transparent char] [transparent bgcolor] [transparent fgcolor]\n\nRETURN: 0 on success, -1 for file write error, -2 for invalid block\n"); return 0; }
 		if (argc>7) {
 			if (argv[7][0]=='n') encodeMode = 0;
 			if (argv[7][0]=='f') encodeMode = 2;
@@ -1031,8 +1273,8 @@ int main(int argc, char **argv) {
 		if (argc>10) transpFg = atoi(argv[10]);
 
 		result = SaveBlock(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), encodeMode, transpChar, transpBg, transpFg);
-		if (result == 1) printf("Error: Could not write file\n");
-		if (result == 2) printf("Error: Invalid block\n");
+		if (result == 1) { printf("Error: Could not write file\n"); result=-result; }
+		if (result == 2) { printf("Error: Invalid block\n"); result=-result; }
 		return result;
 	}
 	else if (stricmp(argv[1],"setcursorpos") == 0) {
@@ -1080,16 +1322,34 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	else if (stricmp(argv[1],"insertbmp") == 0) {
-		int x,y,z = 100, w = -1, h = -1;
+		
+		DWORD bitOp[] = { SRCCOPY, SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, MERGECOPY, MERGEPAINT, PATCOPY, PATPAINT, PATINVERT, DSTINVERT, BLACKNESS, WHITENESS, NOMIRRORBITMAP, CAPTUREBLT };
+		char* bitOp_S[] = { "SRCCOPY", "SRCPAINT", "SRCAND", "SRCINVERT", "SRCERASE", "NOTSRCCOPY", "NOTSRCERASE", "MERGECOPY", "MERGEPAINT", "PATCOPY", "PATPAINT", "PATINVERT", "DSTINVERT", "BLACKNESS", "WHITENESS", "NOMIRRORBITMAP", "CAPTUREBLT" };
+		DWORD selBitOp = SRCCOPY;
+		
+		int i, x,y,z = 100, w = -1, h = -1;
 	
-		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]]\n\nRETURN: 0 on success, 1 if failed to load file\n"); return 0; }
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]] [bitOp]\n\nBitops are: SRCCOPY (default), SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, DSTINVERT, BLACKNESS, WHITENESS\n\nRETURN: 0 on success, -1 if failed to load file\n"); return 0; }
 
 		x = atoi(argv[3]);
 		y = atoi(argv[4]);
+		
+		if (argc > 5) {
+			for (i = 0; i < strlen(argv[argc - 1]); i++) argv[argc - 1][i] = toupper(argv[argc - 1][i]);
+
+			for (i = 0;i < 17; i++) {
+				if (strcmp(bitOp_S[i], argv[argc - 1]) == 0) {
+					selBitOp = bitOp[i];
+					argc--;
+					break;
+				}
+			}
+		}
+
 		if (argc > 5) z = atoi(argv[5]);
 		if (argc > 6) { w = atoi(argv[5]); h = atoi(argv[6]); }
 
-		if (Fn_LoadBmp(argv[2], x, y, z, w, h) == EXIT_SUCCESS) return 0; else return 1;
+		if (Fn_LoadBmp(argv[2], x, y, z, w, h, selBitOp) == EXIT_SUCCESS) return 0; else return -1;
 	}
 	else if (stricmp(argv[1],"setwindowtransparency") == 0) {
 		int percentage = -1;
@@ -1102,17 +1362,23 @@ int main(int argc, char **argv) {
 	}
 	else if (stricmp(argv[1],"setwindowpos") == 0) {
 		RECT bounds;
-		int x, y;
+		int x, y, w, h, topMost = 0;
 		HWND hWnd = GetConsoleWindow();
 
 		if (!hWnd) return -1;
 		GetWindowRect(hWnd, &bounds);
 		
+//		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep] [w|keep] [h|keep] [0|1(topMost)]\n"); return 0; }
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep]\n"); return 0; }
 		x = atoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
 		y = atoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
+		w = bounds.right-bounds.left;
+		h = bounds.bottom-bounds.top;
+/*		if (argc > 4) { w = atoi(argv[4]); if (argv[4][0]=='k') w = bounds.right-bounds.left; }
+		if (argc > 5) { h = atoi(argv[5]); if (argv[5][0]=='k') h = bounds.bottom-bounds.top; }
+		if (argc > 6) { topMost = atoi(argv[6]); if (topMost == 1) topMost = HWND_TOPMOST; else topMost = 0; } */
 		
-		SetWindowPos(hWnd, HWND_TOP, x, y, bounds.right-bounds.left, bounds.bottom-bounds.top, 0); // HWND_TOPMOST is "always on top"
+		SetWindowPos(hWnd, HWND_TOP, x, y, w, h, topMost); // HWND_TOPMOST is "always on top"
 		return 0;
 	}
 	else if (stricmp(argv[1],"getwindowbounds") == 0) {
@@ -1217,11 +1483,42 @@ int main(int argc, char **argv) {
 		
 		return 0;
 	}
-	// want operation to hide/show mouse cursor, but not possible in console window according to http://stackoverflow.com/questions/16110898/how-can-i-hide-the-mouse-cursor
+	else if (stricmp(argv[1],"setwindowstyle") == 0) {
+		int bExtended, bSet, i;
+		long valueFlags;
+
+		if (argc > 2) bSet = argv[2][0] == 's' ? 1 : argv[2][0] == 'c'? 0 : -1;
+		if (argc > 3) bExtended = argv[3][0] == 'e' ? 1 : argv[3][0] == 's'? 0 : -1;
+		
+		if (argc < 5 || bInfo || bSet == -1 || bExtended == -1) { printf("\nUsage: cmdwiz setwindowstyle set|clear standard|extended value1 [value2] ...\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n"); return 0;
+		}
+		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
+		
+		for (i = 4; i < argc; i++) {
+			int flag = strtol(argv[i], NULL, 16);
+			if (bSet) valueFlags |= flag; else valueFlags &= ~(flag);
+		}
+		SetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);		
+		return 0;
+	}
+	else if (stricmp(argv[1],"getwindowstyle") == 0) {
+		int bExtended, flag;
+		long valueFlags;
+
+		if (argc > 2) bExtended = argv[2][0] == 'e' ? 1 : argv[2][0] == 's'? 0 : -1;
+		
+		if (argc < 4 || bInfo || bExtended == -1) { printf("\nUsage: cmdwiz getwindowstyle standard|extended value\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n\nRETURN: ERRORLEVEL 1 if style set, otherwise 0\n"); return 0;
+		}
+		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
+		
+		flag = strtol(argv[3], NULL, 16);
+		return valueFlags & flag ? 1 : 0;
+	}
 	else {
 		printf("Error: unknown operation\n");
 		return 0;
 	}
+	// want operation to hide/show mouse cursor, but not possible in console window according to http://stackoverflow.com/questions/16110898/how-can-i-hide-the-mouse-cursor
 
 	return 0; 
 }

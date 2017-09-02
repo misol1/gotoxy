@@ -9,7 +9,10 @@
 
 // Compilation with tcc(32 bit version) : tcc -lshell32 -lwinmm -luser32 -o gotoxy.exe gotoxy.c
 
-// TODO: Transparency (with \T switch) does not work with encoded characters in the input.
+// TODO: 1. Transparency (with \T switch) does not work with encoded characters in the input.
+//       2. If end of line, \I: should not have to finish with ;
+//       3. Can write \ak, to use last color for bg and "a" for fg, but not \ka, then "a" is not used for bg, instead last color is used for both fg and bg
+//			4. Not working when running cmdgfx as output server. Possible to fix?
 
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED

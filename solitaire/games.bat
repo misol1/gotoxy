@@ -1,0 +1,1 @@
+@menu 0 gamesmenu.dat gamescmds.dat "" 32 %1

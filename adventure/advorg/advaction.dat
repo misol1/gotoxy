@@ -1,0 +1,33 @@
+O@open@ @You opened the #@R@The # cannot be opened
+U@unlock@ @You unlocked the #@R@The # cannot be unlocked
+K@kill@ @You defeated the #@R@You were killed by the #@D
+A@attack@ @You defeated the #@R@You were killed by the #@D
+t@talk to@ @It seems the # is not interested...
+I@#inventory@i
+W@#wait@z
+L@#look@l
+T@take@t@Picked up the #@A@You cannot pick up the #
+T@get@t@Picked up the #@A@You cannot pick up the #
+T@pick up@t@Picked up the #@A@You cannot pick up the #
+Z@#north@n
+Z@#south@s
+Z@#east@e
+Z@#west@w
+Z@#go north@n
+Z@#go south@s
+Z@#go east@e
+Z@#go west@w
+Z@#go n@n
+Z@#go s@s
+Z@#go e@e
+Z@#go w@w
+E@examine@x
+E@look at@x
+G@#again@g
+Q@#quit@q
+Q@#exit@q
+q@#restart@
+H@#help@h
+l@load@
+l@restore@
+s@save@

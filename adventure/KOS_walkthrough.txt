@@ -1,0 +1,31 @@
+Walkthrough KOS:
+
+n
+knock door
+n
+x towel
+pay receptionist
+tell joke to receptionist
+dance with receptionist
+n
+show ticket to geezer
+e  e  n
+remove clothes
+n  e
+get lipstick
+w  w  n  n  w
+sit on bench
+z  z  z  z  z
+e  s  s  w
+(take tube  x tube  x note)
+s  w
+get thing
+e  n  e  n  n  e
+apply lipstick
+wear wig
+e  e  s
+untie kent
+lift kent
+n  e  e
+search exit
+n

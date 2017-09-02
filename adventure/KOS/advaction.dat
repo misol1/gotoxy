@@ -1,0 +1,70 @@
+O@open@ @You opened the #@R@The # cannot be opened
+A@kill@ @You defeated the #@R@You were killed by the #@D
+A@attack@ @You defeated the #@R@You were killed by the #@D
+A@kick@ @You defeated the #@R@You were killed by the #@D
+t@talk to@ @It seems the # is not interested...
+t@talk with@ @It seems the # is not interested...
+I@#inventory@i
+W@#wait@z
+F@look for
+E@look at@x
+L@#look@l
+r@take off@
+1@get ticket from
+T@take@t@Picked up the #@A@You cannot pick up the #
+T@get@t@Picked up the #@A@You cannot pick up the #
+T@pick up@t@Picked up the #@A@You cannot pick up the #
+.@#north@n
+.@#south@s
+.@#east@e
+.@#west@w
+.@#go north@n
+.@#go south@s
+.@#go east@e
+.@#go west@w
+.@#go n@n
+.@#go s@s
+.@#go e@e
+.@#go w@w
+E@examine@x
+G@#again@g
+Q@#quit@q
+Q@#exit@q
+q@#restart@
+H@#help@h
+l@load@
+l@restore@
+s@save@
+r@remove@
+k@knock on@
+k@knock@
+1@give money to@
+1@pay money to
+1@pay@
+1@buy ticket from
+2@flirt with
+2@touch
+2@kiss
+2@fuck
+3@dance for
+3@dance with
+3@dance in front of
+4@tell joke to
+4@joke with
+5@show ticket to
+5@give ticket to
+6@sit on
+6@sit down on
+7@apply
+7@put on
+8@wear
+9@free
+9@untie
+0@lift up
+0@lift
+0@carry
+F@search for
+F@search
+P@swim down to
+P@dive after
+P@dive down to
