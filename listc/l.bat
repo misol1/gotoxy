@@ -10,6 +10,10 @@ set L_OLDW=%L_W%
 if %L_W% lss 80 set L_W=80&set DIM_MOD=1
 if not "%~2" == "" set L_W=%~2&set DIM_MOD=1
 
+for %%p in ( "%PATH:;=" "%" ) do if "%%~p\." == "%~dp0." goto :no_set_path
+set "Path=%Path%;%~dp0"
+:no_set_path
+
 cmdwiz getconsoledim h
 set L_OLDBH=%ERRORLEVEL%
 

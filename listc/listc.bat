@@ -6,8 +6,8 @@ if "%~1"=="_SHOWBOTTOMBAR" call :SHOWBOTTOMBAR %2&goto :eof
 if "%~1"=="_COUNTITEMS" call :COUNTITEMS %2 %3&goto :eof
 
 cls & cmdwiz showcursor 0
-if defined __ goto :START
-set __=.
+if defined ____ goto :START
+set ____=.
 
 set COLS=80&if not "%2" == "" set /A COLS=%2
 if %COLS% lss 80 set /a COLS=80
@@ -30,7 +30,7 @@ cls
 mode %COLS%,%LINES%
 
 cmdgfx_input.exe m0W12 | call %0 %* | cmdgfx.exe "fbox u U 20 0,0,400,400" Se
-set __=
+set ____=
 
 if %MOUSESUPPORT%==1 cmdwiz setquickedit %QE%
 set /a LINES-=1
@@ -460,13 +460,13 @@ echo "cmdgfx: line %BARINFOCOL% %BARCOL% 20 0,0,16,0 & text %BARTEXTCOL% %BARCOL
 
 set FGCOL=%FILECOL%U&if "!FT%OLDPOS%!"=="/" set FGCOL=%DIRCOL%U
 set SEL= &if not "!FS%OLDPOS%!"=="" set SEL=!FS%OLDPOS%!
-for %%a in (%OLDPOS%) do set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)
+for %%a in (%OLDPOS%) do set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF="!FNAME:~0,%CXM%!"&(if not !OUTF!=="!FNAME!" set OUTF="!FNAME:~0,%CXMM%!~")
 
 set SEL=%SEL: =_%
 set OUTF=%OUTF:_=\g5f%
 set OUTF=%OUTF: =_%
 set OUTF=!OUTF:^&=\g26!
-echo "cmdgfx: text %FILECOL% %SCRBGCOL% 0 %SEL%\%FGCOL%%OUTF% %NX%,%NY%" n
+echo "cmdgfx: text %FILECOL% %SCRBGCOL% 0 %SEL%\%FGCOL%%OUTF:~1,-1% %NX%,%NY%" n
 
 set /a N=%CURRPOS%-%CNT%
 set /a NX=(%N%/%LH%)
@@ -475,13 +475,13 @@ set /a NY=(%N% %% %LH%)+1
 
 set FGCOL=%FILECOL%%CURRCOL%&if "!FT%CURRPOS%!"=="/" set FGCOL=%DIRCOL%%CURRCOL%
 set SEL= &if not "!FS%CURRPOS%!"=="" set SEL=!FS%CURRPOS%!
-for %%a in (%CURRPOS%) do set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF=!FNAME:~0,%CXM%!&(if not "!OUTF!"=="!FNAME!" set OUTF=!FNAME:~0,%CXMM%!~)
+for %%a in (%CURRPOS%) do set FNAME=!FO%%a!&(if %DETAILS%==1 set FNAME=!FL%%a!)&set FNAME=!FNAME:~1,-1!!FT%%a!&set OUTF="!FNAME:~0,%CXM%!"&(if not !OUTF!=="!FNAME!" set OUTF="!FNAME:~0,%CXMM%!~")
 
 set SEL=%SEL: =_%
 set OUTF=%OUTF:_=\g5f%
 set OUTF=%OUTF: =_%
 set OUTF=!OUTF:^&=\g26!
-echo "cmdgfx: text %FILECOL% %SCRBGCOL% 0 %SEL%\%FGCOL%%OUTF% %NX%,%NY%" F
+echo "cmdgfx: text %FILECOL% %SCRBGCOL% 0 %SEL%\%FGCOL%%OUTF:~1,-1% %NX%,%NY%" F
 set SHOWS=
 
 goto :eof
@@ -495,6 +495,7 @@ set TCD="%CD:\=/%"
 set TCD=%TCD:_=\g5f%
 set TCD=%TCD: =_%
 set TCD=%TCD:^&=\g26%
+set TCD=%TCD:&=\g26%
 
 set /a TC=%COLS%-1 & set /a TDP=%DIRP%+1
 
@@ -560,7 +561,7 @@ goto :eof
 echo "cmdgfx: fbox %FILECOL% %SCRBGCOL% 20 0,0,%COLS%,%LINES%" n
 echo "cmdgfx: line %BARTEXTCOL% %BARCOL% 20 0,0,400,0 & text %BARTEXTCOL% %BARCOL% 0 Listc_Help 1,0"
 
-set HELPTEXT="%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-9/0/+: %HLPC2%columns per screen / adaptive columns on/off / details on/off\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%</BS: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space: %HLPC2%select file/folder\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%d/D: %HLPC2%delete current/selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy/move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listb [path] [width] [height] [-][columns] [extendfile] [mouse]\n"
+set HELPTEXT="%HLPC1%Up/Down/Left/Right/Home/End/PageUp/PageDown: %HLPC2%navigate\n%HLPC1%Alt-key: %HLPC2%jump to next file/folder starting with key\n%HLPC1%^F: %HLPC2%find file in list starting with specified string\n%HLPC1%1-9/0/+: %HLPC2%columns per screen / adaptive columns on/off / details on/off\n%HLPC1%U: %HLPC2%refresh file listing/screen\n\n%HLPC1%Return: %HLPC2%enter folder/show file\n%HLPC1%</BS: %HLPC2%enter parent folder\n%HLPC1%/: %HLPC2%enter specified path\n%HLPC1%y: %HLPC2%switch beteen paths 1 and 2\n%HLPC1%o: %HLPC2%specify sorting order\n%HLPC1%p: %HLPC2%launch command prompt\n%HLPC1%q/x: %HLPC2%quit in start/current folder\n\n%HLPC1%e/E: %HLPC2%edit current/specified file\n%HLPC1%i/j: %HLPC2%invoke file (j updates file list after)\n%HLPC1%I: %HLPC2%perform action with file/folder\n%HLPC1%f/F: %HLPC2%show file information / show full item name\n%HLPC1%S/s: %HLPC2%execute command with/without waiting for key after\n%HLPC1%r: %HLPC2%rename file/folder\n%HLPC1%k: %HLPC2%create new folder\n%HLPC1%c: %HLPC2%copy file to specified destination\n%HLPC1%m: %HLPC2%move file/folder to specified folder\n%HLPC1%Y/^Y: %HLPC2%copy/move file/folder to second path (see y)\n%HLPC1%v/V: %HLPC2%put item in clipboard with/without clearing clipboard (see B)\n\n%HLPC1%Space: %HLPC2%select file/folder\n%HLPC1%^I: %HLPC2%perform specified action with selected files\n%HLPC1%d/D: %HLPC2%delete current/selected files\n%HLPC1%C/M: %HLPC2%copy/move selected files/folders to specified folder\n%HLPC1%T/^T: %HLPC2%copy/move selected files/folders to second path (see y)\n%HLPC1%b/B/^B: %HLPC2%put selected items in clipboard / copy/move from clipboard\n\n%HLPC1%Arguments: %HLPC2%listc [path] [width] [height] [-][columns] [extendfile] [mouse]\n"
 
 set EXTHELPTEXT=""
 if not %EXTEND% == "" if exist %EXTEND% call %EXTEND% _GET_EXTENDED_HELP

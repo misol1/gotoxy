@@ -22,12 +22,10 @@
 //			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
 //       5. Support UNICODE
 //			6. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			7. savevisualstate [name] / restorevisualstate (save cursor state, buffer size, cursor pos?, buffer content?, font, color, quickedit). default = delete temp file on restore
+//			7. save/restorevisualstate (cursor,buffersize/content,cursorpos,font,colors,quicked etc). Default=restore removes tempfile
 //       8. Calc: use tinyexpr to calculate float expressions 
-//			9. Await/gettime : use the more precise "milliseconds_now"
-//			10. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
-//			11. Several operations (showcursor etc) not working when running cmdgfx as output server. Possible to fix?
-
+//			9. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			10. Several operations (showcursor etc) not working when running cmdgfx as output server. Possible to fix?
 
 #define BUFW 0
 #define BUFH 1
@@ -46,6 +44,7 @@ BOOL WINAPI SetConsoleFont(HANDLE hConsoleOutput, DWORD nFont);
 typedef BOOL(WINAPI * Func_SetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 typedef BOOL(WINAPI * Func_GetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT_INFOEX);
 
+int WINAPI ShowConsoleCursor(HANDLE hConsoleOutput, BOOL bShow);
 
 int GetDim(int dim) {
 	int retVal;
@@ -353,14 +352,14 @@ int CopyBlock(int x, int y, int w, int h, int dx, int dy) {
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &screenBufferInfo);
-	if (y > screenBufferInfo.dwSize.Y || y < 0) return 2;
-	if (x > screenBufferInfo.dwSize.X || x < 0) return 2;
-	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return 2;
-	if (x+w > screenBufferInfo.dwSize.X || w < 1) return 2;
+	if (y > screenBufferInfo.dwSize.Y || y < 0) return -1;
+	if (x > screenBufferInfo.dwSize.X || x < 0) return -1;
+	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return -1;
+	if (x+w > screenBufferInfo.dwSize.X || w < 1) return -1;
 
 	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * STR_SIZE);
 	if (!str)
-		return 3;
+		return -2;
 
 	b.X = 0;
 	b.Y = 0;
@@ -805,7 +804,7 @@ int inspectGxy(char *fname, int bIgnoreCodes) {
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
@@ -816,10 +815,10 @@ int main(int argc, char **argv) {
 				
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz cache [filelist]\n"); return 0; }
 		ifp = fopen(argv[2], "r");
-		if (!ifp) { printf("Error: file not found\n"); return 1; }
+		if (!ifp) { printf("Error: file not found\n"); return -1; }
 
 		dummy = (char *) malloc(fmsize);
-		if (!dummy) { printf("Error: could not allocate memory\n"); fclose(ifp); return 2; }
+		if (!dummy) { printf("Error: could not allocate memory\n"); fclose(ifp); return -2; }
 		
 		do {
 			fch = fgets(dummy, fmsize, ifp);
@@ -984,7 +983,7 @@ int main(int argc, char **argv) {
 	else if (stricmp(argv[1],"gettime") == 0) {
 		if (bInfo) { printf("\nUsage: cmdwiz gettime\n\nRETURN: Time passed since system start, in milliseconds\n"); return 0; }
 		
-		return GetTickCount();
+		return milliseconds_now();
 	}
 	else if (stricmp(argv[1],"setquickedit") == 0) {
 		DWORD fdwMode;
@@ -1107,7 +1106,7 @@ int main(int argc, char **argv) {
 		h = atoi(argv[5]);
 		r.Right = r.Left + w-1;
 		r.Bottom = r.Top + h-1;
-		if (r.Right < 0 || r.Bottom < 0) return 1;
+		if (r.Right < 0 || r.Bottom < 0) return -1;
 		np.X = atoi(argv[6]);
 		np.Y = atoi(argv[7]);
 		chiFill.Attributes = FOREGROUND_RED;
@@ -1151,7 +1150,7 @@ int main(int argc, char **argv) {
 		startT = atoi(argv[2]);
 		waitT = atoi(argv[3]);
 
-		while (GetTickCount() < startT+waitT) {
+		while (milliseconds_now() < startT+waitT) {
 //			Sleep(1);
 		}
 	}
@@ -1273,8 +1272,9 @@ int main(int argc, char **argv) {
 		if (argc>10) transpFg = atoi(argv[10]);
 
 		result = SaveBlock(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), encodeMode, transpChar, transpBg, transpFg);
-		if (result == 1) { printf("Error: Could not write file\n"); result=-result; }
-		if (result == 2) { printf("Error: Invalid block\n"); result=-result; }
+		result = -result;
+		if (result == -1) { printf("Error: Could not write file\n"); }
+		if (result == -2) { printf("Error: Invalid block\n"); }
 		return result;
 	}
 	else if (stricmp(argv[1],"setcursorpos") == 0) {
@@ -1473,10 +1473,10 @@ int main(int argc, char **argv) {
 
 		res = GetFont(&fontInfo);
 		
-		if (res) return 1;
+		if (res) return -1;
 		
 		ofp = fopen(argv[2], "wb");
-		if (!ofp) { printf("Error: could not save font\n"); return 1; }
+		if (!ofp) { printf("Error: could not save font\n"); return -1; }
 		
 		fwrite(&fontInfo, sizeof(CONSOLE_FONT_INFOEX),1,ofp);
 		fclose(ofp);
@@ -1484,7 +1484,7 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	else if (stricmp(argv[1],"setwindowstyle") == 0) {
-		int bExtended, bSet, i;
+		int bExtended, bSet, i,flag;
 		long valueFlags;
 
 		if (argc > 2) bSet = argv[2][0] == 's' ? 1 : argv[2][0] == 'c'? 0 : -1;
@@ -1495,7 +1495,10 @@ int main(int argc, char **argv) {
 		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
 		for (i = 4; i < argc; i++) {
-			int flag = strtol(argv[i], NULL, 16);
+			char *inp = argv[i];
+			if (inp[0]=='0' && inp[1]=='x')
+				inp+=2;
+			int flag = strtol(inp, NULL, 16);
 			if (bSet) valueFlags |= flag; else valueFlags &= ~(flag);
 		}
 		SetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);		
@@ -1504,21 +1507,83 @@ int main(int argc, char **argv) {
 	else if (stricmp(argv[1],"getwindowstyle") == 0) {
 		int bExtended, flag;
 		long valueFlags;
-
+		char *inp;
+		
 		if (argc > 2) bExtended = argv[2][0] == 'e' ? 1 : argv[2][0] == 's'? 0 : -1;
 		
 		if (argc < 4 || bInfo || bExtended == -1) { printf("\nUsage: cmdwiz getwindowstyle standard|extended value\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n\nRETURN: ERRORLEVEL 1 if style set, otherwise 0\n"); return 0;
 		}
 		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
-		flag = strtol(argv[3], NULL, 16);
+		inp = argv[3];
+		if (inp[0]=='0' && inp[1]=='x')
+			inp+=2;
+		flag = strtol(inp, NULL, 16);
+		
 		return valueFlags & flag ? 1 : 0;
+	}
+	else if (stricmp(argv[1],"setpalette") == 0) {
+		CONSOLE_SCREEN_BUFFER_INFOEX consoleInfo;
+		consoleInfo.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+		int cols[20];
+		int nof, i;
+		
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setpalette [RRGGBB[,RRGGBB...]]\n"); return 0; }
+
+		GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo);
+
+		nof = sscanf(argv[2], "%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x", &cols[0], &cols[1], &cols[2], &cols[3], &cols[4], &cols[5], &cols[6], &cols[7], &cols[8], &cols[9], &cols[10], &cols[11], &cols[12], &cols[13], &cols[14], &cols[15]);
+		
+		if (nof < 1) { printf("\nError: invalid format\n"); return -1; }
+		
+		for (i = 0; i < nof; i++) {
+			consoleInfo.ColorTable[i] = ((cols[i] & 0xff) << 16) | ((cols[i] & 0xff00)) | ((cols[i] & 0xff0000) >> 16);
+		}
+		
+		SetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo);
+		
+		return 0;
+	}
+	else if (stricmp(argv[1],"getpalette") == 0) {
+		CONSOLE_SCREEN_BUFFER_INFOEX consoleInfo;
+		consoleInfo.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+		int col, i;
+		
+		if (bInfo) { printf("\nUsage: cmdwiz getpalette\n\nRETURN:Prints palette string to be used for setpalette\n"); return 0; }
+
+		GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo);
+
+		for (i = 0; i < 16; i++) {
+			col = consoleInfo.ColorTable[i];
+			printf("%06x", ((col & 0xff) << 16) | ((col & 0xff00)) | ((col & 0xff0000) >> 16));
+			if (i < 15) printf(",");
+		}		
+		puts("");
+		
+		return 0;
+	}
+	else if (stricmp(argv[1],"showmousecursor") == 0) {
+		int show;
+	
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showmousecursor [0|1]\n"); return 0; }
+		
+		show = atoi(argv[2]);
+		
+		int ref_cnt = ShowConsoleCursor(GetStdHandle(STD_OUTPUT_HANDLE), show);
+		if (show) {
+			if (ref_cnt > 0) {
+				while ((ref_cnt = ShowConsoleCursor(GetStdHandle(STD_OUTPUT_HANDLE), 0)) > 0);
+			}
+		} else {
+			if (ref_cnt < -1) {
+				while ((ref_cnt = ShowConsoleCursor(GetStdHandle(STD_OUTPUT_HANDLE), 1)) < -1);
+			}
+		}
 	}
 	else {
 		printf("Error: unknown operation\n");
 		return 0;
 	}
-	// want operation to hide/show mouse cursor, but not possible in console window according to http://stackoverflow.com/questions/16110898/how-can-i-hide-the-mouse-cursor
 
 	return 0; 
 }
