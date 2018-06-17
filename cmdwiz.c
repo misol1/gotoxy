@@ -16,11 +16,11 @@
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32 -lgdi32
 
 // TODO:
-//		  (1. getwindowbounds, client area
-//		  (2. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
-//      (3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
+//			(1. getwindowbounds, client area
+//			(2. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
+//			(3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
 //			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
-//       5. Support UNICODE
+//			5. Support UNICODE
 //			6. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
 //			7. save/restorevisualstate (cursor,buffersize/content,cursorpos,font,colors,quicked etc). Default=restore removes tempfile
 //			8. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
@@ -29,8 +29,9 @@
 //			1. "cmdwiz /?" now prints help same as just writing "cmdwiz"
 //			2. Several operations (showcursor etc) not working when running cmdgfx as output server. Possible to fix?
 //			3. fullscreen operation (no file save/restore yet)
-//       4. showmousecursor
+//			4. showmousecursor
 //			5. topmost support for setwindowpos
+//			6. showwindow op to minimize,maximize,restore etc
 
 #define BUFW 0
 #define BUFH 1
@@ -825,10 +826,10 @@ int clean(int returnValue) {
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2 || (argc == 2 && strcmp(argv[1],"/?")==0) ) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2 || (argc == 2 && strcmp(argv[1],"/?")==0) ) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
-
+	
 	g_conin = GetInputHandle();
 	g_conout = GetOutputHandle();
 	
@@ -1601,7 +1602,20 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	else if (stricmp(argv[1],"fullscreen") == 0) {
+	else if (stricmp(argv[1],"showwindow") == 0) {
+		int show;
+	
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showwindow [minimize|maximize|restore|value:n]\n"); return clean(0); }
+		
+		if (strstr(argv[2], "max") == argv[2]) show = SW_MAXIMIZE;
+		else if (strstr(argv[2], "min") == argv[2]) show = SW_MINIMIZE;
+		else if (strstr(argv[2], "rest") == argv[2]) show = SW_RESTORE;
+		else if (strstr(argv[2], "value:") == argv[2]) show = atoi(&argv[2][6]);
+		else { printf("\nError: invalid format\n"); return clean(-1); } 
+		
+		ShowWindow(GetConsoleWindow(), show);
+
+	} else if (stricmp(argv[1],"fullscreen") == 0) {
 		HWND hWnd;
 		HANDLE hOut, hIn;
 		COORD screenBufferSize;
