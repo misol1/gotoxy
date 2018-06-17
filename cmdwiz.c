@@ -1,4 +1,4 @@
-/* CmdWiz (c) 2015-17 Mikael Sollenborn */
+/* CmdWiz (c) 2015-18 Mikael Sollenborn */
 
 #ifndef WINVER
 #define WINVER 0x0502
@@ -23,9 +23,14 @@
 //       5. Support UNICODE
 //			6. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
 //			7. save/restorevisualstate (cursor,buffersize/content,cursorpos,font,colors,quicked etc). Default=restore removes tempfile
-//       8. Calc: use tinyexpr to calculate float expressions 
-//			9. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
-//			10. Several operations (showcursor etc) not working when running cmdgfx as output server. Possible to fix?
+//			8. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+
+// Done:
+//			1. "cmdwiz /?" now prints help same as just writing "cmdwiz"
+//			2. Several operations (showcursor etc) not working when running cmdgfx as output server. Possible to fix?
+//			3. fullscreen operation (no file save/restore yet)
+//       4. showmousecursor
+//			5. topmost support for setwindowpos
 
 #define BUFW 0
 #define BUFH 1
@@ -46,10 +51,21 @@ typedef BOOL(WINAPI * Func_GetCurrentConsoleFontEx) (HANDLE, BOOL, PCONSOLE_FONT
 
 int WINAPI ShowConsoleCursor(HANDLE hConsoleOutput, BOOL bShow);
 
+HANDLE g_conin, g_conout;
+
+HANDLE GetInputHandle() {
+	return CreateFile("CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+}
+
+HANDLE GetOutputHandle() {
+	return CreateFile("CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+}
+
+				
 int GetDim(int dim) {
 	int retVal;
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &screenBufferInfo);
+	GetConsoleScreenBufferInfo(g_conout, &screenBufferInfo);
 
 	switch(dim) {
 		case BUFW: retVal = screenBufferInfo.dwSize.X; break;
@@ -64,7 +80,7 @@ int GetDim(int dim) {
 
 void GetXY(int *x, int *y) {
 	CONSOLE_SCREEN_BUFFER_INFO  csbInfo;
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbInfo);
+	GetConsoleScreenBufferInfo(g_conout, &csbInfo);
 	if (x) *x = csbInfo.dwCursorPosition.X;
 	if (y) *y = csbInfo.dwCursorPosition.Y;
 }
@@ -87,7 +103,7 @@ int ReadCharProperty(int x, int y, int eProperty) {
 	CHAR_INFO str[81];
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &screenBufferInfo);
+	GetConsoleScreenBufferInfo(g_conout, &screenBufferInfo);
 	if (y > screenBufferInfo.dwSize.Y || y < 0) return INVALID_COORDINATE;
 	if (x > screenBufferInfo.dwSize.X || x < 0) return INVALID_COORDINATE;
 
@@ -95,7 +111,7 @@ int ReadCharProperty(int x, int y, int eProperty) {
 	r.Top = y;
 	r.Right = x + 1;
 	r.Bottom = y + 1;
-	ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str, a, b, &r);
+	ReadConsoleOutput(g_conout, str, a, b, &r);
 
 	switch(eProperty) {
 		case CHARPROP_FGCOL: return str[0].Attributes % 16;
@@ -263,7 +279,7 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	ofp = fopen(fName, "w");
 	if (!ofp) return 1;
 
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &screenBufferInfo);
+	GetConsoleScreenBufferInfo(g_conout, &screenBufferInfo);
 	if (y > screenBufferInfo.dwSize.Y || y < 0) return 2;
 	if (x > screenBufferInfo.dwSize.X || x < 0) return 2;
 	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return 2;
@@ -285,7 +301,7 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	r.Top = y;
 	r.Right = x + w;
 	r.Bottom = y + h;
-	ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str, a, b, &r);
+	ReadConsoleOutput(g_conout, str, a, b, &r);
 */
 	
 	// Stupid bug in ReadConsoleOutput doesn't seem to read more than ~15680 chars, then it's all garbled characters!! Have to read in smaller blocks
@@ -301,7 +317,7 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 			r.Bottom = j*l+k+y;
 			a.X = w;
 			a.Y = k;
-			ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str+j*l*w, a, b, &r);
+			ReadConsoleOutput(g_conout, str+j*l*w, a, b, &r);
 		}
 	}	
 	
@@ -351,7 +367,7 @@ int CopyBlock(int x, int y, int w, int h, int dx, int dy) {
 	CHAR_INFO *str;
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &screenBufferInfo);
+	GetConsoleScreenBufferInfo(g_conout, &screenBufferInfo);
 	if (y > screenBufferInfo.dwSize.Y || y < 0) return -1;
 	if (x > screenBufferInfo.dwSize.X || x < 0) return -1;
 	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return -1;
@@ -371,13 +387,13 @@ int CopyBlock(int x, int y, int w, int h, int dx, int dy) {
 	r.Top = y;
 	r.Right = x + w;
 	r.Bottom = y + h;
-	ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str, a, b, &r);
+	ReadConsoleOutput(g_conout, str, a, b, &r);
 
 	r.Left = dx;
 	r.Top = dy;
 	r.Right = dx + w;
 	r.Bottom = dy + h;  
-	WriteConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), str, a, b, &r);
+	WriteConsoleOutput(g_conout, str, a, b, &r);
 
 	free(str);
 	return 0;
@@ -536,7 +552,7 @@ int SetFont(int index) {
 		return 1;
 	}
 
-	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	hOut = g_conout;
 
 	HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
 
@@ -578,7 +594,7 @@ int GetFont(PCONSOLE_FONT_INFOEX font_info) {
 
 		if (NULL != GetCurrentConsoleFontEx_Ptr) {	//vista
 			font_info->cbSize = sizeof(CONSOLE_FONT_INFOEX); // must set this manually, otherwise GetCurrentConsoleFontEx fails with error 87(bad params). Weird.
-			ret = GetCurrentConsoleFontEx_Ptr(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, font_info);
+			ret = GetCurrentConsoleFontEx_Ptr(g_conout, FALSE, font_info);
 			ret = 1 - ret;
 		}
 		FreeLibrary(dllHandle);
@@ -602,9 +618,9 @@ int SetFontFromFile(char *fname) {
 		Func_SetCurrentConsoleFontEx SetCurrentConsoleFontEx_Ptr = (Func_SetCurrentConsoleFontEx) GetProcAddress(dllHandle, "SetCurrentConsoleFontEx");
 
 		if (NULL != SetCurrentConsoleFontEx_Ptr) {	//vista
-			ret = SetCurrentConsoleFontEx_Ptr(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &font_info);
+			ret = SetCurrentConsoleFontEx_Ptr(g_conout, FALSE, &font_info);
 			ret = 1 - ret;
-			SetConsoleFont(GetStdHandle(STD_OUTPUT_HANDLE), font_info.nFont);
+			SetConsoleFont(g_conout, font_info.nFont);
 		}
 	}
 			
@@ -800,25 +816,33 @@ int inspectGxy(char *fname, int bIgnoreCodes) {
 	return 0;
 }
 
+int clean(int returnValue) { 
+	CloseHandle(g_conin);
+	CloseHandle(g_conout);
+	return returnValue;
+}
 
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2 || (argc == 2 && strcmp(argv[1],"/?")==0) ) { printf("\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
+
+	g_conin = GetInputHandle();
+	g_conout = GetOutputHandle();
 	
 	if (stricmp(argv[1],"cache") == 0) {
 		FILE *ifp, *ifp2;
 		char *dummy, *fch, *dum_p;
 		int fmsize = 1048576 * 16;
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz cache [filelist]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz cache [filelist]\n"); return clean(0); }
 		ifp = fopen(argv[2], "r");
-		if (!ifp) { printf("Error: file not found\n"); return -1; }
+		if (!ifp) { printf("Error: file not found\n"); return clean(-1); }
 
 		dummy = (char *) malloc(fmsize);
-		if (!dummy) { printf("Error: could not allocate memory\n"); fclose(ifp); return -2; }
+		if (!dummy) { printf("Error: could not allocate memory\n"); fclose(ifp); return clean(-2); }
 		
 		do {
 			fch = fgets(dummy, fmsize, ifp);
@@ -836,59 +860,59 @@ int main(int argc, char **argv) {
 		free(dummy);
 		fclose(ifp);
 	} else if (stricmp(argv[1],"delay") == 0) {
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz delay [ms]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz delay [ms]\n"); return clean(0); }
 
 		delayVal=atoi(argv[2]);
-		if (delayVal < 1) return 0;
+		if (delayVal < 1) return clean(0);
 		millisleep(delayVal);
 		//Sleep(delayVal);
 	}
 	else if (stricmp(argv[1],"getconsoledim") == 0) {
 		int dim = BUFW;
-		if (bInfo) { printf("\nUsage: cmdwiz getconsoledim [w|h|sw|sh|cx|cy]\n\nRETURN: Console dimensions in text, or specified dimension value in ERRORLEVEL\n"); return 0; }
-		if (argc < 3) { printf("WIDTH %d HEIGHT %d SCREEN_WIDTH %d SCREEN_HEIGHT %d SCROLL_X %d SCROLL_Y %d\n", GetDim(BUFW), GetDim(BUFH), GetDim(SCRW), GetDim(SCRH), GetDim(CURRX), GetDim(CURRY)); return 0; }
+		if (bInfo) { printf("\nUsage: cmdwiz getconsoledim [w|h|sw|sh|cx|cy]\n\nRETURN: Console dimensions in text, or specified dimension value in ERRORLEVEL\n"); return clean(0); }
+		if (argc < 3) { printf("WIDTH %d HEIGHT %d SCREEN_WIDTH %d SCREEN_HEIGHT %d SCROLL_X %d SCROLL_Y %d\n", GetDim(BUFW), GetDim(BUFH), GetDim(SCRW), GetDim(SCRH), GetDim(CURRX), GetDim(CURRY)); return clean(0); }
 		if (argv[2][0] == 'w') dim = BUFW;
 		if (argv[2][0] == 'h') dim = BUFH;
 		if (argv[2][0] == 's') if (argv[2][1] == 'w') dim = SCRW;
 		if (argv[2][0] == 's') if (argv[2][1] == 'h') dim = SCRH;
 		if (argv[2][0] == 'c') if (argv[2][1] == 'x') dim = CURRX;
 		if (argv[2][0] == 'c') if (argv[2][1] == 'y') dim = CURRY;
-		return GetDim(dim);
+		return clean(GetDim(dim));
 	}
 	else if (stricmp(argv[1],"setbuffersize") == 0) {
 		COORD nb;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setbuffersize [width|keep height|keep]\n"); return 0; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setbuffersize [width|keep height|keep]\n"); return clean(0); }
 		nb.X = atoi(argv[2]);
 		nb.Y = atoi(argv[3]);
 		if (argv[2][0] == 'k') nb.X = GetDim(BUFW);
 		if (argv[3][0] == 'k') nb.Y = GetDim(BUFH);
-		SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), nb);
-		return 0;
+		SetConsoleScreenBufferSize(g_conout, nb);
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getch") == 0) {
 		int k;
 		
-		if (bInfo) { printf("\nUsage: cmdwiz getch [noWait]\n\nRETURN: Key scan code\n"); return 0; }
+		if (bInfo) { printf("\nUsage: cmdwiz getch [noWait]\n\nRETURN: Key scan code\n"); return clean(0); }
 		
-		if (argc > 2) if (!kbhit()) return 0;
+		if (argc > 2) if (!kbhit()) return clean(0);
 		k = getch();
 
 		if (k == 224 || k == 0) k = 256 + getch();
-		return k;
+		return clean(k);
 	}
 	else if (stricmp(argv[1],"flushkeys") == 0) {
-		if (bInfo) { printf("\nUsage: cmdwiz flushkeys\n"); return 0; }
+		if (bInfo) { printf("\nUsage: cmdwiz flushkeys\n"); return clean(0); }
 
 		while(kbhit())
 			getch();
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getkeystate") == 0) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 		int i, j, k = 0;
 		char buf[128];
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
 
 		if (stricmp(argv[2],"all") == 0) {
 			int vKeys[16] = { VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_MENU, VK_LMENU, VK_RMENU }; 
@@ -897,7 +921,7 @@ int main(int argc, char **argv) {
 				k = (k<<1) | ((j & 0x8000)? 1:0 );
 			}
 			printKeystates(k, 9);
-			return k;
+			return clean(k);
 		}
 
 		for (i = argc-1; i > 1; i--) {
@@ -922,19 +946,19 @@ int main(int argc, char **argv) {
 			k = (k<<1) | ((j & 0x8000)? 1:0 );
 		}
 		printKeystates(k, argc-2);
-		return k;
+		return clean(k);
 	}
 	else if (stricmp(argv[1],"playsound") == 0) {
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename.wav]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename.wav]\n"); return clean(0); }
 		PlaySound(argv[2], NULL, 0x00020000L|0x0002); // SND_FILENAME | SND_NODEFAULT
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"gxyinfo") == 0) {
 		int res;
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz gxyinfo [filename.gxy] [ignoreCodes]\n\nRETURN: 0 if file could be loaded, -1 on failure\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz gxyinfo [filename.gxy] [ignoreCodes]\n\nRETURN: 0 if file could be loaded, -1 on failure\n"); return clean(0); }
 	
 		res = inspectGxy(argv[2], argc > 3);
-		return res > 0? -1 : 0;
+		return clean(res > 0? -1 : 0);
 	}
 	else if (stricmp(argv[1],"getcharat") == 0) {
 		int ox, oy;
@@ -943,7 +967,7 @@ int main(int argc, char **argv) {
 		
 		if (argc < 4 || bInfo) {
 			printf("\nUsage: cmdwiz getcharat [x|keep y|keep]\n\nRETURN: Character ASCII value at position, -1 on failure\n");
-			return 0;
+			return clean(0);
 		}
 		
 		GetXY(&ox, &oy);
@@ -952,16 +976,16 @@ int main(int argc, char **argv) {
 		if (argv[3][0]!='k') y=atoi(argv[3]); else y=oy;
 
 		i = ReadCharProperty(x,y,CHARPROP_CHAR);
-		if (i == INVALID_COORDINATE) return -1;
+		if (i == INVALID_COORDINATE) return clean(-1);
 		if (i < 0) i = 256+i;
-		return i;
+		return clean(i);
 	}
 	else if (stricmp(argv[1],"getcolorat") == 0) {
 		int x, y;
 		int ox, oy;
 		int i;
 
-		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz getcolorat [fg|bg x|keep y|keep]\n\nRETURN: Color value at position, -1 on failure\n"); return 0; }
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz getcolorat [fg|bg x|keep y|keep]\n\nRETURN: Color value at position, -1 on failure\n"); return clean(0); }
 
 		GetXY(&ox, &oy);
 
@@ -969,29 +993,29 @@ int main(int argc, char **argv) {
 		if (argv[4][0]!='k') y=atoi(argv[4]); else y=oy;
 
 		i = ReadCharProperty(x,y,argv[2][0]=='f'? CHARPROP_FGCOL : CHARPROP_BGCOL);
-		if (i == INVALID_COORDINATE) return -1;
-		return i;
+		if (i == INVALID_COORDINATE) return clean(-1);
+		return clean(i);
 	}
 	else if (stricmp(argv[1],"getcursorpos") == 0) {
 		int ox, oy;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getcursorpos [x|y]\n\nRETURN: Cursor position in x or y\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getcursorpos [x|y]\n\nRETURN: Cursor position in x or y\n"); return clean(0); }
 		GetXY(&ox, &oy);
 
-		return argv[2][0]=='x'? ox : oy;
+		return clean(argv[2][0]=='x'? ox : oy);
 	}
 	else if (stricmp(argv[1],"gettime") == 0) {
-		if (bInfo) { printf("\nUsage: cmdwiz gettime\n\nRETURN: Time passed since system start, in milliseconds\n"); return 0; }
+		if (bInfo) { printf("\nUsage: cmdwiz gettime\n\nRETURN: Time passed since system start, in milliseconds\n"); return clean(0); }
 		
-		return milliseconds_now();
+		return clean(milliseconds_now());
 	}
 	else if (stricmp(argv[1],"setquickedit") == 0) {
 		DWORD fdwMode;
 		int i;
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setquickedit [0|1]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setquickedit [0|1]\n"); return clean(0); }
 		i = atoi(argv[2]);
 
-		GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &fdwMode);
+		GetConsoleMode(g_conin, &fdwMode);
 
 		fdwMode = fdwMode | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT; 
 		if (i == 0)
@@ -999,14 +1023,14 @@ int main(int argc, char **argv) {
 		else
 			fdwMode = fdwMode | ENABLE_QUICK_EDIT_MODE;
 
-		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), fdwMode);
+		SetConsoleMode(g_conin, fdwMode);
 	}
 	else if (stricmp(argv[1],"getquickedit") == 0) {
 		DWORD fdwMode;
-		if (bInfo) { printf("\nUsage: cmdwiz getquickedit\n\nRETURN: 1 if quick edit is enabled, otherwise 0\n"); return 0; }
+		if (bInfo) { printf("\nUsage: cmdwiz getquickedit\n\nRETURN: 1 if quick edit is enabled, otherwise 0\n"); return clean(0); }
 		
-		GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &fdwMode);
-		return fdwMode & ENABLE_QUICK_EDIT_MODE ? 1 : 0;
+		GetConsoleMode(g_conin, &fdwMode);
+		return clean(fdwMode & ENABLE_QUICK_EDIT_MODE ? 1 : 0);
 	}
 	else if (stricmp(argv[1],"getmouse") == 0 || stricmp(argv[1],"getch_or_mouse") == 0 || stricmp(argv[1],"getch_and_mouse") == 0) {
 		DWORD fdwMode, oldfdwMode, cNumRead, j; 
@@ -1027,24 +1051,24 @@ int main(int argc, char **argv) {
 			} else {
 				printf("\nUsage: cmdwiz getch_and_mouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event and key press\n\nERRORLEVEL -1 on no input, or bitpattern kkkkkkkkkyyyyyyyxxxxxxxxWwRLrlM where M is set if there was a Mouse event, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, x/y are mouse coordinates, and k is the KEY (0 means no key pressed)\n");			
 			}
-			return 0;
+			return clean(0);
 		}
 		
 		if (argc > 2) wtime = atoi(argv[2]);
 
-		GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &oldfdwMode);
+		GetConsoleMode(g_conin, &oldfdwMode);
 
 		fdwMode = oldfdwMode | ENABLE_EXTENDED_FLAGS  | ENABLE_MOUSE_INPUT;
 		fdwMode = fdwMode & ~ENABLE_QUICK_EDIT_MODE;
-		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), fdwMode);
+		SetConsoleMode(g_conin, fdwMode);
 
 		if (wtime > -1) {
-			res = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), wtime);
-			if (res & WAIT_TIMEOUT) { printf(mouse_output); return -1; }
+			res = WaitForSingleObject(g_conin, wtime);
+			if (res & WAIT_TIMEOUT) { printf(mouse_output); return clean(-1); }
 		}
 
 		res = -1;
-		ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), irInBuf, 128, &cNumRead);
+		ReadConsoleInput(g_conin, irInBuf, 128, &cNumRead);
 		for (i = 0; i < cNumRead; i++) {
 			switch(irInBuf[i].EventType) { 
 			case MOUSE_EVENT:
@@ -1053,7 +1077,7 @@ int main(int argc, char **argv) {
 				break; 
 			case KEY_EVENT:
 				if (bReadKeys) {
-					WriteConsoleInput(GetStdHandle(STD_INPUT_HANDLE), &irInBuf[i], 1, &j);
+					WriteConsoleInput(g_conin, &irInBuf[i], 1, &j);
 					bWroteKey = 1;
 				}
 				break;
@@ -1070,9 +1094,9 @@ int main(int argc, char **argv) {
 				k=getch();
 				if (k == 224 || k == 0) k = 256 + getch();
 			}
-			res2 = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), 1);
+			res2 = WaitForSingleObject(g_conin, 1);
 			if (!(res2 & WAIT_TIMEOUT))
-				ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), irInBuf, 128, &cNumRead);
+				ReadConsoleInput(g_conin, irInBuf, 128, &cNumRead);
 
 			if (k!=-1) {
 				if (bKeyAndMouse)
@@ -1088,8 +1112,8 @@ int main(int argc, char **argv) {
 		else
 			printf("EVENT KEY_EVENT %d MOUSE_EVENT 0\n", k);
 		
-		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), oldfdwMode);
-		return res;
+		SetConsoleMode(g_conin, oldfdwMode);
+		return clean(res);
 	}
 	else if (stricmp(argv[1],"moveblock") == 0) {
 		COORD np;
@@ -1099,18 +1123,18 @@ int main(int argc, char **argv) {
 		CONSOLE_SCREEN_BUFFER_INFO info;
 		int w, h;
 
-		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY] [char] [fgcol] [bgcol]\n"); return 0; }
+		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY] [char] [fgcol] [bgcol]\n"); return clean(0); }
 		r.Left = atoi(argv[2]);
 		r.Top = atoi(argv[3]);
 		w = atoi(argv[4]);
 		h = atoi(argv[5]);
 		r.Right = r.Left + w-1;
 		r.Bottom = r.Top + h-1;
-		if (r.Right < 0 || r.Bottom < 0) return -1;
+		if (r.Right < 0 || r.Bottom < 0) return clean(-1);
 		np.X = atoi(argv[6]);
 		np.Y = atoi(argv[7]);
 		chiFill.Attributes = FOREGROUND_RED;
-		if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
+		if (GetConsoleScreenBufferInfo(g_conout, &info))
 			chiFill.Attributes = info.wAttributes;
 		chiFill.Char.AsciiChar = ' ';
 		
@@ -1137,16 +1161,16 @@ int main(int argc, char **argv) {
 		}
 		
 		cl.Left=np.X; cl.Top=np.Y; cl.Right=np.X+w; cl.Bottom=np.Y+h; //not working (tried to copy instead of moving). Hence NULL below
-		ScrollConsoleScreenBuffer(GetStdHandle(STD_OUTPUT_HANDLE), &r, NULL, np, &chiFill);
-		return 0;
+		ScrollConsoleScreenBuffer(g_conout, &r, NULL, np, &chiFill);
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"copyblock") == 0) {
-		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz copyblock [x y width height newX newY]\n"); return 0; }
-		return CopyBlock(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),atoi(argv[6]),atoi(argv[7]));
+		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz copyblock [x y width height newX newY]\n"); return clean(0); }
+		return clean(CopyBlock(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),atoi(argv[6]),atoi(argv[7])));
 	}
 	else if (stricmp(argv[1],"await") == 0) {
 		int startT, waitT;
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz await [oldtime] [waittime]\n"); return 0; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz await [oldtime] [waittime]\n"); return clean(0); }
 		startT = atoi(argv[2]);
 		waitT = atoi(argv[3]);
 
@@ -1157,23 +1181,23 @@ int main(int argc, char **argv) {
 	else if (stricmp(argv[1],"getconsolecolor") == 0) {
 		CONSOLE_SCREEN_BUFFER_INFO info;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getconsolecolor [fg|bg]\n\nRETURN: Console color 0-15, or -1 on error\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getconsolecolor [fg|bg]\n\nRETURN: Console color 0-15, or -1 on error\n"); return clean(0); }
 
-		if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
-			return -1;
+		if (!GetConsoleScreenBufferInfo(g_conout, &info))
+			return clean(-1);
 
-		return argv[2][0]=='f'? info.wAttributes & 0xf : (info.wAttributes >> 4) & 0xf;
+		return clean(argv[2][0]=='f'? info.wAttributes & 0xf : (info.wAttributes >> 4) & 0xf);
 	}
 	else if (stricmp(argv[1],"showcursor") == 0) {
 		CONSOLE_CURSOR_INFO c;
 		BOOL result;
 		int retVal;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 1-100 (default 25)]\n\nRETURN: 0 if cursor was previously off, otherwise the previous show percentage\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showcursor [0|1] [show percentage 1-100 (default 25)]\n\nRETURN: 0 if cursor was previously off, otherwise the previous show percentage\n"); return clean(0); }
 
-		result = GetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+		result = GetConsoleCursorInfo(g_conout, &c);
 		if (!result)
-			return -1;
+			return clean(-1);
 		if (c.bVisible == FALSE)
 			retVal = 0;
 		else
@@ -1186,17 +1210,17 @@ int main(int argc, char **argv) {
 			if (c.dwSize < 1 || c.dwSize > 100)
 				c.dwSize = 25;
 		}
-		result = SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
+		result = SetConsoleCursorInfo(g_conout, &c);
 		if (!result)
-			return -1;
-		return retVal;
+			return clean(-1);
+		return clean(retVal);
 	}
 	else if (stricmp(argv[1],"stringfind") == 0) {
 		int index = 0;
 		char *cp;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring findstring] [startindex] [noCase]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return 0; }
-		if (argc > 4) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return -1; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring findstring] [startindex] [noCase]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return clean(0); }
+		if (argc > 4) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return clean(-1); }
 		if (argc > 5) { 
 			int i;
 			for (i = 0; i < strlen(argv[2]); i++) argv[2][i] = toupper(argv[2][i]);
@@ -1204,42 +1228,42 @@ int main(int argc, char **argv) {
 		}
 
 		cp = strstr(&(argv[2][index]), argv[3]);		
-		if (!cp) return -1;
-		return (int)(cp - (char *)argv[2]);
+		if (!cp) return clean(-1);
+		return clean((int)(cp - (char *)argv[2]));
 	}
 	else if (stricmp(argv[1],"stringlen") == 0) {
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz stringlen [string]\n\nRETURN: Length of string\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz stringlen [string]\n\nRETURN: Length of string\n"); return clean(0); }
 
-		return strlen(argv[2]);
+		return clean(strlen(argv[2]));
 	}
 	else if (stricmp(argv[1],"getexetype") == 0) {
 		SHFILEINFO sfi = {0};
 		DWORD_PTR ret = 0;
 		WORD hi, lo;
 		
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getexetype [file]\n\nRETURN: -1 (Error), 0 (Unknown), 1 (Console or .bat), 2 (MS-DOS), 3 (Windows)\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getexetype [file]\n\nRETURN: -1 (Error), 0 (Unknown), 1 (Console or .bat), 2 (MS-DOS), 3 (Windows)\n"); return clean(0); }
 
 		ret = SHGetFileInfo(argv[2], 0, &sfi, sizeof(sfi), SHGFI_EXETYPE);
 
-		if (ret == 0) return 0;
+		if (ret == 0) return clean(0);
 
 		hi = HIWORD(ret);
 		lo = LOWORD(ret);
 
 		if (lo == 0x4550 && hi == 0)
-			return 1;
+			return clean(1);
 		else if (lo == 0x5A4D && hi == 0)
-			return 2;
+			return clean(2);
 		else if ((lo == 0x4550 || lo == 0x454E) && hi != 0)
-			return 3;
+			return clean(3);
 
-		return -1;
+		return clean(-1);
 	}
 	else if (stricmp(argv[1],"inspectblock") == 0) {
 		char glyphs[128];
 		int i, inspChar;
 		
-		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz inspectblock [x y width height inclusive|exclusive char1] [char2] [char3] ...\n\nRETURN: Bit pattern, where char1 is bit 1, char 2 is bit 2, etc. -1 on error.\n"); return 0; }
+		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz inspectblock [x y width height inclusive|exclusive char1] [char2] [char3] ...\n\nRETURN: Bit pattern, where char1 is bit 1, char 2 is bit 2, etc. -1 on error.\n"); return clean(0); }
 		for (i = 7; i < argc; i++) {
 			if (argv[i][1]==0)
 				inspChar = argv[i][0];
@@ -1249,14 +1273,14 @@ int main(int argc, char **argv) {
 		}
 		glyphs[i-7] = 0;
 		
-		return InspectBuffer(GetStdHandle(STD_OUTPUT_HANDLE), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6][0]=='e', glyphs);
+		return clean(InspectBuffer(g_conout, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6][0]=='e', glyphs));
 	}
 	else if (stricmp(argv[1],"saveblock") == 0) {
 		int result;
 		int encodeMode = 1;
 		int transpChar = -1, transpFg = -1, transpBg = -1;
 
-		if (argc < 7 || bInfo) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode|txt] [transparent char] [transparent bgcolor] [transparent fgcolor]\n\nRETURN: 0 on success, -1 for file write error, -2 for invalid block\n"); return 0; }
+		if (argc < 7 || bInfo) { printf("\nUsage: cmdwiz saveblock [filename x y width height] [encode|forcecode|nocode|txt] [transparent char] [transparent bgcolor] [transparent fgcolor]\n\nRETURN: 0 on success, -1 for file write error, -2 for invalid block\n"); return clean(0); }
 		if (argc>7) {
 			if (argv[7][0]=='n') encodeMode = 0;
 			if (argv[7][0]=='f') encodeMode = 2;
@@ -1275,24 +1299,24 @@ int main(int argc, char **argv) {
 		result = -result;
 		if (result == -1) { printf("Error: Could not write file\n"); }
 		if (result == -2) { printf("Error: Invalid block\n"); }
-		return result;
+		return clean(result);
 	}
 	else if (stricmp(argv[1],"setcursorpos") == 0) {
       int xp, yp;
 		
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setcursorpos [x|keep y|keep]\n"); return 0; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setcursorpos [x|keep y|keep]\n"); return clean(0); }
 		xp = atoi(argv[2]);
 		yp = atoi(argv[3]);
 		if (argv[2][0] == 'k') { GetXY(&xp, NULL); }
 		if (argv[3][0] == 'k') { GetXY(NULL, &yp); }
-		GotoXY(GetStdHandle(STD_OUTPUT_HANDLE), xp, yp);
-		return 0;
+		GotoXY(g_conout, xp, yp);
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"print") == 0) {
 		char *token;
 		int i = 0, bFirst = 0;
 		
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz print [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz print [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return clean(0); }
 		if (argv[2][0] == '\\') bFirst=1;
 
 		for (i = 0; i < strlen(argv[2]); i++) {
@@ -1319,7 +1343,7 @@ int main(int argc, char **argv) {
 			i++;
 		}
 
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"insertbmp") == 0) {
 		
@@ -1329,7 +1353,7 @@ int main(int argc, char **argv) {
 		
 		int i, x,y,z = 100, w = -1, h = -1;
 	
-		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]] [bitOp]\n\nBitops are: SRCCOPY (default), SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, DSTINVERT, BLACKNESS, WHITENESS\n\nRETURN: 0 on success, -1 if failed to load file\n"); return 0; }
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]] [bitOp]\n\nBitops are: SRCCOPY (default), SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, DSTINVERT, BLACKNESS, WHITENESS\n\nRETURN: 0 on success, -1 if failed to load file\n"); return clean(0); }
 
 		x = atoi(argv[3]);
 		y = atoi(argv[4]);
@@ -1349,37 +1373,34 @@ int main(int argc, char **argv) {
 		if (argc > 5) z = atoi(argv[5]);
 		if (argc > 6) { w = atoi(argv[5]); h = atoi(argv[6]); }
 
-		if (Fn_LoadBmp(argv[2], x, y, z, w, h, selBitOp) == EXIT_SUCCESS) return 0; else return -1;
+		if (Fn_LoadBmp(argv[2], x, y, z, w, h, selBitOp) == EXIT_SUCCESS) return clean(0); else return clean(-1);
 	}
 	else if (stricmp(argv[1],"setwindowtransparency") == 0) {
 		int percentage = -1;
 		if (argc > 2) percentage = atoi(argv[2]);
 		
-		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100]\n"); return 0; }
+		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100]\n"); return clean(0); }
 		
 		f_SetConsoleTransparency(percentage);
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"setwindowpos") == 0) {
 		RECT bounds;
-		int x, y, w, h, topMost = 0;
-		HWND hWnd = GetConsoleWindow();
+		int x, y, w, h;
+		HWND hWnd = GetConsoleWindow(), hTop = HWND_TOP;
 
-		if (!hWnd) return -1;
+		if (!hWnd) return clean(-1);
 		GetWindowRect(hWnd, &bounds);
 		
-//		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep] [w|keep] [h|keep] [0|1(topMost)]\n"); return 0; }
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep]\n"); return 0; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep] [topmost]\n"); return clean(0); }
 		x = atoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
 		y = atoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
+		if (argc > 4) { hTop = HWND_TOPMOST; }
 		w = bounds.right-bounds.left;
 		h = bounds.bottom-bounds.top;
-/*		if (argc > 4) { w = atoi(argv[4]); if (argv[4][0]=='k') w = bounds.right-bounds.left; }
-		if (argc > 5) { h = atoi(argv[5]); if (argv[5][0]=='k') h = bounds.bottom-bounds.top; }
-		if (argc > 6) { topMost = atoi(argv[6]); if (topMost == 1) topMost = HWND_TOPMOST; else topMost = 0; } */
 		
-		SetWindowPos(hWnd, HWND_TOP, x, y, w, h, topMost); // HWND_TOPMOST is "always on top"
-		return 0;
+		SetWindowPos(hWnd, hTop, x, y, w, h, 0);
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getwindowbounds") == 0) {
 		RECT bounds;
@@ -1387,30 +1408,30 @@ int main(int argc, char **argv) {
 		int pos = -1;
 		hWnd = GetConsoleWindow();
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h]\n\nRETURN: The requested value in ERRORLEVEL\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h]\n\nRETURN: The requested value in ERRORLEVEL\n"); return clean(0); }
 		GetWindowRect(hWnd, &bounds);
 
-		if (argv[2][0] == 'y') return bounds.top;
-		if (argv[2][0] == 'w') return bounds.right - bounds.left;
-		if (argv[2][0] == 'h') return bounds.bottom - bounds.top;
-		return bounds.left;
+		if (argv[2][0] == 'y') return clean(bounds.top);
+		if (argv[2][0] == 'w') return clean(bounds.right - bounds.left);
+		if (argv[2][0] == 'h') return clean(bounds.bottom - bounds.top);
+		return clean(bounds.left);
 	}
 	else if (stricmp(argv[1],"gettitle") == 0) {
 		char title[1024];
 
-		if (bInfo) { printf("\nUsage: cmdwiz gettitle\n\nRETURN: Prints the title of the console\n"); return 0; }		
+		if (bInfo) { printf("\nUsage: cmdwiz gettitle\n\nRETURN: Prints the title of the console\n"); return clean(0); }		
 		
 		GetConsoleTitle(title, 1023);
 		printf("%s\n", title);
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getdisplaydim") == 0) {
 		int bW = 0;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return clean(0); }
 		if (argv[2][0] == 'w') bW = 1;
 
-		return GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN);
+		return clean(GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN));
 	}
 	else if (stricmp(argv[1],"setmousecursorpos") == 0) {
 		int x, y;
@@ -1420,7 +1441,7 @@ int main(int argc, char **argv) {
 
 		GetCursorPos(&pos);
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x|keep y|keep] [l|r|d|u]\n"); return 0; }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x|keep y|keep] [l|r|d|u]\n"); return clean(0); }
 		x = atoi(argv[2]); if (argv[2][0]=='k') x = pos.x;
 		y = atoi(argv[3]); if (argv[3][0]=='k') y = pos.y;
 		if (argc > 4) { if (argv[4][0]=='l') click = 1; if (argv[4][0]=='r') click = 2; if (argv[4][0]=='d') click = 3; if (argv[4][0]=='u') click = 4; } 
@@ -1441,47 +1462,47 @@ int main(int argc, char **argv) {
 				SendInput(1,&Input,sizeof(INPUT));
 			}
 		}
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getmousecursorpos") == 0) {
 		POINT pos;
 		int bX = 0;
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getmousecursorpos [x|y]\n\nRETURN: The requested mouse cursor position dimension in ERRORLEVEL\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getmousecursorpos [x|y]\n\nRETURN: The requested mouse cursor position dimension in ERRORLEVEL\n"); return clean(0); }
 		if (argv[2][0] == 'x') bX = 1;
 		
 		GetCursorPos(&pos);
-		return bX ? pos.x : pos.y;
+		return clean(bX ? pos.x : pos.y);
 	}
 	else if (stricmp(argv[1],"setfont") == 0) {
 		int index = -1;
 		
 		if (argc > 2 && strlen(argv[2]) == 1) index = atoi(argv[2]);
-		if (argc < 3 || (strlen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return 0; }
+		if (argc < 3 || (strlen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return clean(0); }
 
 		if (index == -1)
-			return SetFontFromFile(argv[2]);
+			return clean(SetFontFromFile(argv[2]));
 		else
-			return SetFont(index);
+			return clean(SetFont(index));
 	}
 	else if (stricmp(argv[1],"savefont") == 0) {
 		CONSOLE_FONT_INFOEX fontInfo;
 		FILE *ofp;
 		int res;
 		
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz savefont [filename]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz savefont [filename]\n"); return clean(0); }
 
 		res = GetFont(&fontInfo);
 		
-		if (res) return -1;
+		if (res) return clean(-1);
 		
 		ofp = fopen(argv[2], "wb");
-		if (!ofp) { printf("Error: could not save font\n"); return -1; }
+		if (!ofp) { printf("Error: could not save font\n"); return clean(-1); }
 		
 		fwrite(&fontInfo, sizeof(CONSOLE_FONT_INFOEX),1,ofp);
 		fclose(ofp);
 		
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"setwindowstyle") == 0) {
 		int bExtended, bSet, i,flag;
@@ -1490,7 +1511,7 @@ int main(int argc, char **argv) {
 		if (argc > 2) bSet = argv[2][0] == 's' ? 1 : argv[2][0] == 'c'? 0 : -1;
 		if (argc > 3) bExtended = argv[3][0] == 'e' ? 1 : argv[3][0] == 's'? 0 : -1;
 		
-		if (argc < 5 || bInfo || bSet == -1 || bExtended == -1) { printf("\nUsage: cmdwiz setwindowstyle set|clear standard|extended value1 [value2] ...\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n"); return 0;
+		if (argc < 5 || bInfo || bSet == -1 || bExtended == -1) { printf("\nUsage: cmdwiz setwindowstyle set|clear standard|extended value1 [value2] ...\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n"); return clean(0);
 		}
 		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
@@ -1502,7 +1523,7 @@ int main(int argc, char **argv) {
 			if (bSet) valueFlags |= flag; else valueFlags &= ~(flag);
 		}
 		SetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);		
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getwindowstyle") == 0) {
 		int bExtended, flag;
@@ -1511,7 +1532,7 @@ int main(int argc, char **argv) {
 		
 		if (argc > 2) bExtended = argv[2][0] == 'e' ? 1 : argv[2][0] == 's'? 0 : -1;
 		
-		if (argc < 4 || bInfo || bExtended == -1) { printf("\nUsage: cmdwiz getwindowstyle standard|extended value\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n\nRETURN: ERRORLEVEL 1 if style set, otherwise 0\n"); return 0;
+		if (argc < 4 || bInfo || bExtended == -1) { printf("\nUsage: cmdwiz getwindowstyle standard|extended value\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n\nRETURN: ERRORLEVEL 1 if style set, otherwise 0\n"); return clean(0);
 		}
 		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
@@ -1520,7 +1541,7 @@ int main(int argc, char **argv) {
 			inp+=2;
 		flag = strtol(inp, NULL, 16);
 		
-		return valueFlags & flag ? 1 : 0;
+		return clean(valueFlags & flag ? 1 : 0);
 	}
 	else if (stricmp(argv[1],"setpalette") == 0) {
 		CONSOLE_SCREEN_BUFFER_INFOEX consoleInfo;
@@ -1528,30 +1549,30 @@ int main(int argc, char **argv) {
 		int cols[20];
 		int nof, i;
 		
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setpalette [RRGGBB[,RRGGBB...]]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setpalette [RRGGBB[,RRGGBB...]]\n"); return clean(0); }
 
-		GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo);
+		GetConsoleScreenBufferInfoEx(g_conout, &consoleInfo);
 
 		nof = sscanf(argv[2], "%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x", &cols[0], &cols[1], &cols[2], &cols[3], &cols[4], &cols[5], &cols[6], &cols[7], &cols[8], &cols[9], &cols[10], &cols[11], &cols[12], &cols[13], &cols[14], &cols[15]);
 		
-		if (nof < 1) { printf("\nError: invalid format\n"); return -1; }
+		if (nof < 1) { printf("\nError: invalid format\n"); return clean(-1); }
 		
 		for (i = 0; i < nof; i++) {
 			consoleInfo.ColorTable[i] = ((cols[i] & 0xff) << 16) | ((cols[i] & 0xff00)) | ((cols[i] & 0xff0000) >> 16);
 		}
 		
-		SetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo);
+		SetConsoleScreenBufferInfoEx(g_conout, &consoleInfo);
 		
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"getpalette") == 0) {
 		CONSOLE_SCREEN_BUFFER_INFOEX consoleInfo;
 		consoleInfo.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 		int col, i;
 		
-		if (bInfo) { printf("\nUsage: cmdwiz getpalette\n\nRETURN:Prints palette string to be used for setpalette\n"); return 0; }
+		if (bInfo) { printf("\nUsage: cmdwiz getpalette\n\nRETURN:Prints palette string to be used for setpalette\n"); return clean(0); }
 
-		GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &consoleInfo);
+		GetConsoleScreenBufferInfoEx(g_conout, &consoleInfo);
 
 		for (i = 0; i < 16; i++) {
 			col = consoleInfo.ColorTable[i];
@@ -1560,30 +1581,90 @@ int main(int argc, char **argv) {
 		}		
 		puts("");
 		
-		return 0;
+		return clean(0);
 	}
 	else if (stricmp(argv[1],"showmousecursor") == 0) {
 		int show;
 	
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showmousecursor [0|1]\n"); return 0; }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showmousecursor [0|1]\n"); return clean(0); }
 		
 		show = atoi(argv[2]);
 		
-		int ref_cnt = ShowConsoleCursor(GetStdHandle(STD_OUTPUT_HANDLE), show);
+		int ref_cnt = ShowConsoleCursor(g_conout, show);
 		if (show) {
 			if (ref_cnt > 0) {
-				while ((ref_cnt = ShowConsoleCursor(GetStdHandle(STD_OUTPUT_HANDLE), 0)) > 0);
+				while ((ref_cnt = ShowConsoleCursor(g_conout, 0)) > 0);
 			}
 		} else {
 			if (ref_cnt < -1) {
-				while ((ref_cnt = ShowConsoleCursor(GetStdHandle(STD_OUTPUT_HANDLE), 1)) < -1);
+				while ((ref_cnt = ShowConsoleCursor(g_conout, 1)) < -1);
 			}
 		}
 	}
+	else if (stricmp(argv[1],"fullscreen") == 0) {
+		HWND hWnd;
+		HANDLE hOut, hIn;
+		COORD screenBufferSize;
+		LONG style, ex_style;
+		SMALL_RECT windowSize;
+		RECT rcWorkArea;
+		DWORD mode;
+		int fs;
+	
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz fullscreen [0|1]\n"); return clean(0); }
+		
+		fs = atoi(argv[2]);
+
+		if (((hWnd = GetConsoleWindow()) == NULL)) {
+			return clean(-1);
+		}
+		
+		if (fs == 0) {
+			SetWindowLong(hWnd, GWL_STYLE, 0x14cf0000);
+			SetWindowLong(hWnd, GWL_EXSTYLE, 0x40310);
+			return clean(0);
+		}
+
+		hOut = g_conout;
+
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rcWorkArea, 0);
+
+		style = GetWindowLong(hWnd, GWL_STYLE);
+		ex_style = GetWindowLong(hWnd, GWL_EXSTYLE);
+
+		//printf("%x %x\n", style, ex_style);getchar();
+		
+		SetWindowLong(hWnd, GWL_STYLE, style & ~(WS_CAPTION | WS_THICKFRAME));
+		SetWindowLong(hWnd, GWL_EXSTYLE,
+		  ex_style & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
+					 WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+
+		SetWindowPos(hWnd, NULL, rcWorkArea.left, rcWorkArea.top,
+		 0, 0,
+		 SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE |
+		 SWP_FRAMECHANGED);
+
+		screenBufferSize = (COORD) GetLargestConsoleWindowSize(hOut);
+
+		windowSize.Left = (SHORT) 0;
+		windowSize.Top = (SHORT) 0;
+		windowSize.Right = (SHORT) screenBufferSize.X - 1;
+		windowSize.Bottom = (SHORT) screenBufferSize.Y - 1;
+
+		SetConsoleScreenBufferSize(hOut, screenBufferSize);
+		SetConsoleWindowInfo(hOut, TRUE, &windowSize);
+
+		//hIn = g_conin;
+		//GetConsoleMode(hIn, &mode);
+		//SetConsoleMode(hIn, mode & ~0x0040);
+		//CloseHandle(hIn);	
+		
+		return clean(0);
+	}
 	else {
 		printf("Error: unknown operation\n");
-		return 0;
+		return clean(0);
 	}
 
-	return 0; 
+	return clean(0); 
 }
