@@ -1,4 +1,4 @@
-/* GotoXY (c) 2015-16 Mikael Sollenborn */
+/* GotoXY (c) 2015-18 Mikael Sollenborn */
 
 #ifndef WINVER
 #define WINVER 0x0502
@@ -21,7 +21,6 @@
 // TODO: 1. Transparency (with \T switch) does not work with encoded characters in the input.
 //		 2. If end of line, \I: should not have to finish with ;
 //		 3. Can write \ak, to use last color for bg and "a" for fg, but not \ka, then "a" is not used for bg, instead last color is used for both fg and bg
-//		 4. Not working when running cmdgfx as output server. Possible to fix?
 
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED
@@ -77,6 +76,12 @@ void DebugPrintIS(int v);
 #define AND_EXISTING_FG 4096
 #define OR_EXISTING_FG 8192
 #define ADD_EXISTING_FG 16384
+
+HANDLE g_conout;
+
+HANDLE GetOutputHandle() {
+	return CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+}
 
 int GetDim(HANDLE h, int bH) {
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
@@ -314,7 +319,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	int h;
 	UINT oldCP;
 	
-	hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	hCurrHandle = g_conout;
 
 	oldfc = orgConsoleCol & 0xf;
 	oldbc = (orgConsoleCol>>4) & 0xf;
@@ -864,14 +869,14 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 			if (hNewScreenBuffer != INVALID_HANDLE_VALUE) {
 				hCurrHandle = hNewScreenBuffer;
 				if (bNewHandle == OFFSCREEN_NEW_COPY) {
-					CopyBuffer(GetStdHandle(STD_OUTPUT_HANDLE), hNewScreenBuffer, bufdims[0], bufdims[1], bufdims[2], bufdims[3], 0, 0);
+					CopyBuffer(g_conout, hNewScreenBuffer, bufdims[0], bufdims[1], bufdims[2], bufdims[3], 0, 0);
 				}
 			}
 			bNewHandle = 0;
 		}
 
 		if (bCopyback) {
-			hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+			hCurrHandle = g_conout;
 			CopyBuffer(hNewScreenBuffer, hCurrHandle, 0, 0, bufdims[2], bufdims[3], bufdims[0], bufdims[1]);
 			CloseHandle(hNewScreenBuffer);
 			hNewScreenBuffer = INVALID_HANDLE_VALUE;
@@ -899,7 +904,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	}
 
 	if (hNewScreenBuffer != INVALID_HANDLE_VALUE){
-		CopyBuffer(hNewScreenBuffer, GetStdHandle(STD_OUTPUT_HANDLE), 0, 0, bufdims[2], bufdims[3], bufdims[0], bufdims[1]);
+		CopyBuffer(hNewScreenBuffer, g_conout, 0, 0, bufdims[2], bufdims[3], bufdims[0], bufdims[1]);
 		CloseHandle(hNewScreenBuffer);
 	}
 
@@ -940,7 +945,7 @@ void DebugPrintIS(int v) {
 
 int GetConsoleColor(){
 	CONSOLE_SCREEN_BUFFER_INFO info;
-	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info))
+	if (!GetConsoleScreenBufferInfo(g_conout, &info))
 		return 0x7;
 	return info.wAttributes;
 }
@@ -1101,7 +1106,7 @@ int main(int argc, char **argv) {
 	char ch;
 	int keyret = 0;
 	unsigned int startT;
-	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE h;
 	LPWSTR *szArglist;
 	int nArgs;
 
@@ -1113,7 +1118,9 @@ int main(int argc, char **argv) {
 		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
 		return keyret;
 	}
-	
+
+	g_conout = h = GetOutputHandle();	
+ 
 	ch = argv[1][0];
 	switch(ch) {
 		case 'k':case '/':case '+': GetXY(h, &ox, &oy); x = ox; if (ch == '+') x += atoi(&(argv[1][1])); if (ch == '/') x -= atoi(&(argv[1][1])); break;
@@ -1168,6 +1175,7 @@ int main(int argc, char **argv) {
 			if (ifp == NULL) {
 				printf("Error: file not found.\n");
 				LocalFree(szArglist);
+				CloseHandle(g_conout);
 				return -1;
 			}
 			u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
@@ -1229,6 +1237,7 @@ int main(int argc, char **argv) {
 		free(u8buf);
 
 	LocalFree(szArglist);
+	CloseHandle(g_conout);
 
 	return keyret;
 }
