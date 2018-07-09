@@ -17,17 +17,17 @@
 
 // TODO:
 //			(1. getwindowbounds, client area
-//			(2. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
+//			(2. showwindow: maybe move topmost from setwindowpos to here. also make it possible to remove topmost. Also move window to back or to front.
 //			(3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
 //			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
-//			5. Support UNICODE
-//			6. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			7. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			5. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
 
 // Known bugs:
 //			1. showmousecursor to hide does not work Win10. Only tested to work on Win7.
 //			2. setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after clearing resize flag standard 0x00040000L). Win10 only?
+//			4. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+//			5. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd though, because scroll wheel affects the coordinates
 
 #define BUFW 0
 #define BUFH 1

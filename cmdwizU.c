@@ -18,20 +18,23 @@
 #include <shellapi.h>
 #include <string.h>
 
-// Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32 -lgdi32
+// Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -lwinmm -luser32 -lgdi32
 
 // TODO:
 //			(1. getwindowbounds, client area
-//			(2. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
+//			(2. showwindow: maybe move topmost from setwindowpos to here. also make it possible to remove topmost. Also move window to back or to front.
 //			(3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
 //			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
-//			5. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			6. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			5. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
 
 // Known bugs:
 //			1. showmousecursor to hide does not work Win10. Only tested to work on Win7.
 //			2. setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after clearing resize flag standard 0x00040000L). Win10 only?
+//			4. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+//			5. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd though, because scroll wheel affects the coordinates
+
+// Done:
 
 
 #define BUFW 0
@@ -1206,7 +1209,8 @@ int main(int oargc, char **oargv) {
 		CHAR_INFO chiFill;
 		CONSOLE_SCREEN_BUFFER_INFO info;
 		int w, h;
-
+		UINT oldCP;
+		
 		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY] [char] [fgcol] [bgcol]\n"); return clean(0); }
 		r.Left = _wtoi(argv[2]);
 		r.Top = _wtoi(argv[3]);
@@ -1220,13 +1224,25 @@ int main(int oargc, char **oargv) {
 		chiFill.Attributes = FOREGROUND_RED;
 		if (GetConsoleScreenBufferInfo(g_conout, &info))
 			chiFill.Attributes = info.wAttributes;
-		chiFill.Char.AsciiChar = ' ';
+		chiFill.Char.UnicodeChar = ' ';
+
+		oldCP = GetConsoleOutputCP();
+		SetConsoleOutputCP(CP_OEMCP);
 		
 		if (argc > 8) {
 			if (wcslen(argv[8]) == 1)
-				chiFill.Char.AsciiChar = argv[8][0];
-			else
-				chiFill.Char.AsciiChar =  wcstol(argv[8], NULL, 16);
+				chiFill.Char.UnicodeChar = argv[8][0];
+			else {
+				chiFill.Char.UnicodeChar = wcstol(argv[8], NULL, 16);
+				if (chiFill.Char.UnicodeChar < 256) { // Need to convert to get right extended ascii chars
+					char u8convBuf[4];
+					TCHAR convBuf[4];
+					u8convBuf[0] = chiFill.Char.UnicodeChar;
+					u8convBuf[1] = 0;
+					MultiByteToWideChar(CP_OEMCP, 0, u8convBuf, -1, convBuf, 1+1);
+					chiFill.Char.UnicodeChar = convBuf[0];
+				}
+			}
 			
 			if (argc > 9) {
 				chiFill.Attributes = 0;
@@ -1246,6 +1262,8 @@ int main(int oargc, char **oargv) {
 		
 		cl.Left=np.X; cl.Top=np.Y; cl.Right=np.X+w; cl.Bottom=np.Y+h; //not working (tried to copy instead of moving). Hence NULL below
 		ScrollConsoleScreenBuffer(g_conout, &r, NULL, np, &chiFill);
+		
+		SetConsoleOutputCP(oldCP);
 		return clean(0);
 	}
 	else if (_wcsicmp(argv[1],L"copyblock") == 0) {
