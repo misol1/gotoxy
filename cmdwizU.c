@@ -1,5 +1,7 @@
 /* CmdWiz (c) 2015-18 Mikael Sollenborn */
 
+/* UNICODE VERSION */
+
 #ifndef WINVER
 #define WINVER 0x0502
 #endif
@@ -7,11 +9,14 @@
 #define _WIN32_WINNT 0x0502
 #endif
 
+#define UNICODE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
 #include <shellapi.h>
+#include <string.h>
 
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwiz.c -lwinmm -luser32 -lgdi32
 
@@ -20,14 +25,14 @@
 //			(2. showwindow (normal, minimize, maximize, alwaysontop, foreground, background)
 //			(3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
 //			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
-//			5. Support UNICODE
-//			6. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			7. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			5. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+//			6. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
 
 // Known bugs:
 //			1. showmousecursor to hide does not work Win10. Only tested to work on Win7.
 //			2. setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after clearing resize flag standard 0x00040000L). Win10 only?
+
 
 #define BUFW 0
 #define BUFH 1
@@ -51,11 +56,11 @@ int WINAPI ShowConsoleCursor(HANDLE hConsoleOutput, BOOL bShow);
 HANDLE g_conin, g_conout;
 
 HANDLE GetInputHandle() {
-	return CreateFile("CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+	return CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 }
 
 HANDLE GetOutputHandle() {
-	return CreateFile("CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	return CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 }
 
 				
@@ -256,24 +261,27 @@ char *GetAttribs(WORD attributes, char *utp, int transpChar, int transpBg, int t
 #define BUF_SIZE 64000
 #define STR_SIZE 12000
 
-int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int transpChar, int transpBg, int transpFg) {
+int SaveBlock(TCHAR *filename, int x, int y, int w, int h, int bEncode, int transpChar, int transpBg, int transpFg) {
 	COORD a = { 1, 1 };
 	COORD b = { 0, 0 };
 	SMALL_RECT r;
 	CHAR_INFO *str;
-	char *output, attribS[16], charS[8];
+	char *output;
+	char attribS[16], charS[8];
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 	WORD oldAttrib = 6666;
 	FILE *ofp = NULL;
 	int i, j;
 	unsigned char ch;
-	char fName[512];
-
+	TCHAR fName[512];
+	int outSize;
+	char u8buf[8];
+	
 	if (bEncode == 3)
-		sprintf(fName, "%s.txt", filename);
+		swprintf(fName, 500, L"%s.txt", filename);
 	else
-		sprintf(fName, "%s.gxy", filename);
-	ofp = fopen(fName, "w");
+		swprintf(fName, 500, L"%s.gxy", filename);
+	ofp = _wfopen(fName, L"w");
 	if (!ofp) return 1;
 
 	GetConsoleScreenBufferInfo(g_conout, &screenBufferInfo);
@@ -282,7 +290,8 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	if (y+h > screenBufferInfo.dwSize.Y || h < 1) return 2;
 	if (x+w > screenBufferInfo.dwSize.X || w < 1) return 2;
 
-	output = (char*) malloc(10 * w*h);
+	outSize = 10 * w*h;
+	output = (char*) malloc(outSize);
 	if (!output) return 3;
 	output[0] = 0;
 	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * w*h);
@@ -321,7 +330,21 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	for (j=0; j < h; j++) {
 		output[0]=0;
 		for (i=0; i < w; i++) {
-			ch = str[i + j*w].Char.AsciiChar;
+			
+			// ch = str[i + j*w].Char.AsciiChar; // this character is NOT correct due to compiling with UNICODE.
+			
+				// Instead, we need to call WideCharToMultiByte *for every char* :(
+			WideCharToMultiByte( 
+				CP_OEMCP,          // convert to IBM437 ("extended AscII")
+				0,            // conversion behavior
+				&str[i + j*w].Char.UnicodeChar, // source UTF-16 string
+				1,       // total source string length, in WCHAR’s, including end-of-string (so, should this be 2? seems to work fine with 1)
+				u8buf,
+				8,
+				NULL, NULL
+			);
+			ch = u8buf[0];
+			
 			if ((ch==transpChar && transpChar >-1) && (transpFg == -1 || transpFg == (str[i + j*w].Attributes & 0xf))  && (transpBg == -1 || transpBg == ((str[i + j*w].Attributes>>4) & 0xf)) ) {
 				charS[0] = '\\'; charS[1]='-'; charS[2]=0;
 			} else if (bEncode == 3) {
@@ -353,6 +376,7 @@ int SaveBlock(char *filename, int x, int y, int w, int h, int bEncode, int trans
 	free(output);
 
 	fclose(ofp);
+	
 	return 0;
 }
 
@@ -397,7 +421,7 @@ int CopyBlock(int x, int y, int w, int h, int dx, int dy) {
 }
 
 
-int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, char *output) {
+int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, TCHAR *output) {
 	int res = 0;
 	if (bKeyAndMouse)
 		res = (mer.dwMousePosition.X << 7) | (mer.dwMousePosition.Y << 15);
@@ -430,7 +454,7 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, char *output) {
 	
 	if (bKeyAndMouse) res |= 1;
 	
-	sprintf(output, "MOUSE_EVENT 1 MOUSE_X %d MOUSE_Y %d LEFT_BUTTON %d RIGHT_BUTTON %d LEFT_DOUBLE_CLICK %d RIGHT_DOUBLE_CLICK %d MOUSE_WHEEL %d",
+	swprintf(output, 255, L"MOUSE_EVENT 1 MOUSE_X %d MOUSE_Y %d LEFT_BUTTON %d RIGHT_BUTTON %d LEFT_DOUBLE_CLICK %d RIGHT_DOUBLE_CLICK %d MOUSE_WHEEL %d",
 							mer.dwMousePosition.X, mer.dwMousePosition.Y, (res & 2)>0, (res & 4)>0, (res & 8)>0, (res & 16)>0, (res & 32)>0? 1: (res & 64)>0? -1 : 0);
 
 	return res;
@@ -473,7 +497,7 @@ BOOL f_SetConsoleTransparency(long percentage)
 	return FALSE;
 }
 
-int Fn_LoadBmp(char *szBmpPath, long x, long y, long z, long w, long h, DWORD dwRop)
+int Fn_LoadBmp(TCHAR *szBmpPath, long x, long y, long z, long w, long h, DWORD dwRop)
 {
 	HWND hWnd = NULL;
 	HDC hDc = NULL, hDcBmp = NULL;
@@ -600,13 +624,13 @@ int GetFont(PCONSOLE_FONT_INFOEX font_info) {
 	return ret;
 }
 
-int SetFontFromFile(char *fname) {
+int SetFontFromFile(TCHAR *fname) {
 	HINSTANCE dllHandle = LoadLibraryW(L"KERNEL32.DLL");
 	CONSOLE_FONT_INFOEX font_info;
 	int ret = 1;
 	FILE*ifp;
 	
-	ifp = fopen(fname, "rb");
+	ifp = _wfopen(fname, L"rb");
 	if (!ifp) { printf("Error: Could not load font\n"); return ret; }
 	fread(&font_info, sizeof(CONSOLE_FONT_INFOEX), 1, ifp);
 	fclose(ifp);
@@ -646,7 +670,7 @@ void evaluateCol(char ch, int *bUsesColors, int *bUsesExtendedColor, int *bUsesU
 	}
 }
 
-int inspectGxy(char *fname, int bIgnoreCodes) {
+int inspectGxy(TCHAR *fname, int bIgnoreCodes) {
 	char ch, *text;
 	int fr, i, inlen, maxW=-1, maxH=-1;
 	int x=0, y=0;
@@ -654,7 +678,7 @@ int inspectGxy(char *fname, int bIgnoreCodes) {
 	int bLastNewline=0;
 	FILE *ifp;
 
-	ifp=fopen(fname, "r");
+	ifp=_wfopen(fname, L"r");
 	if (ifp == NULL) {
 		return 1;
 	}
@@ -667,7 +691,7 @@ int inspectGxy(char *fname, int bIgnoreCodes) {
 	text[fr] = 0;
 	fclose(ifp);
 	
-	inlen =strlen(text);
+	inlen = strlen(text);
 	
 	for(i = 0; i < inlen; i++) {
 		ch = text[i];
@@ -813,60 +837,120 @@ int inspectGxy(char *fname, int bIgnoreCodes) {
 	return 0;
 }
 
+TCHAR **argv;
+
 int clean(int returnValue) { 
 	CloseHandle(g_conin);
 	CloseHandle(g_conout);
+	LocalFree(argv);
 	return returnValue;
 }
 
-int main(int argc, char **argv) {
+int main(int oargc, char **oargv) {
 	int delayVal = 0, bInfo = 0;
+	int argc;
+	TCHAR **env;
+	STARTUPINFO start_info = { 0 };
 
-	if (argc < 2 || (argc == 2 && strcmp(argv[1],"/?")==0) ) { printf("\nCmdWiz (Ascii) v1.0 : Mikael Sollenborn 2015-2018\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+//	TCHAR *argv[128];
+//  __wgetmainargs(&argc, &argv, &env, 0, &start_info);
+		
+	argv = (TCHAR **)CommandLineToArgvW(GetCommandLineW(), &argc);
 
-	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
-	
+	// If enabling this, input coming as UTF-8 without BOM will be received correctly, but NOT Utf-16 LE and UTF-8 with BOM...
+	/*
+	for (int i=0; i < oargc; i++) {
+		argv[i] = (TCHAR *)malloc(sizeof(TCHAR) * 1024);
+		MultiByteToWideChar(CP_UTF8, 0, oargv[i], -1, argv[i], 1000);
+	}
+	argc=oargc;
+	*/
+		
+	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.0 : Mikael Sollenborn 2015-2018\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+
+	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
+
 	g_conin = GetInputHandle();
 	g_conout = GetOutputHandle();
-	
-	if (stricmp(argv[1],"cache") == 0) {
+
+	if (_wcsicmp(argv[1],L"cache") == 0) {
 		FILE *ifp, *ifp2;
-		char *dummy, *fch, *dum_p;
-		int fmsize = 1048576 * 16, count = 1;
-				
+		TCHAR *dummy, *dummy2, *fch, *dum_p;
+		int fmsize = 1048576 * 16, i, firstLine = 1, isUtf16LE=0, count=1;
+		char *dumSingle;
+		
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz cache [filelist] [reportFailedOpen]\n"); return clean(0); }
-		ifp = fopen(argv[2], "r");
+		ifp = _wfopen(argv[2], L"r"); // with _wfopen, use "r" to read as char (into wide char buffer), or "rb" to read as wide char
 		if (!ifp) { printf("Error: file not found\n"); return clean(-1); }
 
-		dummy = (char *) malloc(fmsize);
-		if (!dummy) { printf("Error: could not allocate memory\n"); fclose(ifp); return clean(-2); }
+		dummy = (TCHAR *) malloc(fmsize * sizeof(TCHAR));
+		dummy2 = (TCHAR *) malloc(1024 * sizeof(TCHAR));
+		dumSingle = (char *) malloc(1024);
+		if (!dummy || !dumSingle) { printf("Error: could not allocate memory\n"); fclose(ifp); return clean(-2); }
+		
+		// BOM UTf-8: 0xEF 0xBB 0xBF
+		// BOM Utf-16 LE: 0xFF 0xFE (0xFE 0xFF för BE)
+
+		fch = fgetws(dummy, fmsize, ifp);
+		if (dummy[0]==0xFF && dummy[1]==0xFE) { // if Utf-16 LE, then reopen same file in binary to read wide chars (Big Endian not supported, many issues like byte swap + fgetws will read entire file as one line...)
+			isUtf16LE=1;
+			fclose(ifp);
+			ifp = _wfopen(argv[2], L"rb"); // with _wfopen, use "r" to read as char (into wide char buffer), or "rb" to read as wide char
+		} else {
+			rewind(ifp);
+		}
 		
 		do {
-			fch = fgets(dummy, fmsize, ifp);
+			fch = fgetws(dummy, fmsize, ifp);
 			if (fch) {
-				dummy[strlen(dummy)-1] = 0; dum_p = dummy;
-				if (*dum_p == '"' && dummy[strlen(dummy)-1]=='"') { dummy[strlen(dummy)-1] = 0; dum_p++; }
-				ifp2 = fopen(dum_p, "r");
+				int index = wcslen(dummy)-1-isUtf16LE;
+				if (dummy[index] == 10 || dummy[index] == 13) { dummy[index] = 0; } // get rid of newline. Weird, seems to be 13+10 for Utf-16 and just 10 for utf-8 ??
+				dum_p = dummy;
+				if (firstLine) { firstLine = 0; if (isUtf16LE) { dum_p = dum_p + 1; } else if (dum_p[0]==0xEF && dum_p[1]==0xBB && dum_p[2]==0xBF) dum_p = dum_p + 3; }
+				if (*dum_p == '"' && dummy[wcslen(dummy)-1]=='"') { dummy[wcslen(dummy)-1] = 0; dum_p++; }
+
+				if (isUtf16LE) {
+					//for (i=0; i < wcslen(dum_p); i++) printf("%d%c\n", dum_p[i], dum_p[i]);
+					ifp2 = _wfopen(dum_p, L"r"); 
+				} else {
+					ifp2 = _wfopen(dum_p, L"r");	// First try to open file as Ansi with default Windows Code Page
+					if (!ifp2) {  					// Next try Ansi with OEM (console) Code Page
+						//for (i=0; i < wcslen(dum_p); i++) printf("%d%c\n", dum_p[i], dum_p[i]);
+						for (i=0; i < wcslen(dum_p); i++) dumSingle[i] = dum_p[i]; dumSingle[i]=0;
+						MultiByteToWideChar(CP_OEMCP, 0, dumSingle, -1, dummy2, 1000);
+						ifp2 = _wfopen(dummy2, L"r");
+					}
+					if (!ifp2) { 					// Last, try Utf-8
+						//for (i=0; i < wcslen(dum_p); i++) printf("%d%c\n", dum_p[i], dum_p[i]);
+						for (i=0; i < wcslen(dum_p); i++) dumSingle[i] = dum_p[i]; dumSingle[i]=0;
+						MultiByteToWideChar(CP_UTF8, 0, dumSingle, -1, dummy2, 1000);
+						ifp2 = _wfopen(dummy2, L"r");
+					}
+				}
+
 				if (ifp2) {
 					fread(dummy, 1, fmsize, ifp2);
 					fclose(ifp2);
 				} else if (argc > 3)
 					printf("Could not read file on line %d\n", count);
+				
+				count++;
 			}
-			count++;
 		} while (fch);
 		
 		free(dummy);
+		free(dummy2);
+		free(dumSingle);
 		fclose(ifp);
-	} else if (stricmp(argv[1],"delay") == 0) {
+	} else if (_wcsicmp(argv[1],L"delay") == 0) {
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz delay [ms]\n"); return clean(0); }
 
-		delayVal=atoi(argv[2]);
+		delayVal=_wtoi(argv[2]);
 		if (delayVal < 1) return clean(0);
 		millisleep(delayVal);
 		//Sleep(delayVal);
 	}
-	else if (stricmp(argv[1],"getconsoledim") == 0) {
+	else if (_wcsicmp(argv[1],L"getconsoledim") == 0) {
 		int dim = BUFW;
 		if (bInfo) { printf("\nUsage: cmdwiz getconsoledim [w|h|sw|sh|cx|cy]\n\nRETURN: Console dimensions in text, or specified dimension value in ERRORLEVEL\n"); return clean(0); }
 		if (argc < 3) { printf("WIDTH %d HEIGHT %d SCREEN_WIDTH %d SCREEN_HEIGHT %d SCROLL_X %d SCROLL_Y %d\n", GetDim(BUFW), GetDim(BUFH), GetDim(SCRW), GetDim(SCRH), GetDim(CURRX), GetDim(CURRY)); return clean(0); }
@@ -878,18 +962,19 @@ int main(int argc, char **argv) {
 		if (argv[2][0] == 'c') if (argv[2][1] == 'y') dim = CURRY;
 		return clean(GetDim(dim));
 	}
-	else if (stricmp(argv[1],"setbuffersize") == 0) {
+	
+	else if (_wcsicmp(argv[1],L"setbuffersize") == 0) {
 		COORD nb;
 
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setbuffersize [width|keep height|keep]\n"); return clean(0); }
-		nb.X = atoi(argv[2]);
-		nb.Y = atoi(argv[3]);
+		nb.X = _wtoi(argv[2]);
+		nb.Y = _wtoi(argv[3]);
 		if (argv[2][0] == 'k') nb.X = GetDim(BUFW);
 		if (argv[3][0] == 'k') nb.Y = GetDim(BUFH);
 		SetConsoleScreenBufferSize(g_conout, nb);
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getch") == 0) {
+	else if (_wcsicmp(argv[1],L"getch") == 0) {
 		int k;
 		
 		if (bInfo) { printf("\nUsage: cmdwiz getch [noWait]\n\nRETURN: Key scan code\n"); return clean(0); }
@@ -900,20 +985,20 @@ int main(int argc, char **argv) {
 		if (k == 224 || k == 0) k = 256 + getch();
 		return clean(k);
 	}
-	else if (stricmp(argv[1],"flushkeys") == 0) {
+	else if (_wcsicmp(argv[1],L"flushkeys") == 0) {
 		if (bInfo) { printf("\nUsage: cmdwiz flushkeys\n"); return clean(0); }
 
 		while(kbhit())
 			getch();
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getkeystate") == 0) {
+	else if (_wcsicmp(argv[1],L"getkeystate") == 0) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 		int i, j, k = 0;
-		char buf[128];
+		TCHAR buf[128];
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
 
-		if (stricmp(argv[2],"all") == 0) {
+		if (_wcsicmp(argv[2],L"all") == 0) {
 			int vKeys[16] = { VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_MENU, VK_LMENU, VK_RMENU }; 
 			for (i = 0; i < 9; i++) {
 				j = GetAsyncKeyState(vKeys[i]);
@@ -924,22 +1009,22 @@ int main(int argc, char **argv) {
 		}
 
 		for (i = argc-1; i > 1; i--) {
-			if (stricmp(argv[i],"shift") == 0) j = GetAsyncKeyState(VK_SHIFT);
-			else if (stricmp(argv[i],"lshift") == 0) j = GetAsyncKeyState(VK_LSHIFT);
-			else if (stricmp(argv[i],"rshift") == 0) j = GetAsyncKeyState(VK_RSHIFT);
-			else if (stricmp(argv[i],"ctrl") == 0) j = GetAsyncKeyState(VK_CONTROL);
-			else if (stricmp(argv[i],"lctrl") == 0) j = GetAsyncKeyState(VK_LCONTROL);
-			else if (stricmp(argv[i],"rctrl") == 0) j = GetAsyncKeyState(VK_RCONTROL);
-			else if (stricmp(argv[i],"alt") == 0) j = GetAsyncKeyState(VK_MENU);
-			else if (stricmp(argv[i],"lalt") == 0) j = GetAsyncKeyState(VK_LMENU);
-			else if (stricmp(argv[i],"ralt") == 0) j = GetAsyncKeyState(VK_RMENU);
+			if (_wcsicmp(argv[i],L"shift") == 0) j = GetAsyncKeyState(VK_SHIFT);
+			else if (_wcsicmp(argv[i],L"lshift") == 0) j = GetAsyncKeyState(VK_LSHIFT);
+			else if (_wcsicmp(argv[i],L"rshift") == 0) j = GetAsyncKeyState(VK_RSHIFT);
+			else if (_wcsicmp(argv[i],L"ctrl") == 0) j = GetAsyncKeyState(VK_CONTROL);
+			else if (_wcsicmp(argv[i],L"lctrl") == 0) j = GetAsyncKeyState(VK_LCONTROL);
+			else if (_wcsicmp(argv[i],L"rctrl") == 0) j = GetAsyncKeyState(VK_RCONTROL);
+			else if (_wcsicmp(argv[i],L"alt") == 0) j = GetAsyncKeyState(VK_MENU);
+			else if (_wcsicmp(argv[i],L"lalt") == 0) j = GetAsyncKeyState(VK_LMENU);
+			else if (_wcsicmp(argv[i],L"ralt") == 0) j = GetAsyncKeyState(VK_RMENU);
 			else {
-				strcpy(buf, argv[i]);
-				if (buf[strlen(buf)-1]=='h') {
-					buf[strlen(buf)-1]=0;
-					j = GetAsyncKeyState(strtol(buf, NULL, 16));
+				wcscpy(buf, argv[i]);
+				if (buf[wcslen(buf)-1]=='h') {
+					buf[wcslen(buf)-1]=0;
+					j = GetAsyncKeyState(wcstol(buf, NULL, 16));
 				} else
-					j = GetAsyncKeyState(strtol(buf, NULL, 10));
+					j = GetAsyncKeyState(wcstol(buf, NULL, 10));
 			}
 
 			k = (k<<1) | ((j & 0x8000)? 1:0 );
@@ -947,19 +1032,19 @@ int main(int argc, char **argv) {
 		printKeystates(k, argc-2);
 		return clean(k);
 	}
-	else if (stricmp(argv[1],"playsound") == 0) {
+	else if (_wcsicmp(argv[1],L"playsound") == 0) {
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz playsound [filename.wav]\n"); return clean(0); }
 		PlaySound(argv[2], NULL, 0x00020000L|0x0002); // SND_FILENAME | SND_NODEFAULT
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"gxyinfo") == 0) {
+	else if (_wcsicmp(argv[1],L"gxyinfo") == 0) {
 		int res;
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz gxyinfo [filename.gxy] [ignoreCodes]\n\nRETURN: 0 if file could be loaded, -1 on failure\n"); return clean(0); }
 	
 		res = inspectGxy(argv[2], argc > 3);
 		return clean(res > 0? -1 : 0);
 	}
-	else if (stricmp(argv[1],"getcharat") == 0) {
+	else if (_wcsicmp(argv[1],L"getcharat") == 0) {
 		int ox, oy;
 		int x, y;
 		int i;
@@ -971,15 +1056,15 @@ int main(int argc, char **argv) {
 		
 		GetXY(&ox, &oy);
 
-		if (argv[2][0]!='k') x=atoi(argv[2]); else x=ox;
-		if (argv[3][0]!='k') y=atoi(argv[3]); else y=oy;
+		if (argv[2][0]!='k') x=_wtoi(argv[2]); else x=ox;
+		if (argv[3][0]!='k') y=_wtoi(argv[3]); else y=oy;
 
 		i = ReadCharProperty(x,y,CHARPROP_CHAR);
 		if (i == INVALID_COORDINATE) return clean(-1);
 		if (i < 0) i = 256+i;
 		return clean(i);
 	}
-	else if (stricmp(argv[1],"getcolorat") == 0) {
+	else if (_wcsicmp(argv[1],L"getcolorat") == 0) {
 		int x, y;
 		int ox, oy;
 		int i;
@@ -988,14 +1073,14 @@ int main(int argc, char **argv) {
 
 		GetXY(&ox, &oy);
 
-		if (argv[3][0]!='k') x=atoi(argv[3]); else x=ox;
-		if (argv[4][0]!='k') y=atoi(argv[4]); else y=oy;
+		if (argv[3][0]!='k') x=_wtoi(argv[3]); else x=ox;
+		if (argv[4][0]!='k') y=_wtoi(argv[4]); else y=oy;
 
 		i = ReadCharProperty(x,y,argv[2][0]=='f'? CHARPROP_FGCOL : CHARPROP_BGCOL);
 		if (i == INVALID_COORDINATE) return clean(-1);
 		return clean(i);
 	}
-	else if (stricmp(argv[1],"getcursorpos") == 0) {
+	else if (_wcsicmp(argv[1],L"getcursorpos") == 0) {
 		int ox, oy;
 
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getcursorpos [x|y]\n\nRETURN: Cursor position in x or y\n"); return clean(0); }
@@ -1003,16 +1088,16 @@ int main(int argc, char **argv) {
 
 		return clean(argv[2][0]=='x'? ox : oy);
 	}
-	else if (stricmp(argv[1],"gettime") == 0) {
+	else if (_wcsicmp(argv[1],L"gettime") == 0) {
 		if (bInfo) { printf("\nUsage: cmdwiz gettime\n\nRETURN: Time passed since system start, in milliseconds\n"); return clean(0); }
 		
 		return clean(milliseconds_now());
 	}
-	else if (stricmp(argv[1],"setquickedit") == 0) {
+	else if (_wcsicmp(argv[1],L"setquickedit") == 0) {
 		DWORD fdwMode;
 		int i;
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz setquickedit [0|1]\n"); return clean(0); }
-		i = atoi(argv[2]);
+		i = _wtoi(argv[2]);
 
 		GetConsoleMode(g_conin, &fdwMode);
 
@@ -1024,28 +1109,28 @@ int main(int argc, char **argv) {
 
 		SetConsoleMode(g_conin, fdwMode);
 	}
-	else if (stricmp(argv[1],"getquickedit") == 0) {
+	else if (_wcsicmp(argv[1],L"getquickedit") == 0) {
 		DWORD fdwMode;
 		if (bInfo) { printf("\nUsage: cmdwiz getquickedit\n\nRETURN: 1 if quick edit is enabled, otherwise 0\n"); return clean(0); }
 		
 		GetConsoleMode(g_conin, &fdwMode);
 		return clean(fdwMode & ENABLE_QUICK_EDIT_MODE ? 1 : 0);
 	}
-	else if (stricmp(argv[1],"getmouse") == 0 || stricmp(argv[1],"getch_or_mouse") == 0 || stricmp(argv[1],"getch_and_mouse") == 0) {
+	else if (_wcsicmp(argv[1],L"getmouse") == 0 || _wcsicmp(argv[1],L"getch_or_mouse") == 0 || _wcsicmp(argv[1],L"getch_and_mouse") == 0) {
 		DWORD fdwMode, oldfdwMode, cNumRead, j; 
 		INPUT_RECORD irInBuf[128];
-		char mouse_output[256] = "NO_EVENT\n";
+		TCHAR mouse_output[256] = L"NO_EVENT\n";
 		int wtime = -1, i, res, res2, bReadKeys = 0, bWroteKey = 0, bKeyAndMouse = 0, k = 0, bMouseEvent = 0;
 
-		if (!(stricmp(argv[1],"getmouse") == 0))
+		if (!(_wcsicmp(argv[1],L"getmouse") == 0))
 			bReadKeys = 1;
-		if (stricmp(argv[1],"getch_and_mouse") == 0)
+		if (_wcsicmp(argv[1],L"getch_and_mouse") == 0)
 			bKeyAndMouse = 1;
 
 		if (bInfo) {
-			if (stricmp(argv[1],"getmouse") == 0) {
+			if (_wcsicmp(argv[1],L"getmouse") == 0) {
 				printf("\nUsage: cmdwiz getmouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event\n\nERRORLEVEL -1 on no input, or bitpattern following yyyyyyyyyyxxxxxxxxxxx---WwRLrl-  where - bits are ignored, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, and x/y are mouse coordinates\n");
-			} else if (stricmp(argv[1],"getch_or_mouse") == 0) {
+			} else if (_wcsicmp(argv[1],L"getch_or_mouse") == 0) {
 				printf("\nUsage: cmdwiz getch_or_mouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event or key press\n\nERRORLEVEL -1 on no input, or bitpattern following yyyyyyyyyyxxxxxxxxxxx---WwRLrl0 for a MOUSE event where - bits are ignored, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, and x/y are mouse coordinates, OR kkkkkkkkkk1 for a KEY event where k is the key pressed\n");
 			} else {
 				printf("\nUsage: cmdwiz getch_and_mouse [maxWait_ms]\n\nRETURN: Text output regarding mouse event and key press\n\nERRORLEVEL -1 on no input, or bitpattern kkkkkkkkkyyyyyyyxxxxxxxxWwRLrlM where M is set if there was a Mouse event, l/L is single/double left click, r/R is single/double right click, w/W is mouse wheel up/down, x/y are mouse coordinates, and k is the KEY (0 means no key pressed)\n");			
@@ -1053,7 +1138,7 @@ int main(int argc, char **argv) {
 			return clean(0);
 		}
 		
-		if (argc > 2) wtime = atoi(argv[2]);
+		if (argc > 2) wtime = _wtoi(argv[2]);
 
 		GetConsoleMode(g_conin, &oldfdwMode);
 
@@ -1063,7 +1148,7 @@ int main(int argc, char **argv) {
 
 		if (wtime > -1) {
 			res = WaitForSingleObject(g_conin, wtime);
-			if (res & WAIT_TIMEOUT) { printf(mouse_output); return clean(-1); }
+			if (res & WAIT_TIMEOUT) { wprintf(mouse_output); return clean(-1); }
 		}
 
 		res = -1;
@@ -1107,14 +1192,14 @@ int main(int argc, char **argv) {
 
 		if (k == -1) k = 0;
 		if (bMouseEvent)
-			printf("EVENT KEY_EVENT %d %s\n", k, mouse_output);
+			wprintf(L"EVENT KEY_EVENT %d %s\n", k, mouse_output);
 		else
-			printf("EVENT KEY_EVENT %d MOUSE_EVENT 0\n", k);
+			wprintf(L"EVENT KEY_EVENT %d MOUSE_EVENT 0\n", k);
 		
 		SetConsoleMode(g_conin, oldfdwMode);
 		return clean(res);
 	}
-	else if (stricmp(argv[1],"moveblock") == 0) {
+	else if (_wcsicmp(argv[1],L"moveblock") == 0) {
 		COORD np;
 		SMALL_RECT r;
 		SMALL_RECT cl;
@@ -1123,38 +1208,38 @@ int main(int argc, char **argv) {
 		int w, h;
 
 		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz moveblock [x y width height newX newY] [char] [fgcol] [bgcol]\n"); return clean(0); }
-		r.Left = atoi(argv[2]);
-		r.Top = atoi(argv[3]);
-		w = atoi(argv[4]);
-		h = atoi(argv[5]);
+		r.Left = _wtoi(argv[2]);
+		r.Top = _wtoi(argv[3]);
+		w = _wtoi(argv[4]);
+		h = _wtoi(argv[5]);
 		r.Right = r.Left + w-1;
 		r.Bottom = r.Top + h-1;
 		if (r.Right < 0 || r.Bottom < 0) return clean(-1);
-		np.X = atoi(argv[6]);
-		np.Y = atoi(argv[7]);
+		np.X = _wtoi(argv[6]);
+		np.Y = _wtoi(argv[7]);
 		chiFill.Attributes = FOREGROUND_RED;
 		if (GetConsoleScreenBufferInfo(g_conout, &info))
 			chiFill.Attributes = info.wAttributes;
 		chiFill.Char.AsciiChar = ' ';
 		
 		if (argc > 8) {
-			if (strlen(argv[8]) == 1)
+			if (wcslen(argv[8]) == 1)
 				chiFill.Char.AsciiChar = argv[8][0];
 			else
-				chiFill.Char.AsciiChar =  strtol(argv[8], NULL, 16);
+				chiFill.Char.AsciiChar =  wcstol(argv[8], NULL, 16);
 			
 			if (argc > 9) {
 				chiFill.Attributes = 0;
-				if (strlen(argv[9]) == 1 && strtol(argv[9], NULL, 16) > 0)
-					chiFill.Attributes = strtol(argv[9], NULL, 16);
+				if (wcslen(argv[9]) == 1 && wcstol(argv[9], NULL, 16) > 0)
+					chiFill.Attributes = wcstol(argv[9], NULL, 16);
 				else
-					chiFill.Attributes = atoi(argv[9]);
+					chiFill.Attributes = _wtoi(argv[9]);
 				
 				if (argc > 10) {
-					if (strlen(argv[10]) == 1 && strtol(argv[10], NULL, 16) > 0)
-						chiFill.Attributes |= strtol(argv[10], NULL, 16) << 4;
+					if (wcslen(argv[10]) == 1 && wcstol(argv[10], NULL, 16) > 0)
+						chiFill.Attributes |= wcstol(argv[10], NULL, 16) << 4;
 					else
-						chiFill.Attributes |= atoi(argv[10]) << 4;
+						chiFill.Attributes |= _wtoi(argv[10]) << 4;
 				}
 			}
 		}
@@ -1163,21 +1248,21 @@ int main(int argc, char **argv) {
 		ScrollConsoleScreenBuffer(g_conout, &r, NULL, np, &chiFill);
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"copyblock") == 0) {
+	else if (_wcsicmp(argv[1],L"copyblock") == 0) {
 		if (argc < 8 || bInfo) { printf("\nUsage: cmdwiz copyblock [x y width height newX newY]\n"); return clean(0); }
-		return clean(CopyBlock(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),atoi(argv[6]),atoi(argv[7])));
+		return clean(CopyBlock(_wtoi(argv[2]),_wtoi(argv[3]),_wtoi(argv[4]),_wtoi(argv[5]),_wtoi(argv[6]),_wtoi(argv[7])));
 	}
-	else if (stricmp(argv[1],"await") == 0) {
+	else if (_wcsicmp(argv[1],L"await") == 0) {
 		int startT, waitT;
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz await [oldtime] [waittime]\n"); return clean(0); }
-		startT = atoi(argv[2]);
-		waitT = atoi(argv[3]);
+		startT = _wtoi(argv[2]);
+		waitT = _wtoi(argv[3]);
 
 		while (milliseconds_now() < startT+waitT) {
 //			Sleep(1);
 		}
 	}
-	else if (stricmp(argv[1],"getconsolecolor") == 0) {
+	else if (_wcsicmp(argv[1],L"getconsolecolor") == 0) {
 		CONSOLE_SCREEN_BUFFER_INFO info;
 
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getconsolecolor [fg|bg]\n\nRETURN: Console color 0-15, or -1 on error\n"); return clean(0); }
@@ -1187,7 +1272,7 @@ int main(int argc, char **argv) {
 
 		return clean(argv[2][0]=='f'? info.wAttributes & 0xf : (info.wAttributes >> 4) & 0xf);
 	}
-	else if (stricmp(argv[1],"showcursor") == 0) {
+	else if (_wcsicmp(argv[1],L"showcursor") == 0) {
 		CONSOLE_CURSOR_INFO c;
 		BOOL result;
 		int retVal;
@@ -1205,7 +1290,7 @@ int main(int argc, char **argv) {
 		c.bVisible = argv[2][0] == '0'? FALSE : TRUE;
 		c.dwSize = 25;
 		if (argc > 3) {
-			c.dwSize = atoi(argv[3]);
+			c.dwSize = _wtoi(argv[3]);
 			if (c.dwSize < 1 || c.dwSize > 100)
 				c.dwSize = 25;
 		}
@@ -1214,28 +1299,28 @@ int main(int argc, char **argv) {
 			return clean(-1);
 		return clean(retVal);
 	}
-	else if (stricmp(argv[1],"stringfind") == 0) {
+	else if (_wcsicmp(argv[1],L"stringfind") == 0) {
 		int index = 0;
-		char *cp;
+		TCHAR *cp;
 
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz stringfind [orgstring findstring] [startindex] [noCase]\n\nRETURN: Index of findstring in orgstring, or -1 if not found\n"); return clean(0); }
-		if (argc > 4) { index = atoi(argv[4]); if (index < 0 || index >= strlen(argv[2])) return clean(-1); }
+		if (argc > 4) { index = _wtoi(argv[4]); if (index < 0 || index >= wcslen(argv[2])) return clean(-1); }
 		if (argc > 5) { 
 			int i;
-			for (i = 0; i < strlen(argv[2]); i++) argv[2][i] = toupper(argv[2][i]);
-			for (i = 0; i < strlen(argv[3]); i++) argv[3][i] = toupper(argv[3][i]);
+			for (i = 0; i < wcslen(argv[2]); i++) argv[2][i] = toupper(argv[2][i]);
+			for (i = 0; i < wcslen(argv[3]); i++) argv[3][i] = toupper(argv[3][i]);
 		}
 
-		cp = strstr(&(argv[2][index]), argv[3]);		
+		cp = wcsstr(&(argv[2][index]), argv[3]);		
 		if (!cp) return clean(-1);
-		return clean((int)(cp - (char *)argv[2]));
+		return clean((int)(cp - (TCHAR *)argv[2]));
 	}
-	else if (stricmp(argv[1],"stringlen") == 0) {
+	else if (_wcsicmp(argv[1],L"stringlen") == 0) {
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz stringlen [string]\n\nRETURN: Length of string\n"); return clean(0); }
 
-		return clean(strlen(argv[2]));
+		return clean(wcslen(argv[2]));
 	}
-	else if (stricmp(argv[1],"getexetype") == 0) {
+	else if (_wcsicmp(argv[1],L"getexetype") == 0) {
 		SHFILEINFO sfi = {0};
 		DWORD_PTR ret = 0;
 		WORD hi, lo;
@@ -1258,7 +1343,7 @@ int main(int argc, char **argv) {
 
 		return clean(-1);
 	}
-	else if (stricmp(argv[1],"inspectblock") == 0) {
+	else if (_wcsicmp(argv[1],L"inspectblock") == 0) {
 		char glyphs[128];
 		int i, inspChar;
 		
@@ -1267,14 +1352,14 @@ int main(int argc, char **argv) {
 			if (argv[i][1]==0)
 				inspChar = argv[i][0];
 			else
-				inspChar = strtol(argv[i], NULL, 16);
+				inspChar = wcstol(argv[i], NULL, 16);
 			glyphs[i-7] = inspChar;
 		}
 		glyphs[i-7] = 0;
 		
-		return clean(InspectBuffer(g_conout, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6][0]=='e', glyphs));
+		return clean(InspectBuffer(g_conout, _wtoi(argv[2]), _wtoi(argv[3]), _wtoi(argv[4]), _wtoi(argv[5]), argv[6][0]=='e', glyphs));
 	}
-	else if (stricmp(argv[1],"saveblock") == 0) {
+	else if (_wcsicmp(argv[1],L"saveblock") == 0) {
 		int result;
 		int encodeMode = 1;
 		int transpChar = -1, transpFg = -1, transpBg = -1;
@@ -1289,41 +1374,47 @@ int main(int argc, char **argv) {
 			if (argv[8][1]==0)
 				transpChar = argv[8][0];
 			else
-				transpChar = strtol(argv[8], NULL, 16);
+				transpChar = wcstol(argv[8], NULL, 16);
 		}
-		if (argc>9) transpBg = atoi(argv[9]);
-		if (argc>10) transpFg = atoi(argv[10]);
+		if (argc>9) transpBg = _wtoi(argv[9]);
+		if (argc>10) transpFg = _wtoi(argv[10]);
 
-		result = SaveBlock(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), encodeMode, transpChar, transpBg, transpFg);
+		result = SaveBlock(argv[2], _wtoi(argv[3]), _wtoi(argv[4]), _wtoi(argv[5]), _wtoi(argv[6]), encodeMode, transpChar, transpBg, transpFg);
 		result = -result;
 		if (result == -1) { printf("Error: Could not write file\n"); }
 		if (result == -2) { printf("Error: Invalid block\n"); }
 		return clean(result);
 	}
-	else if (stricmp(argv[1],"setcursorpos") == 0) {
+	else if (_wcsicmp(argv[1],L"setcursorpos") == 0) {
       int xp, yp;
 		
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setcursorpos [x|keep y|keep]\n"); return clean(0); }
-		xp = atoi(argv[2]);
-		yp = atoi(argv[3]);
+		xp = _wtoi(argv[2]);
+		yp = _wtoi(argv[3]);
 		if (argv[2][0] == 'k') { GetXY(&xp, NULL); }
 		if (argv[3][0] == 'k') { GetXY(NULL, &yp); }
 		GotoXY(g_conout, xp, yp);
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"print") == 0) {
-		char *token;
-		int i = 0, bFirst = 0;
+	else if (_wcsicmp(argv[1],L"print") == 0) {
+		TCHAR *token;
+		int i = 0, bFirst = 0, bufferSize;
+		UINT oldCP;		
+		char *tempOut;
+		BOOL cpRes;
 		
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz print [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\\\n"); return clean(0); }
 		if (argv[2][0] == '\\') bFirst=1;
 
-		for (i = 0; i < strlen(argv[2]); i++) {
+		oldCP = GetConsoleOutputCP();
+		cpRes = SetConsoleOutputCP(CP_UTF8);
+
+		for (i = 0; i < wcslen(argv[2]); i++) {
 			if (argv[2][i] == '\\' && argv[2][i+1] == '\\')
 				argv[2][i+1] = 1;
 		}
 		i = 0;
-		token = strtok(argv[2], "\\");
+		token = wcstok(argv[2], L"\\");
 		while (token) {
 			if (i > 0 || bFirst) {
 				switch(token[0]) {
@@ -1336,32 +1427,42 @@ int main(int argc, char **argv) {
 					case '\"': printf("\""); token++; break;
 				}
 			}
-			printf("%s", token);
 			
-			token = strtok(NULL, "\\");
+			if (cpRes) {
+				bufferSize = WideCharToMultiByte(CP_UTF8, 0, token, -1, NULL, 0, NULL, NULL);
+				tempOut = (char *)malloc(bufferSize);
+				WideCharToMultiByte(CP_UTF8, 0, token, -1, tempOut, bufferSize, NULL, NULL);
+				wprintf(L"%S", tempOut);
+				free(tempOut);
+			} else
+				wprintf(L"%s", token);
+			
+			token = wcstok(NULL, L"\\");
 			i++;
 		}
 
+		SetConsoleOutputCP(oldCP);
+
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"insertbmp") == 0) {
+	else if (_wcsicmp(argv[1],L"insertbmp") == 0) {
 		
 		DWORD bitOp[] = { SRCCOPY, SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, MERGECOPY, MERGEPAINT, PATCOPY, PATPAINT, PATINVERT, DSTINVERT, BLACKNESS, WHITENESS, NOMIRRORBITMAP, CAPTUREBLT };
-		char* bitOp_S[] = { "SRCCOPY", "SRCPAINT", "SRCAND", "SRCINVERT", "SRCERASE", "NOTSRCCOPY", "NOTSRCERASE", "MERGECOPY", "MERGEPAINT", "PATCOPY", "PATPAINT", "PATINVERT", "DSTINVERT", "BLACKNESS", "WHITENESS", "NOMIRRORBITMAP", "CAPTUREBLT" };
+		TCHAR* bitOp_S[] = { L"SRCCOPY", L"SRCPAINT", L"SRCAND", L"SRCINVERT", L"SRCERASE", L"NOTSRCCOPY", L"NOTSRCERASE", L"MERGECOPY", L"MERGEPAINT", L"PATCOPY", L"PATPAINT", L"PATINVERT", L"DSTINVERT", L"BLACKNESS", L"WHITENESS", L"NOMIRRORBITMAP", L"CAPTUREBLT" };
 		DWORD selBitOp = SRCCOPY;
 		
 		int i, x,y,z = 100, w = -1, h = -1;
 	
 		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]] [bitOp]\n\nBitops are: SRCCOPY (default), SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, DSTINVERT, BLACKNESS, WHITENESS\n\nRETURN: 0 on success, -1 if failed to load file\n"); return clean(0); }
 
-		x = atoi(argv[3]);
-		y = atoi(argv[4]);
+		x = _wtoi(argv[3]);
+		y = _wtoi(argv[4]);
 		
 		if (argc > 5) {
-			for (i = 0; i < strlen(argv[argc - 1]); i++) argv[argc - 1][i] = toupper(argv[argc - 1][i]);
+			for (i = 0; i < wcslen(argv[argc - 1]); i++) argv[argc - 1][i] = toupper(argv[argc - 1][i]);
 
 			for (i = 0;i < 17; i++) {
-				if (strcmp(bitOp_S[i], argv[argc - 1]) == 0) {
+				if (wcscmp(bitOp_S[i], argv[argc - 1]) == 0) {
 					selBitOp = bitOp[i];
 					argc--;
 					break;
@@ -1369,21 +1470,21 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (argc > 5) z = atoi(argv[5]);
-		if (argc > 6) { w = atoi(argv[5]); h = atoi(argv[6]); }
+		if (argc > 5) z = _wtoi(argv[5]);
+		if (argc > 6) { w = _wtoi(argv[5]); h = _wtoi(argv[6]); }
 
 		if (Fn_LoadBmp(argv[2], x, y, z, w, h, selBitOp) == EXIT_SUCCESS) return clean(0); else return clean(-1);
 	}
-	else if (stricmp(argv[1],"setwindowtransparency") == 0) {
+	else if (_wcsicmp(argv[1],L"setwindowtransparency") == 0) {
 		int percentage = -1;
-		if (argc > 2) percentage = atoi(argv[2]);
+		if (argc > 2) percentage = _wtoi(argv[2]);
 		
 		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100]\n"); return clean(0); }
 		
 		f_SetConsoleTransparency(percentage);
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"setwindowpos") == 0) {
+	else if (_wcsicmp(argv[1],L"setwindowpos") == 0) {
 		RECT bounds;
 		int x, y, w, h;
 		HWND hWnd = GetConsoleWindow(), hTop = HWND_TOP;
@@ -1392,16 +1493,16 @@ int main(int argc, char **argv) {
 		GetWindowRect(hWnd, &bounds);
 		
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep] [topmost]\n"); return clean(0); }
-		x = atoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
-		y = atoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
+		x = _wtoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
+		y = _wtoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
 		if (argc > 4) { hTop = HWND_TOPMOST; }
 		w = bounds.right-bounds.left;
 		h = bounds.bottom-bounds.top;
 		
-		SetWindowPos(hWnd, hTop, x, y, w, h, 0);
+		SetWindowPos(hWnd, hTop, x, y, w, h, SWP_SHOWWINDOW);
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getwindowbounds") == 0) {
+	else if (_wcsicmp(argv[1],L"getwindowbounds") == 0) {
 		RECT bounds;
 		HWND hWnd;
 		int pos = -1;
@@ -1415,16 +1516,34 @@ int main(int argc, char **argv) {
 		if (argv[2][0] == 'h') return clean(bounds.bottom - bounds.top);
 		return clean(bounds.left);
 	}
-	else if (stricmp(argv[1],"gettitle") == 0) {
-		char title[1024];
-
+	else if (_wcsicmp(argv[1],L"gettitle") == 0) {
+		TCHAR title[1024];
+		int bufferSize;
+		char *tempOut;
+		UINT oldCP;
+		BOOL cpRes;
+		
 		if (bInfo) { printf("\nUsage: cmdwiz gettitle\n\nRETURN: Prints the title of the console\n"); return clean(0); }		
 		
 		GetConsoleTitle(title, 1023);
-		printf("%s\n", title);
+
+		oldCP = GetConsoleOutputCP();
+		cpRes = SetConsoleOutputCP(CP_UTF8);
+
+		if (cpRes) {
+			bufferSize = WideCharToMultiByte(CP_UTF8, 0, title, -1, NULL, 0, NULL, NULL);
+			tempOut = (char *)malloc(bufferSize);
+			WideCharToMultiByte(CP_UTF8, 0, title, -1, tempOut, bufferSize, NULL, NULL);
+			wprintf(L"%S", tempOut);
+			free(tempOut);
+		} else
+			wprintf(L"%s", title);
+
+		SetConsoleOutputCP(oldCP);
+
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getdisplaydim") == 0) {
+	else if (_wcsicmp(argv[1],L"getdisplaydim") == 0) {
 		int bW = 0;
 
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return clean(0); }
@@ -1432,7 +1551,7 @@ int main(int argc, char **argv) {
 
 		return clean(GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN));
 	}
-	else if (stricmp(argv[1],"setmousecursorpos") == 0) {
+	else if (_wcsicmp(argv[1],L"setmousecursorpos") == 0) {
 		int x, y;
 		int click = 0;
 		INPUT Input = {0};
@@ -1441,8 +1560,8 @@ int main(int argc, char **argv) {
 		GetCursorPos(&pos);
 
 		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x|keep y|keep] [l|r|d|u]\n"); return clean(0); }
-		x = atoi(argv[2]); if (argv[2][0]=='k') x = pos.x;
-		y = atoi(argv[3]); if (argv[3][0]=='k') y = pos.y;
+		x = _wtoi(argv[2]); if (argv[2][0]=='k') x = pos.x;
+		y = _wtoi(argv[3]); if (argv[3][0]=='k') y = pos.y;
 		if (argc > 4) { if (argv[4][0]=='l') click = 1; if (argv[4][0]=='r') click = 2; if (argv[4][0]=='d') click = 3; if (argv[4][0]=='u') click = 4; } 
 
 		SetCursorPos(x,y);
@@ -1463,7 +1582,7 @@ int main(int argc, char **argv) {
 		}
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getmousecursorpos") == 0) {
+	else if (_wcsicmp(argv[1],L"getmousecursorpos") == 0) {
 		POINT pos;
 		int bX = 0;
 				
@@ -1473,18 +1592,18 @@ int main(int argc, char **argv) {
 		GetCursorPos(&pos);
 		return clean(bX ? pos.x : pos.y);
 	}
-	else if (stricmp(argv[1],"setfont") == 0) {
+	else if (_wcsicmp(argv[1],L"setfont") == 0) {
 		int index = -1;
 		
-		if (argc > 2 && strlen(argv[2]) == 1) index = atoi(argv[2]);
-		if (argc < 3 || (strlen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return clean(0); }
+		if (argc > 2 && wcslen(argv[2]) == 1) index = _wtoi(argv[2]);
+		if (argc < 3 || (wcslen(argv[2])==1 && (index < 0 || index > 9)) || bInfo) { printf("\nUsage: cmdwiz setfont [0-9|filename]\n"); return clean(0); }
 
 		if (index == -1)
 			return clean(SetFontFromFile(argv[2]));
 		else
 			return clean(SetFont(index));
 	}
-	else if (stricmp(argv[1],"savefont") == 0) {
+	else if (_wcsicmp(argv[1],L"savefont") == 0) {
 		CONSOLE_FONT_INFOEX fontInfo;
 		FILE *ofp;
 		int res;
@@ -1495,7 +1614,7 @@ int main(int argc, char **argv) {
 		
 		if (res) return clean(-1);
 		
-		ofp = fopen(argv[2], "wb");
+		ofp = _wfopen(argv[2], L"wb");
 		if (!ofp) { printf("Error: could not save font\n"); return clean(-1); }
 		
 		fwrite(&fontInfo, sizeof(CONSOLE_FONT_INFOEX),1,ofp);
@@ -1503,7 +1622,7 @@ int main(int argc, char **argv) {
 		
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"setwindowstyle") == 0) {
+	else if (_wcsicmp(argv[1],L"setwindowstyle") == 0) {
 		int bExtended, bSet, i,flag;
 		long valueFlags;
 
@@ -1515,19 +1634,20 @@ int main(int argc, char **argv) {
 		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
 		for (i = 4; i < argc; i++) {
-			char *inp = argv[i];
+			TCHAR *inp = argv[i];
 			if (inp[0]=='0' && inp[1]=='x')
 				inp+=2;
-			int flag = strtol(inp, NULL, 16);
+			int flag = wcstol(inp, NULL, 16);
 			if (bSet) valueFlags |= flag; else valueFlags &= ~(flag);
 		}
-		SetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);		
+		SetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);
+		// SetWindowPos(GetConsoleWindow(), HWND_TOP, 0,0,0,0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getwindowstyle") == 0) {
+	else if (_wcsicmp(argv[1],L"getwindowstyle") == 0) {
 		int bExtended, flag;
 		long valueFlags;
-		char *inp;
+		TCHAR *inp;
 		
 		if (argc > 2) bExtended = argv[2][0] == 'e' ? 1 : argv[2][0] == 's'? 0 : -1;
 		
@@ -1538,11 +1658,11 @@ int main(int argc, char **argv) {
 		inp = argv[3];
 		if (inp[0]=='0' && inp[1]=='x')
 			inp+=2;
-		flag = strtol(inp, NULL, 16);
+		flag = wcstol(inp, NULL, 16);
 		
 		return clean(valueFlags & flag ? 1 : 0);
 	}
-	else if (stricmp(argv[1],"setpalette") == 0) {
+	else if (_wcsicmp(argv[1],L"setpalette") == 0) {
 		CONSOLE_SCREEN_BUFFER_INFOEX consoleInfo;
 		consoleInfo.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 		int cols[20];
@@ -1552,7 +1672,7 @@ int main(int argc, char **argv) {
 
 		GetConsoleScreenBufferInfoEx(g_conout, &consoleInfo);
 
-		nof = sscanf(argv[2], "%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x", &cols[0], &cols[1], &cols[2], &cols[3], &cols[4], &cols[5], &cols[6], &cols[7], &cols[8], &cols[9], &cols[10], &cols[11], &cols[12], &cols[13], &cols[14], &cols[15]);
+		nof = swscanf(argv[2], L"%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x", &cols[0], &cols[1], &cols[2], &cols[3], &cols[4], &cols[5], &cols[6], &cols[7], &cols[8], &cols[9], &cols[10], &cols[11], &cols[12], &cols[13], &cols[14], &cols[15]);
 		
 		if (nof < 1) { printf("\nError: invalid format\n"); return clean(-1); }
 		
@@ -1564,7 +1684,7 @@ int main(int argc, char **argv) {
 		
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"getpalette") == 0) {
+	else if (_wcsicmp(argv[1],L"getpalette") == 0) {
 		CONSOLE_SCREEN_BUFFER_INFOEX consoleInfo;
 		consoleInfo.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 		int col, i;
@@ -1582,14 +1702,14 @@ int main(int argc, char **argv) {
 		
 		return clean(0);
 	}
-	else if (stricmp(argv[1],"showmousecursor") == 0) {
-		int show, count=0;
+	else if (_wcsicmp(argv[1],L"showmousecursor") == 0) {
+		int show, count = 0;
 	
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showmousecursor [0|1]\n"); return clean(0); }
 		
-		show = atoi(argv[2]);
+		show = _wtoi(argv[2]);
 		
-		int ref_cnt = ShowConsoleCursor(g_conout, show);
+		long ref_cnt = ShowConsoleCursor(g_conout, show);
 		if (show) {
 			if (ref_cnt > 0) {
 				while ((ref_cnt = ShowConsoleCursor(g_conout, 0)) > 0 && count++ < 1000);
@@ -1600,20 +1720,20 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	else if (stricmp(argv[1],"showwindow") == 0) {
+	else if (_wcsicmp(argv[1],L"showwindow") == 0) {
 		int show;
 	
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showwindow [minimize|maximize|restore|value:n]\n"); return clean(0); }
 		
-		if (strstr(argv[2], "max") == argv[2]) show = SW_MAXIMIZE;
-		else if (strstr(argv[2], "min") == argv[2]) show = SW_MINIMIZE;
-		else if (strstr(argv[2], "rest") == argv[2]) show = SW_RESTORE;
-		else if (strstr(argv[2], "value:") == argv[2]) show = atoi(&argv[2][6]);
+		if (wcsstr(argv[2], L"max") == argv[2]) show = SW_MAXIMIZE;
+		else if (wcsstr(argv[2], L"min") == argv[2]) show = SW_MINIMIZE;
+		else if (wcsstr(argv[2], L"rest") == argv[2]) show = SW_RESTORE;
+		else if (wcsstr(argv[2], L"value:") == argv[2]) show = _wtoi(&argv[2][6]);
 		else { printf("\nError: invalid format\n"); return clean(-1); } 
 		
 		ShowWindow(GetConsoleWindow(), show);
 
-	} else if (stricmp(argv[1],"fullscreen") == 0) {
+	} else if (_wcsicmp(argv[1],L"fullscreen") == 0) {
 		HWND hWnd;
 		HANDLE hOut, hIn;
 		COORD screenBufferSize;
@@ -1625,7 +1745,7 @@ int main(int argc, char **argv) {
 	
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz fullscreen [0|1]\n"); return clean(0); }
 		
-		fs = atoi(argv[2]);
+		fs = _wtoi(argv[2]);
 
 		if (((hWnd = GetConsoleWindow()) == NULL)) {
 			return clean(-1);

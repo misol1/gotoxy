@@ -1,5 +1,14 @@
 /* GotoXY (c) 2015-16 Mikael Sollenborn */
 
+#ifndef WINVER
+#define WINVER 0x0502
+#endif
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0502
+#endif
+
+#define UNICODE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,9 +19,9 @@
 // Compilation with tcc(32 bit version) : tcc -lshell32 -lwinmm -luser32 -o gotoxy.exe gotoxy.c
 
 // TODO: 1. Transparency (with \T switch) does not work with encoded characters in the input.
-//       2. If end of line, \I: should not have to finish with ;
-//       3. Can write \ak, to use last color for bg and "a" for fg, but not \ka, then "a" is not used for bg, instead last color is used for both fg and bg
-//			4. Not working when running cmdgfx as output server. Possible to fix?
+//		 2. If end of line, \I: should not have to finish with ;
+//		 3. Can write \ak, to use last color for bg and "a" for fg, but not \ka, then "a" is not used for bg, instead last color is used for both fg and bg
+//		 4. Not working when running cmdgfx as output server. Possible to fix?
 
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED
@@ -294,11 +303,16 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	CHAR_INFO *currentConsoleOutput = NULL;
 	int i, j, inlen, orgx, yp = 0, keyWait = 0, bUseCurrentConsoleOutput = 0;
 	int keyret = 0, bBreakToWrite, bCheckWrap, bHandleTransp;
-	int bY, k, ks, v, v16, dI, tmp1, tmp2, relX, relY, bWroteTab = 0, transparentMode = 0;
+	int bY, k, ks, v, dI, tmp1, tmp2, relX, relY, bWroteTab = 0, transparentMode = 0;
+	unsigned int v16;
 	char ch, number[1024];
 	SMALL_RECT r;
 	CHAR_INFO *str;
 	COORD a, b;
+	char *u8convBuf;
+	TCHAR *convBuf;
+	int h;
+	UINT oldCP;
 	
 	hCurrHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -333,6 +347,12 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	if (flags & F_FOLLOWCURSORVISIBLE)
 		GotoXY(hCurrHandle, *x, *y);
 
+	u8convBuf = (char *) malloc(MAX_STR_SIZE);
+	convBuf = (TCHAR *) malloc(MAX_STR_SIZE * sizeof(TCHAR));
+	
+	oldCP = GetConsoleOutputCP();
+	SetConsoleOutputCP(CP_OEMCP);
+
 	i = 0;
 	while (i < inlen) {
 		j = 0;
@@ -357,7 +377,37 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 							v = GetHex(text[i]);
 						}
 						v16 = (v16*16) + v;
-						str[j].Char.AsciiChar = v16;
+						str[j].Char.UnicodeChar = v16;
+						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
+							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Attributes = fgBgCol;
+						j++;
+						if (wordwrap && v16 == ' ') {
+							lastSep = i; lastSepj = j;
+						}
+						if (wrap) bCheckWrap = 1;
+						break;
+					}
+
+					case 'l': {
+						i++; v16 = GetHex(text[i]);
+						i++; v = 0;
+						if (i < inlen) {
+							v = GetHex(text[i]);
+						}
+						v16 = (v16*16) + v;
+						i++; v = 0;
+						if (i < inlen) {
+							v = GetHex(text[i]);
+						}
+						v16 = (v16*16) + v;
+						i++; v = 0;
+						if (i < inlen) {
+							v = GetHex(text[i]);
+						}
+						v16 = (v16*16) + v;
+						//printf("%x\n", v16);
+						str[j].Char.UnicodeChar = v16;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = fgBgCol;
@@ -412,7 +462,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					}
 					
 					case '\\': {
-						str[j].Char.AsciiChar = ch;
+						str[j].Char.UnicodeChar = ch;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = fgBgCol;
@@ -422,7 +472,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					}
 					
 					case 'G': {
-						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Char.UnicodeChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							str[j].Attributes = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						else
@@ -433,7 +483,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					}
 					
 					case 'J': {
-						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Char.UnicodeChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = GetColorTranspCol(hCurrHandle, USE_EXISTING_FG, USE_EXISTING_BG, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						j++;
 						if (wrap) bCheckWrap = 1;
@@ -701,10 +751,10 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 					break;
 				} else {
 					if (transparentMode == 1 && ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
-						str[j].Char.AsciiChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
+						str[j].Char.UnicodeChar = GetColorTranspCol(hCurrHandle, -1, -1, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = GetColorTranspCol(hCurrHandle, USE_EXISTING_FG, USE_EXISTING_BG, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 					} else {
-						str[j].Char.AsciiChar = ch;
+						str[j].Char.UnicodeChar = ch;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
 						str[j].Attributes = fgBgCol;
@@ -745,6 +795,17 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 				r.Top = *y;
 				r.Right = *x + j;
 				r.Bottom = *y + 1;
+				
+				for (h=0; h < j; h++)
+					u8convBuf[h] = str[h].Char.AsciiChar;
+				u8convBuf[h] = 0;
+
+				MultiByteToWideChar(CP_OEMCP, 0, u8convBuf, -1, convBuf, j+1);
+
+				for (h=0; h < j; h++)
+					if (str[h].Char.UnicodeChar < 256)
+						str[h].Char.UnicodeChar = convBuf[h];
+				
 				WriteConsoleOutput(hCurrHandle, str, a, b, &r);
 			}
 		}
@@ -847,6 +908,11 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	free(str);
 	if (*x!=orgx) (*x)--;
 	
+	free(convBuf);
+	free(u8convBuf);
+	
+	SetConsoleOutputCP(oldCP);
+
 	return keyret;
 }
 
@@ -1021,12 +1087,6 @@ char *EvaluateExpression(char *inp, int bAllocated) {
 }
 
 int main(int argc, char **argv) {
-#ifdef SUPPORT_EXTENDED	
-	char verS[16] = " (extended)";
-#else
-	char verS[16] = "";
-#endif
-	
 #ifdef SUPPORT_KEYCODES_CHECK
 	char iH[128] = "\\k[:xx..;]: check for key xx,yy etc, don't wait; return keystate(s)\n";
 #else
@@ -1042,11 +1102,13 @@ int main(int argc, char **argv) {
 	int keyret = 0;
 	unsigned int startT;
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	LPWSTR *szArglist;
+	int nArgs;
 
 	startT = GetTickCount();
 
 	if (argc < 3 || argc > 8) {
-		printf("\nGotoXY%s v1.0 : Mikael Sollenborn 2015-2018\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n", verS);
+		printf("\nGotoXY (Unicode) v1.0 : Mikael Sollenborn 2015-2018\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n");
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
 		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
 		return keyret;
@@ -1090,22 +1152,22 @@ int main(int argc, char **argv) {
 		}
 	}
 	
+	
+	szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
+	if( NULL == szArglist ) {
+		printf("Err: Error on startup\n");
+		return -99;
+	}
+		
 	if (argc > 3) {
 		int al=strlen(argv[3]);
 
 		if ((flags & F_FORCE_FILE_INPUT) || (!(flags & F_FORCE_TEXT_INPUT) && al > 4 && argv[3][al-4]=='.' && tolower(argv[3][al-3])=='g' && tolower(argv[3][al-2])=='x' && tolower(argv[3][al-1])=='y')) {
 			FILE *ifp;
-			LPWSTR *szArglist;
-			int nArgs;
-			
-			szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
-			if( NULL == szArglist )
-				ifp=fopen(argv[3], "r");
-			else
-				ifp=_wfopen(szArglist[3], L"r");
-
+			ifp=_wfopen(szArglist[3], L"r");
 			if (ifp == NULL) {
 				printf("Error: file not found.\n");
+				LocalFree(szArglist);
 				return -1;
 			}
 			u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
@@ -1115,51 +1177,7 @@ int main(int argc, char **argv) {
 				u8buf[fr]=0;
 				fclose(ifp);
 			}
-			if (szArglist)
-				LocalFree(szArglist);
 		} 
-#ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE
-		else { // ASCII characters over 127 (exteded Ascii) come as wrong values. Get/convert Unicode to IBM437 code page if such characters exist in string.
-		       // Downside: exe files become slower even if not using Extended Ascii characters in the string (due to having to link extra lib).
-			int i, bExt = 0;
-
-			for (i=0; i < al; i++)
-				if (argv[3][i] < 0)
-					bExt = 1;
-
-			if (bExt) {
-				LPWSTR *szArglist;
-				int nArgs, wlen = 0, result = 0;
-
-				szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
-				if( NULL == szArglist ) {
-				} else if (nArgs < 4) {
-					LocalFree(szArglist);
-				} else {
-
-				while(szArglist[3][wlen] != 0)
-					wlen++;
-
-					u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
-					if (u8buf)
-						result = WideCharToMultiByte(
-						437,          // convert to IBM437 ("extended AscII")
-						0,            // conversion behavior
-						szArglist[3], // source UTF-16 string
-						wlen+1,       // total source string length, in WCHAR’s, including end-of-string
-						u8buf,
-						MAX_BUF_SIZE,
-						NULL, NULL
-						);
-					if (result == 0 && u8buf) {
-						free(u8buf); u8buf = NULL;
-					}
-
-					LocalFree(szArglist);
-				}
-			}
-		}
-#endif
 	}
 
 	if (!(flags & F_RESTORECURSOR))
@@ -1209,6 +1227,8 @@ int main(int argc, char **argv) {
 	}
 	if (u8buf)
 		free(u8buf);
+
+	LocalFree(szArglist);
 
 	return keyret;
 }
