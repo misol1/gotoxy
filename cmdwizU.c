@@ -21,20 +21,25 @@
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -lwinmm -luser32 -lgdi32
 
 // TODO:
-//			(1. getwindowbounds, client area
-//			(2. showwindow: maybe move topmost from setwindowpos to here. also make it possible to remove topmost. Also move window to back or to front.
-//			(3. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
-//			4. setmousecursorpos (support right d/u, middle click, mouse wheel) ?
-//			5. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			(1. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
+//			2. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			3. support utf-8 arguments
 
 // Known bugs:
-//			1. showmousecursor to hide does not work Win10. Only tested to work on Win7.
+//			1. showmousecursor to hide does not work on Win10. Only tested to work on Win7.
 //			2. setbuffersize has scroll bar cut off a number of character columns. Only Win10?
-//			3. Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after clearing resize flag standard 0x00040000L). Win10 only?
-//			4. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			5. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd though, because scroll wheel affects the coordinates
+//			3. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
+//			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates
 
 // Done:
+//			1. Use - for setbuffersize to remove scrollbar
+//			2. gettitle [strip] to remove last part
+//			3. setmousecursorpos middle click, mouse wheel and horizontal mouse wheel support
+//			4. showwindow: topmost|top|bottom|close added. Topmost removed from setwindowpos.
+//			5. Hopefully fixed: Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after cmdwiz setwindowstyle clear standard 0x00040000L). Win10 only?
+//			6. fullscreen op now uses official Windows API SetConsoleDisplayMode. Old method kept for legacy, and can be used with legacy parameter. Legacy mode used automatically if new API fails (like on Win7)
+//			7. sendkey op  ( example: cmdwiz-ascii sendkey 0x12 d & cmdwiz-ascii sendkey 0x09 p )
+//			8. getkeystate accepts 0x before virtual key to allow straight copy from MS website
 
 
 #define BUFW 0
@@ -860,7 +865,7 @@ int main(int oargc, char **oargv) {
 		
 	argv = (TCHAR **)CommandLineToArgvW(GetCommandLineW(), &argc);
 
-	// If enabling this, input coming as UTF-8 without BOM will be received correctly, but NOT Utf-16 LE and UTF-8 with BOM...
+	// If enabling this, input coming as UTF-8 without BOM will be received correctly, but NOT Utf-16 LE
 	/*
 	for (int i=0; i < oargc; i++) {
 		argv[i] = (TCHAR *)malloc(sizeof(TCHAR) * 1024);
@@ -868,8 +873,16 @@ int main(int oargc, char **oargv) {
 	}
 	argc=oargc;
 	*/
-		
-	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.0 : Mikael Sollenborn 2015-2018\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	
+	/*
+	for (int i=0; i < argc; i++) {
+		for (int j=0; j < wcslen(argv[i]); j++) {
+			if (argv[i][j] > 255) 
+				printf("%d\n", argv[i][j]);
+		}
+	} */	
+	
+	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.1 : Mikael Sollenborn 2015-2018\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow sendkey] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
 
@@ -969,11 +982,13 @@ int main(int oargc, char **oargv) {
 	else if (_wcsicmp(argv[1],L"setbuffersize") == 0) {
 		COORD nb;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setbuffersize [width|keep height|keep]\n"); return clean(0); }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setbuffersize [width|keep|- height|keep|-]\n"); return clean(0); }
 		nb.X = _wtoi(argv[2]);
 		nb.Y = _wtoi(argv[3]);
 		if (argv[2][0] == 'k') nb.X = GetDim(BUFW);
 		if (argv[3][0] == 'k') nb.Y = GetDim(BUFH);
+		if (argv[2][0] == '-') nb.X = GetDim(SCRW);
+		if (argv[3][0] == '-') nb.Y = GetDim(SCRH);
 		SetConsoleScreenBufferSize(g_conout, nb);
 		return clean(0);
 	}
@@ -997,9 +1012,9 @@ int main(int oargc, char **oargv) {
 	}
 	else if (_wcsicmp(argv[1],L"getkeystate") == 0) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
-		int i, j, k = 0;
+		int i, j, k = 0, done=0;
 		TCHAR buf[128];
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|[0x]VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
 
 		if (_wcsicmp(argv[2],L"all") == 0) {
 			int vKeys[16] = { VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_MENU, VK_LMENU, VK_RMENU }; 
@@ -1022,12 +1037,19 @@ int main(int oargc, char **oargv) {
 			else if (_wcsicmp(argv[i],L"lalt") == 0) j = GetAsyncKeyState(VK_LMENU);
 			else if (_wcsicmp(argv[i],L"ralt") == 0) j = GetAsyncKeyState(VK_RMENU);
 			else {
-				wcscpy(buf, argv[i]);
-				if (buf[wcslen(buf)-1]=='h') {
-					buf[wcslen(buf)-1]=0;
+				if (argv[i][0] == '0' && argv[i][1] == 'x') {
+					wcscpy(buf, &argv[i][2]);
 					j = GetAsyncKeyState(wcstol(buf, NULL, 16));
+					done = 1;
 				} else
-					j = GetAsyncKeyState(wcstol(buf, NULL, 10));
+					wcscpy(buf, argv[i]);
+				if (!done) {
+					if (buf[wcslen(buf)-1]=='h') {
+						buf[wcslen(buf)-1]=0;
+						j = GetAsyncKeyState(wcstol(buf, NULL, 16));
+					} else
+						j = GetAsyncKeyState(wcstol(buf, NULL, 10));
+				}
 			}
 
 			k = (k<<1) | ((j & 0x8000)? 1:0 );
@@ -1495,6 +1517,7 @@ int main(int oargc, char **oargv) {
 	}
 	else if (_wcsicmp(argv[1],L"setwindowtransparency") == 0) {
 		int percentage = -1;
+		
 		if (argc > 2) percentage = _wtoi(argv[2]);
 		
 		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100]\n"); return clean(0); }
@@ -1505,19 +1528,18 @@ int main(int oargc, char **oargv) {
 	else if (_wcsicmp(argv[1],L"setwindowpos") == 0) {
 		RECT bounds;
 		int x, y, w, h;
-		HWND hWnd = GetConsoleWindow(), hTop = HWND_TOP;
+		HWND hWnd = GetConsoleWindow();
 
 		if (!hWnd) return clean(-1);
 		GetWindowRect(hWnd, &bounds);
 		
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep] [topmost]\n"); return clean(0); }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep]\n"); return clean(0); }
 		x = _wtoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
 		y = _wtoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
-		if (argc > 4) { hTop = HWND_TOPMOST; }
 		w = bounds.right-bounds.left;
 		h = bounds.bottom-bounds.top;
 		
-		SetWindowPos(hWnd, hTop, x, y, w, h, SWP_SHOWWINDOW);
+		SetWindowPos(hWnd, HWND_TOP, x, y, w, h, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); // for reasons unclear, SWP_ASYNCWINDOWPOS makes moving more stable
 		return clean(0);
 	}
 	else if (_wcsicmp(argv[1],L"getwindowbounds") == 0) {
@@ -1541,13 +1563,19 @@ int main(int oargc, char **oargv) {
 		UINT oldCP;
 		BOOL cpRes;
 		
-		if (bInfo) { printf("\nUsage: cmdwiz gettitle\n\nRETURN: Prints the title of the console\n"); return clean(0); }		
+		if (bInfo) { printf("\nUsage: cmdwiz gettitle [strip]\n\nRETURN: Prints the title of the console\n"); return clean(0); }		
 		
 		GetConsoleTitle(title, 1023);
 
 		oldCP = GetConsoleOutputCP();
 		cpRes = SetConsoleOutputCP(CP_UTF8);
 
+		if (argc > 2 && argv[2][0] == 's') {
+			TCHAR *fnd = wcsstr(title, L" - ");
+			if (fnd)
+				*fnd = 0;
+		}
+		
 		if (cpRes) {
 			bufferSize = WideCharToMultiByte(CP_UTF8, 0, title, -1, NULL, 0, NULL, NULL);
 			tempOut = (char *)malloc(bufferSize);
@@ -1571,30 +1599,39 @@ int main(int oargc, char **oargv) {
 	}
 	else if (_wcsicmp(argv[1],L"setmousecursorpos") == 0) {
 		int x, y;
-		int click = 0;
+		int click = 0, amount = 1;
 		INPUT Input = {0};
 		POINT pos;
 
 		GetCursorPos(&pos);
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x|keep y|keep] [l|r|d|u]\n"); return clean(0); }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setmousecursorpos [x|keep y|keep] [l|r|d|u|m|wu|wd|wl|wr] [wheelAmount]\n"); return clean(0); }
 		x = _wtoi(argv[2]); if (argv[2][0]=='k') x = pos.x;
 		y = _wtoi(argv[3]); if (argv[3][0]=='k') y = pos.y;
-		if (argc > 4) { if (argv[4][0]=='l') click = 1; if (argv[4][0]=='r') click = 2; if (argv[4][0]=='d') click = 3; if (argv[4][0]=='u') click = 4; } 
+		if (argc > 4) { if (argv[4][0]=='l') click = 1; if (argv[4][0]=='r') click = 2; if (argv[4][0]=='d') click = 3; if (argv[4][0]=='u') click = 4; if (argv[4][0]=='m') click = 5; } 
+		if (argc > 4) { if (argv[4][0]=='w') { if (argv[4][1]=='u') click = 6; if (argv[4][1]=='d') click = 7; if (argv[4][1]=='l') click = 8; if (argv[4][1]=='r') click = 9; } }
+		if (argc > 5) { amount = _wtoi(argv[5]); if (amount < 1) amount=1; }
 
 		SetCursorPos(x,y);
 
 		if (click > 0) {
-			if (click != 4) {
-				Input.type = INPUT_MOUSE;
-				Input.mi.dwFlags = click!=2? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
-				SendInput(1,&Input,sizeof(INPUT));
-			}
+			if (click < 6) {
+				if (click != 4) {
+					Input.type = INPUT_MOUSE;
+					Input.mi.dwFlags = click==2? MOUSEEVENTF_RIGHTDOWN : click==5? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_LEFTDOWN;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
 
-			if (click != 3) {
-				ZeroMemory(&Input,sizeof(INPUT));
+				if (click != 3) {
+					ZeroMemory(&Input,sizeof(INPUT));
+					Input.type = INPUT_MOUSE;
+					Input.mi.dwFlags = click==2? MOUSEEVENTF_RIGHTUP : click==5? MOUSEEVENTF_MIDDLEUP : MOUSEEVENTF_LEFTUP;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+			} else {
 				Input.type = INPUT_MOUSE;
-				Input.mi.dwFlags = click!=2? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
+				Input.mi.dwFlags = click==6 || click==7? MOUSEEVENTF_WHEEL : 0x01000; // 0x01000 = MOUSEEVENTF_HWHEEL
+				Input.mi.mouseData = click==8 || click==7? -120 * amount : 120 * amount;
 				SendInput(1,&Input,sizeof(INPUT));
 			}
 		}
@@ -1739,18 +1776,29 @@ int main(int oargc, char **oargv) {
 		}
 	}
 	else if (_wcsicmp(argv[1],L"showwindow") == 0) {
-		int show;
+		RECT bounds;
+		int show, doPos = 0;
+		HWND hWnd = GetConsoleWindow(), hTop;
 	
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showwindow [minimize|maximize|restore|value:n]\n"); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showwindow [minimize|maximize|restore|topmost|top|bottom|close|value:n]\n"); return clean(0); }
+
+		GetWindowRect(hWnd, &bounds);
 		
 		if (wcsstr(argv[2], L"max") == argv[2]) show = SW_MAXIMIZE;
 		else if (wcsstr(argv[2], L"min") == argv[2]) show = SW_MINIMIZE;
 		else if (wcsstr(argv[2], L"rest") == argv[2]) show = SW_RESTORE;
+		else if (wcsstr(argv[2], L"topmost") == argv[2]) { doPos=1; hTop = HWND_TOPMOST; }
+		else if (wcsstr(argv[2], L"top") == argv[2]) { doPos=1; SetWindowPos(hWnd, HWND_NOTOPMOST, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); hTop = HWND_TOP; }
+		else if (wcsstr(argv[2], L"bottom") == argv[2]) { doPos=1; SetWindowPos(hWnd, HWND_NOTOPMOST, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); hTop = HWND_BOTTOM; }
+		else if (wcsstr(argv[2], L"close") == argv[2]) { SendMessageTimeout(hWnd, WM_CLOSE, 0, 0, SMTO_BLOCK | SMTO_NOTIMEOUTIFNOTHUNG, 2000u, NULL); return clean(0); }
 		else if (wcsstr(argv[2], L"value:") == argv[2]) show = _wtoi(&argv[2][6]);
 		else { printf("\nError: invalid format\n"); return clean(-1); } 
 		
-		ShowWindow(GetConsoleWindow(), show);
-
+		if (doPos)
+			SetWindowPos(hWnd, hTop, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW);
+		else
+			ShowWindow(hWnd, show);
+		
 	} else if (_wcsicmp(argv[1],L"fullscreen") == 0) {
 		HWND hWnd;
 		HANDLE hOut, hIn;
@@ -1759,20 +1807,23 @@ int main(int oargc, char **oargv) {
 		SMALL_RECT windowSize;
 		RECT rcWorkArea;
 		DWORD mode;
-		int fs;
+		int fs, fail = 0;
 	
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz fullscreen [0|1]\n"); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz fullscreen [0|1] [legacy]\n\nRETURN: -1 if normal method failed and had to use legacy method, otherwise 0\n"); return clean(0); }
 		
 		fs = _wtoi(argv[2]);
 
-		if (((hWnd = GetConsoleWindow()) == NULL)) {
-			return clean(-1);
+		if (!(argc > 3 && argv[3][0] == 'l')) {
+			int res = SetConsoleDisplayMode (g_conout, fs? CONSOLE_FULLSCREEN_MODE : CONSOLE_WINDOWED_MODE, NULL);	
+			if (res) return clean(0); else fail = -1;
 		}
-		
+
+		hWnd = GetConsoleWindow();
+				
 		if (fs == 0) {
 			SetWindowLong(hWnd, GWL_STYLE, 0x14cf0000);
 			SetWindowLong(hWnd, GWL_EXSTYLE, 0x40310);
-			return clean(0);
+			return clean(fail);
 		}
 
 		hOut = g_conout;
@@ -1804,11 +1855,42 @@ int main(int oargc, char **oargv) {
 		SetConsoleScreenBufferSize(hOut, screenBufferSize);
 		SetConsoleWindowInfo(hOut, TRUE, &windowSize);
 
-		//hIn = g_conin;
-		//GetConsoleMode(hIn, &mode);
-		//SetConsoleMode(hIn, mode & ~0x0040);
-		//CloseHandle(hIn);	
+		return clean(fail);
+	}
+	else if (_wcsicmp(argv[1],L"sendkey") == 0) {
+		int x, y, done = 0, j;
+		int click = 0, amount = 1;
+		INPUT Input = {0};
+		TCHAR buf[128];
+		POINT pos;
+
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz sendkey [[0x]VKEY[h] p|d|u]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
+
+		if (argv[2][0] == '0' && argv[2][1] == 'x') {
+			wcscpy(buf, &argv[2][2]);
+			j = wcstol(buf, NULL, 16);
+			done = 1;
+		} else
+			wcscpy(buf, argv[2]);
+		if (!done) {
+			if (buf[wcslen(buf)-1]=='h') {
+				buf[wcslen(buf)-1]=0;
+				j = wcstol(buf, NULL, 16);
+			} else
+				j = wcstol(buf, NULL, 10);
+		}
 		
+		Input.type = INPUT_KEYBOARD;
+		Input.ki.wVk = j;
+			
+		if (argv[3][0] == 'p' || argv[3][0] == 'd') {
+			SendInput(1,&Input,sizeof(INPUT));
+		}
+		if (argv[3][0] == 'p' || argv[3][0] == 'u') {
+			Input.ki.dwFlags = KEYEVENTF_KEYUP;
+			SendInput(1,&Input,sizeof(INPUT));
+		}
+					
 		return clean(0);
 	}
 	else {
