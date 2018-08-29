@@ -21,7 +21,7 @@ cmdwiz sendkey 0x10 d & cmdwiz sendkey 0x31 p & cmdwiz sendkey 0x10 u
 cmdwiz delay 1000
 cmdwiz setwindowtransparency 10 /N:notepad.exe
 cmdwiz delay 1000
-if exist 123.bmp cmdwiz insertbmp 123.bmp 10 50 100 /N:notepad.exe
+if exist gotoxy-examples\123.bmp cmdwiz insertbmp gotoxy-examples\123.bmp 10 50 100 /N:notepad.exe
 cmdwiz delay 1000
 
 set /a TIMES=30
