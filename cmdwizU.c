@@ -39,18 +39,11 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 //			3. support saving Unicode with saveblock, add unicode support to gxy file format
 
 // Known bugs:
-//			1. showmousecursor to hide does not work on Win10. Only tested to work on Win7.
-//			2. setbuffersize has scroll bar cut off a number of character columns. Only Win10?
+//			1. Showmousecursor to hide does not work on Win10. Only known to work on Win7.
+//			2. Setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
 //			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates
 //			5. Like saveblock, copyblock/moveblock probably does not work with Unicode chars and/or extended Ascii chars
-
-// Done:
-//			1. getcharat returned incorrect values for extended ascii (>= 80). Only a bug in cmdwiz.exe, not cmdwiz-ascii.exe
-//			2. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?). Operations: getwindowbounds, setwindowpos, setwindowtransparency, setwindowstyle, getwindowstyle, showwindow, +new setwindowsize? + new listwindows. REMOVE several values at once to setwindowstyle (or must always put win info last if used)? 
-//			3. Fixed Showwindow top (using setforegroundwindow)
-//			4. insertbmp: /D to write on desktop on top of all
-
 
 #define BUFW 0
 #define BUFH 1
