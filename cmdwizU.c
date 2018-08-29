@@ -956,14 +956,16 @@ BOOL CALLBACK EnumWindowsListCallback(HWND hwnd, LPARAM lParam)
 BOOL CALLBACK EnumWindowsPIDCallback(HWND hwnd, LPARAM lParam)
 {
   CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
+  LRESULT length = 0, lres;
   static DWORD process_id = 0;
   pData->tid = GetWindowThreadProcessId(hwnd, &process_id);
   if (pData->pid == process_id && !GetWindow(hwnd, GW_OWNER))
   {
     pData->hwnd = hwnd;
     pData->title = NULL;
-    LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
-    if ((pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+	lres = SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, &length);
+//    LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+    if (lres > 0 && (pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
       SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)pData->title, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL);
 
     return FALSE;
@@ -976,13 +978,15 @@ BOOL CALLBACK EnumWindowsTIDCallback(HWND hwnd, LPARAM lParam)
 {
   CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
   static DWORD thread_id = 0;
+  LRESULT length = 0, lres;
   thread_id = GetWindowThreadProcessId(hwnd, &(pData->pid));
   if (pData->tid == thread_id && !GetWindow(hwnd, GW_OWNER))
   {
     pData->hwnd = hwnd;
     pData->title = NULL;
-    LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
-    if ((pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+//    LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+	lres = SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, &length);
+    if (lres > 0 && (pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
       SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)pData->title, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL);
 
     return FALSE;
@@ -995,10 +999,12 @@ BOOL CALLBACK EnumWindowsTitleCallback(HWND hwnd, LPARAM lParam)
 {
   CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
   static TCHAR *tmp = NULL;
+  LRESULT length = 0, lres;
 
-  LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+//  LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+  lres = SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, &length);
 
-  if (length && (tmp = (TCHAR*)malloc((length + 1) * sizeof(TCHAR))))
+  if (length && lres > 0 && (tmp = (TCHAR*)malloc((length + 1) * sizeof(TCHAR))))
   {
     if (SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)tmp, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL) != 0
         && wcscmp(tmp, pData->title) == 0
