@@ -938,10 +938,12 @@ BOOL PidToPname(CALLBACKDATA *const pData)
 BOOL CALLBACK EnumWindowsListCallback(HWND hwnd, LPARAM lParam)
 {
   CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
+  LRESULT length = 0, lres;
   pData->hwnd = hwnd;
   pData->tid = GetWindowThreadProcessId(hwnd, &(pData->pid));
-  LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
-  if (!GetWindow(hwnd, GW_OWNER) && PidToPname(pData) && (length>0 || bPrintEmptyTitleWindows) && (pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+  lres = SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, &length);
+//  LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+  if (!GetWindow(hwnd, GW_OWNER) && PidToPname(pData) && lres > 0 && (length>0 || bPrintEmptyTitleWindows) && (pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
   {
     SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)pData->title, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL);
     PrintData(pData);
