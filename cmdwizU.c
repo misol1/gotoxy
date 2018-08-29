@@ -1,12 +1,20 @@
-/* CmdWiz (c) 2015-18 Mikael Sollenborn */
+/*
 
-/* UNICODE VERSION */
+CmdWiz (c) 2015-18 Mikael Sollenborn (UNICODE VERSION)
+
+Contributions:
+
+Steffen Ilhardt: windowlist function, finding non-console windows for other window operations, original insertbmp function, original setwindowtransparency function, getexetype function
+
+Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscreen function, showmousecursor fuction
+
+*/
 
 #ifndef WINVER
-#define WINVER 0x0502
+#define WINVER 0x600
 #endif
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0502
+#define _WIN32_WINNT 0x600
 #endif
 
 #define UNICODE
@@ -18,28 +26,30 @@
 #include <shellapi.h>
 #include <string.h>
 
+#include <stdint.h>
+#include <tchar.h>
+#include <errno.h>
+#include <tlhelp32.h>
+
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -lwinmm -luser32 -lgdi32
 
 // TODO:
-//			(1. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
-//			2. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
-//			3. support utf-8 arguments
+//			1. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			2. support utf-8 arguments
+//			3. support saving Unicode with saveblock, add unicode support to gxy file format
 
 // Known bugs:
 //			1. showmousecursor to hide does not work on Win10. Only tested to work on Win7.
 //			2. setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
 //			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates
+//			5. Like saveblock, copyblock/moveblock probably does not work with Unicode chars and/or extended Ascii chars
 
 // Done:
-//			1. Use - for setbuffersize to remove scrollbar
-//			2. gettitle [strip] to remove last part
-//			3. setmousecursorpos middle click, mouse wheel and horizontal mouse wheel support
-//			4. showwindow: topmost|top|bottom|close added. Topmost removed from setwindowpos.
-//			5. Hopefully fixed: Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after cmdwiz setwindowstyle clear standard 0x00040000L). Win10 only?
-//			6. fullscreen op now uses official Windows API SetConsoleDisplayMode. Old method kept for legacy, and can be used with legacy parameter. Legacy mode used automatically if new API fails (like on Win7)
-//			7. sendkey op  ( example: cmdwiz-ascii sendkey 0x12 d & cmdwiz-ascii sendkey 0x09 p )
-//			8. getkeystate accepts 0x before virtual key to allow straight copy from MS website
+//			1. getcharat returned incorrect values for extended ascii (>= 80). Only a bug in cmdwiz.exe, not cmdwiz-ascii.exe
+//			2. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?). Operations: getwindowbounds, setwindowpos, setwindowtransparency, setwindowstyle, getwindowstyle, showwindow, +new setwindowsize? + new listwindows. REMOVE several values at once to setwindowstyle (or must always put win info last if used)? 
+//			3. Fixed Showwindow top (using setforegroundwindow)
+//			4. insertbmp: /D to write on desktop on top of all
 
 
 #define BUFW 0
@@ -112,6 +122,7 @@ int ReadCharProperty(int x, int y, int eProperty) {
 	SMALL_RECT r;
 	CHAR_INFO str[81];
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+	char u8buf[8];
 
 	GetConsoleScreenBufferInfo(g_conout, &screenBufferInfo);
 	if (y > screenBufferInfo.dwSize.Y || y < 0) return INVALID_COORDINATE;
@@ -126,7 +137,20 @@ int ReadCharProperty(int x, int y, int eProperty) {
 	switch(eProperty) {
 		case CHARPROP_FGCOL: return str[0].Attributes % 16;
 		case CHARPROP_BGCOL: return (str[0].Attributes&255) / 16;
-		default: return str[0].Char.AsciiChar;
+		default: 
+			// with Unicode enabled, the ascii value for extended Ascii above 127 is incorrect unless converted
+			WideCharToMultiByte( 
+				CP_OEMCP,          // convert to ("extended AscII")
+				0,
+				&str[0].Char.UnicodeChar, // source UTF-16 string
+				1,   // total source string length, in WCHAR’s, including end-of-string (so, should this be 2? seems to work fine with 1)
+				u8buf,
+				8,
+				NULL, NULL
+			);
+		
+			return u8buf[0];
+		break;
 	}
 }
 
@@ -343,8 +367,8 @@ int SaveBlock(TCHAR *filename, int x, int y, int w, int h, int bEncode, int tran
 			
 				// Instead, we need to call WideCharToMultiByte *for every char* :(
 			WideCharToMultiByte( 
-				CP_OEMCP,          // convert to IBM437 ("extended AscII")
-				0,            // conversion behavior
+				CP_OEMCP,	// convert to IBM437 ("extended AscII")
+				0,			// conversion behavior
 				&str[i + j*w].Char.UnicodeChar, // source UTF-16 string
 				1,       // total source string length, in WCHAR’s, including end-of-string (so, should this be 2? seems to work fine with 1)
 				u8buf,
@@ -384,7 +408,6 @@ int SaveBlock(TCHAR *filename, int x, int y, int w, int h, int bEncode, int tran
 	free(output);
 
 	fclose(ofp);
-	
 	return 0;
 }
 
@@ -468,9 +491,6 @@ int MouseEventProc(MOUSE_EVENT_RECORD mer, int bKeyAndMouse, TCHAR *output) {
 	return res;
 }
 
-/* void ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr) {
-	printf("Resized. Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
-}*/
 
 void printKeystates(int keys, int nofKeys) {
 	int i, check = 1;
@@ -487,90 +507,6 @@ void printKeystates(int keys, int nofKeys) {
 	printf("%s\n", output);
 }
 
-// Functions "f_SetConsoleTransparency" and "Fn_LoadBmp" borrowed from user "aGerman" at dostips.com
-
-BOOL f_SetConsoleTransparency(long percentage)
-{
-	HWND hWnd = NULL;
-	BYTE bAlpha = 0;
-	LONG lNewLong = 0;
-	hWnd = GetConsoleWindow();
-	if (hWnd && percentage > -1 && percentage < 101)
-	{
-		bAlpha = (BYTE)(2.55 * (100 - percentage) + 0.5);
-		lNewLong = GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED;
-		if (!SetWindowLong(hWnd, GWL_EXSTYLE, lNewLong)) return FALSE;
-		return SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
-	}
-	return FALSE;
-}
-
-int Fn_LoadBmp(TCHAR *szBmpPath, long x, long y, long z, long w, long h, DWORD dwRop)
-{
-	HWND hWnd = NULL;
-	HDC hDc = NULL, hDcBmp = NULL;
-	HBITMAP hBmp1 = NULL, hBmp2 = NULL;
-	HGDIOBJ hGdiObj = NULL;
-	BITMAP bmp = {0};
-	int iRet = EXIT_FAILURE;
-
-	if ((hWnd = GetConsoleWindow()))
-	{
-		if ((hDc = GetDC(hWnd)))
-		{
-			if ((hDcBmp = CreateCompatibleDC(hDc)))
-			{
-				if ((hBmp1 = (HBITMAP)LoadImage(NULL, szBmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE)))
-				{
-					if (GetObject(hBmp1, sizeof(bmp), &bmp))
-					{
-						if (w == -1) {
-							if ((w = bmp.bmWidth * z / 100.0 + 0.5) <= 0 || (h = bmp.bmHeight * z / 100.0 + 0.5) <= 0)
-							{
-								w = bmp.bmWidth;
-								h = bmp.bmHeight;
-							}
-						} 
-						if ((hBmp2 = (HBITMAP)CopyImage((HANDLE)hBmp1, IMAGE_BITMAP, w, h, LR_COPYDELETEORG)))
-						{
-							if ((hGdiObj = SelectObject(hDcBmp, hBmp2)) && hGdiObj != HGDI_ERROR)
-							{
-								if (BitBlt(hDc, (int)x, (int)y, (int)w, (int)h, hDcBmp, 0, 0, dwRop))
-									iRet = EXIT_SUCCESS;
-								DeleteObject(hGdiObj);
-							}
-							DeleteObject(hBmp2);
-						}
-					}
-					DeleteObject(hBmp1);
-				}
-				ReleaseDC(hWnd, hDcBmp);
-			}
-			ReleaseDC(hWnd, hDc);
-			ReleaseDC(hWnd, hDc);
-		}
-	}
-	return iRet;
-}
-
-/*
-void DrawSemiTransparentBitmap(CDC *pDstDC, int x, int y, int nWidth, int nHeight,
-    CDC* pSrcDC, int xSrc, int ySrc)
-{
-    CDC dcCompatible;
-    CBitmap *pBitmapOld;
-    CBitmap bm;
-    dcCompatible.CreateCompatibleDC(pDstDC);
-    bm.CreateCompatibleBitmap(pDstDC, nWidth, nHeight);
-    pBitmapOld = dcCompatible.SelectObject(&bm);
-    dcCompatible.FillSolidRect(CRect(0, 0, nWidth, nHeight), RGB(0x7F, 0x7F, 0x7F));
-    pDstDC->BitBlt(x, y, nWidth, nHeight, &dcCompatible, 0, 0, SRCAND);
-    dcCompatible.SelectObject(pBitmapOld);
-    pDstDC->BitBlt(x, y, nWidth, nHeight, pSrcDC, 0, 0, SRCPAINT);
-}
-*/
-
-// Function SetFont borrowed from user "carlos" at dostips.com
 
 #define TERMINAL_FONTS 10
 int SetFont(int index) {
@@ -845,6 +781,332 @@ int inspectGxy(TCHAR *fname, int bIgnoreCodes) {
 	return 0;
 }
 
+
+
+typedef struct tag_CALLBACKDATA
+{
+  HWND hwnd;
+  DWORD pid;
+  DWORD tid;
+  TCHAR *title;
+  TCHAR name[MAX_PATH];
+} CALLBACKDATA;
+
+BOOL PnameToPid(CALLBACKDATA *const pData);
+BOOL PidToPname(CALLBACKDATA *const pData);
+BOOL CALLBACK EnumWindowsListCallback(HWND hwnd, LPARAM lParam);
+BOOL CALLBACK EnumWindowsPIDCallback(HWND hwnd, LPARAM lParam);
+BOOL CALLBACK EnumWindowsTIDCallback(HWND hwnd, LPARAM lParam);
+BOOL CALLBACK EnumWindowsTitleCallback(HWND hwnd, LPARAM lParam);
+void PrintData(const CALLBACKDATA *const pData);
+
+int bPrintEmptyTitleWindows = 1;
+
+HWND GetWinHandle(TCHAR *in)
+{
+  CALLBACKDATA data = {0};
+  uint64_t uptr = 0;
+  TCHAR *endptr = NULL;
+
+  if (wcslen(in) < 4 || in[0] != '/' || in[2] != ':' )
+	  return NULL;
+  
+  switch((int)_totupper(in[1]))
+  {
+    case 'H':
+      errno = 0;
+      uptr = _wcstoui64(&in[3], &endptr, 16);
+      if (errno == 0 && *endptr == 0 && (ULONG_PTR)uptr == uptr)
+      {
+        data.hwnd = (HWND)(ULONG_PTR)uptr;
+        data.tid = GetWindowThreadProcessId(data.hwnd, &(data.pid));
+        LRESULT length = SendMessage(data.hwnd, WM_GETTEXTLENGTH, 0, 0);
+        if (!GetWindow(data.hwnd, GW_OWNER) && PidToPname(&data) && (data.title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+        {
+			free(data.title);
+			return data.hwnd;
+        }
+      }
+      break;	  
+    case 'N':
+      wcscpy(data.name, &in[3]);
+      if (PnameToPid(&data))
+      {
+        EnumWindows(EnumWindowsPIDCallback, (LPARAM)&data);
+        if (data.hwnd)
+        {
+			free(data.title);
+			return data.hwnd;
+        }
+      }
+      break;
+    case 'P':
+      errno = 0;
+      data.pid = wcstoul(&in[3], &endptr, 0);
+      if (errno == 0 && *endptr == 0)
+      {
+        EnumWindows(EnumWindowsPIDCallback, (LPARAM)&data);
+        if (data.hwnd && PidToPname(&data))
+        {
+			free(data.title);
+			return data.hwnd;
+        }
+      }
+      break;
+    case 'T':
+      errno = 0;
+      data.tid = wcstoul(&in[3], &endptr, 0);
+      if (errno == 0 && *endptr == 0)
+      {
+        EnumWindows(EnumWindowsTIDCallback, (LPARAM)&data);
+        if (data.hwnd && PidToPname(&data))
+        {
+			free(data.title);
+			return data.hwnd;
+        }
+      }
+      break;
+    case 'W':
+      if (in[3])
+      {
+        data.title = &in[3];
+        EnumWindows(EnumWindowsTitleCallback, (LPARAM)&data);
+        if (data.hwnd && PidToPname(&data))
+        {
+		  return data.hwnd;
+        }
+      }
+      break;
+  }
+
+  return NULL;
+}
+
+BOOL PnameToPid(CALLBACKDATA *const pData)
+{
+  HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  PROCESSENTRY32 procentry = {0};
+  procentry.dwSize = sizeof(PROCESSENTRY32);
+  pData->pid = 0;
+
+  if (Process32First(hProcessSnap, &procentry))
+  {
+    do
+    {
+      if (wcsicmp(procentry.szExeFile, pData->name) == 0)
+      {
+        pData->pid = procentry.th32ProcessID;
+        wcscpy(pData->name, procentry.szExeFile);
+      }
+    } while (pData->pid == 0 && Process32Next(hProcessSnap, &procentry));
+  }
+
+  if (hProcessSnap != INVALID_HANDLE_VALUE)
+    CloseHandle(hProcessSnap);
+
+  if (pData->pid == 0)
+    return FALSE;
+
+  return TRUE;
+}
+
+BOOL PidToPname(CALLBACKDATA *const pData)
+{
+  HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  PROCESSENTRY32 procentry = {0};
+  procentry.dwSize = sizeof(PROCESSENTRY32);
+  *(pData->name) = 0;
+
+  if (Process32First(hProcessSnap, &procentry))
+  {
+    do
+    {
+      if (pData->pid == procentry.th32ProcessID)
+        wcscpy(pData->name, procentry.szExeFile);
+    } while (*(pData->name) == 0 && Process32Next(hProcessSnap, &procentry));
+  }
+
+  if (hProcessSnap != INVALID_HANDLE_VALUE)
+    CloseHandle(hProcessSnap);
+
+  if (*(pData->name) == 0)
+    return FALSE;
+
+  return TRUE;
+}
+
+BOOL CALLBACK EnumWindowsListCallback(HWND hwnd, LPARAM lParam)
+{
+  CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
+  pData->hwnd = hwnd;
+  pData->tid = GetWindowThreadProcessId(hwnd, &(pData->pid));
+  LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+  if (!GetWindow(hwnd, GW_OWNER) && PidToPname(pData) && (length>0 || bPrintEmptyTitleWindows) && (pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+  {
+    SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)pData->title, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL);
+    PrintData(pData);
+    free(pData->title);
+  }
+
+  return TRUE;
+}
+
+BOOL CALLBACK EnumWindowsPIDCallback(HWND hwnd, LPARAM lParam)
+{
+  CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
+  static DWORD process_id = 0;
+  pData->tid = GetWindowThreadProcessId(hwnd, &process_id);
+  if (pData->pid == process_id && !GetWindow(hwnd, GW_OWNER))
+  {
+    pData->hwnd = hwnd;
+    pData->title = NULL;
+    LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+    if ((pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+      SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)pData->title, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL);
+
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+BOOL CALLBACK EnumWindowsTIDCallback(HWND hwnd, LPARAM lParam)
+{
+  CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
+  static DWORD thread_id = 0;
+  thread_id = GetWindowThreadProcessId(hwnd, &(pData->pid));
+  if (pData->tid == thread_id && !GetWindow(hwnd, GW_OWNER))
+  {
+    pData->hwnd = hwnd;
+    pData->title = NULL;
+    LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+    if ((pData->title = (TCHAR*)calloc(length + 1, sizeof(TCHAR))))
+      SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)pData->title, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL);
+
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+BOOL CALLBACK EnumWindowsTitleCallback(HWND hwnd, LPARAM lParam)
+{
+  CALLBACKDATA *pData = (CALLBACKDATA*)lParam;
+  static TCHAR *tmp = NULL;
+
+  LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+
+  if (length && (tmp = (TCHAR*)malloc((length + 1) * sizeof(TCHAR))))
+  {
+    if (SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, (LPARAM)tmp, SMTO_BLOCK | SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 2000u, NULL) != 0
+        && wcscmp(tmp, pData->title) == 0
+        && !GetWindow(hwnd, GW_OWNER))
+    {
+      pData->hwnd = hwnd;
+      pData->tid = GetWindowThreadProcessId(hwnd, &(pData->pid));
+      free(tmp);
+      return FALSE;
+    }
+    free(tmp);
+  }
+
+  return TRUE;
+}
+
+void PrintData(const CALLBACKDATA *const pData)
+{
+	wprintf(TEXT("%p|%lu|%lu|%s|%s\n"), pData->hwnd, pData->pid, pData->tid, pData->name, pData->title ? pData->title : TEXT(""));
+}
+
+
+BOOL f_SetConsoleTransparency(long percentage, TCHAR *winInfo)
+{
+	HWND hWnd = NULL;
+	BYTE bAlpha = 0;
+	LONG lNewLong = 0;
+	hWnd = GetConsoleWindow();
+	
+	if (winInfo) {
+		hWnd = GetWinHandle(winInfo);
+		if (!hWnd) {
+			puts("Error: Could not find specified window");
+			return FALSE;
+		}
+	}
+	
+	if (hWnd && percentage > -1 && percentage < 101)
+	{
+		bAlpha = (BYTE)(2.55 * (100 - percentage) + 0.5);
+		lNewLong = GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED;
+		if (!SetWindowLong(hWnd, GWL_EXSTYLE, lNewLong)) return FALSE;
+		return SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
+	}
+	return FALSE;
+}
+
+
+int Fn_LoadBmp(TCHAR *szBmpPath, long x, long y, long z, long w, long h, DWORD dwRop, HWND hWnd)
+{
+	HDC hDc = NULL, hDcBmp = NULL;
+	HBITMAP hBmp1 = NULL, hBmp2 = NULL;
+	HGDIOBJ hGdiObj = NULL;
+	BITMAP bmp = {0};
+	int iRet = EXIT_FAILURE;
+
+	if ((hDc = GetDC(hWnd)))
+	{
+		if ((hDcBmp = CreateCompatibleDC(hDc)))
+		{
+			if ((hBmp1 = (HBITMAP)LoadImage(NULL, szBmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE)))
+			{
+				if (GetObject(hBmp1, sizeof(bmp), &bmp))
+				{
+					if (w == -1) {
+						if ((w = bmp.bmWidth * z / 100.0 + 0.5) <= 0 || (h = bmp.bmHeight * z / 100.0 + 0.5) <= 0)
+						{
+							w = bmp.bmWidth;
+							h = bmp.bmHeight;
+						}
+					} 
+					if ((hBmp2 = (HBITMAP)CopyImage((HANDLE)hBmp1, IMAGE_BITMAP, w, h, LR_COPYDELETEORG)))
+					{
+						if ((hGdiObj = SelectObject(hDcBmp, hBmp2)) && hGdiObj != HGDI_ERROR)
+						{
+							if (BitBlt(hDc, (int)x, (int)y, (int)w, (int)h, hDcBmp, 0, 0, dwRop))
+								iRet = EXIT_SUCCESS;
+							DeleteObject(hGdiObj);
+						}
+						DeleteObject(hBmp2);
+					}
+				}
+				DeleteObject(hBmp1);
+			}
+			ReleaseDC(hWnd, hDcBmp);
+		}
+		ReleaseDC(hWnd, hDc);
+		ReleaseDC(hWnd, hDc);
+	}
+	return iRet;
+}
+
+/*
+void DrawSemiTransparentBitmap(CDC *pDstDC, int x, int y, int nWidth, int nHeight,
+    CDC* pSrcDC, int xSrc, int ySrc)
+{
+    CDC dcCompatible;
+    CBitmap *pBitmapOld;
+    CBitmap bm;
+    dcCompatible.CreateCompatibleDC(pDstDC);
+    bm.CreateCompatibleBitmap(pDstDC, nWidth, nHeight);
+    pBitmapOld = dcCompatible.SelectObject(&bm);
+    dcCompatible.FillSolidRect(CRect(0, 0, nWidth, nHeight), RGB(0x7F, 0x7F, 0x7F));
+    pDstDC->BitBlt(x, y, nWidth, nHeight, &dcCompatible, 0, 0, SRCAND);
+    dcCompatible.SelectObject(pBitmapOld);
+    pDstDC->BitBlt(x, y, nWidth, nHeight, pSrcDC, 0, 0, SRCPAINT);
+}
+*/
+
+
 TCHAR **argv;
 
 int clean(int returnValue) { 
@@ -859,6 +1121,7 @@ int main(int oargc, char **oargv) {
 	int argc;
 	TCHAR **env;
 	STARTUPINFO start_info = { 0 };
+	char windowSpecHelp[] = "[/h:HWND|/p:pId|/t:tId|\"/n:processName\"|\"/w:windowTitle\"";
 
 //	TCHAR *argv[128];
 //  __wgetmainargs(&argc, &argv, &env, 0, &start_info);
@@ -882,7 +1145,7 @@ int main(int oargc, char **oargv) {
 		}
 	} */	
 	
-	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.1 : Mikael Sollenborn 2015-2018\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow sendkey] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.2 : Mikael Sollenborn 2015-2018\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow sendkey windowlist] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
 
@@ -1492,8 +1755,25 @@ int main(int oargc, char **oargv) {
 		DWORD selBitOp = SRCCOPY;
 		
 		int i, x,y,z = 100, w = -1, h = -1;
-	
-		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]] [bitOp]\n\nBitops are: SRCCOPY (default), SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, DSTINVERT, BLACKNESS, WHITENESS\n\nRETURN: 0 on success, -1 if failed to load file\n"); return clean(0); }
+		HWND hWnd = GetConsoleWindow();
+		
+		if (argc > 5) {
+			TCHAR *winInf = argv[argc - 1];
+			
+			if (wcslen(winInf) == 2 && winInf[0] == '/' && (winInf[1] == 'D' || winInf[1] == 'd') ) {
+				hWnd = NULL;
+				argc--;
+			} else if (wcslen(winInf) > 3 && winInf[0] == '/' && winInf[2] == ':' ) {
+				hWnd = GetWinHandle(winInf);
+				if (!hWnd) {
+					puts("Error: Could not find specified window");
+					return clean(-1);
+				}
+				argc--;
+			}
+		}
+		
+		if (argc < 5 || bInfo) { printf("\nUsage: cmdwiz insertbmp [file.bmp x y] [[z]|[w h]] [bitOp] %s|/D]\n\nBitops are: SRCCOPY (default), SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, DSTINVERT, BLACKNESS, WHITENESS\n\nRETURN: 0 on success, -1 if failed to load file\n", windowSpecHelp); return clean(0); }
 
 		x = _wtoi(argv[3]);
 		y = _wtoi(argv[4]);
@@ -1513,27 +1793,36 @@ int main(int oargc, char **oargv) {
 		if (argc > 5) z = _wtoi(argv[5]);
 		if (argc > 6) { w = _wtoi(argv[5]); h = _wtoi(argv[6]); }
 
-		if (Fn_LoadBmp(argv[2], x, y, z, w, h, selBitOp) == EXIT_SUCCESS) return clean(0); else return clean(-1);
+		if (Fn_LoadBmp(argv[2], x, y, z, w, h, selBitOp, hWnd) == EXIT_SUCCESS) return clean(0); else return clean(-1);
 	}
 	else if (_wcsicmp(argv[1],L"setwindowtransparency") == 0) {
 		int percentage = -1;
+		BOOL res;
 		
 		if (argc > 2) percentage = _wtoi(argv[2]);
 		
-		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100]\n"); return clean(0); }
-		
-		f_SetConsoleTransparency(percentage);
-		return clean(0);
+		if (percentage < 0 || percentage > 100 || bInfo) { printf("\nUsage: cmdwiz setwindowtransparency [0-100] %s]\n", windowSpecHelp); return clean(0); }
+
+		res = f_SetConsoleTransparency(percentage, argc > 3? argv[3] : NULL);
+		return clean(res == FALSE? -1 : 0);
 	}
 	else if (_wcsicmp(argv[1],L"setwindowpos") == 0) {
 		RECT bounds;
 		int x, y, w, h;
 		HWND hWnd = GetConsoleWindow();
 
+		if (argc > 4) {
+			hWnd = GetWinHandle(argv[4]);
+			if (!hWnd) {
+				puts("Error: Could not find specified window");
+				return clean(-1);
+			}
+		}
+		
 		if (!hWnd) return clean(-1);
 		GetWindowRect(hWnd, &bounds);
 		
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep]\n"); return clean(0); }
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowpos [x|keep y|keep] %s]\n", windowSpecHelp); return clean(0); }
 		x = _wtoi(argv[2]); if (argv[2][0]=='k') x = bounds.left;
 		y = _wtoi(argv[3]); if (argv[3][0]=='k') y = bounds.top;
 		w = bounds.right-bounds.left;
@@ -1542,13 +1831,49 @@ int main(int oargc, char **oargv) {
 		SetWindowPos(hWnd, HWND_TOP, x, y, w, h, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); // for reasons unclear, SWP_ASYNCWINDOWPOS makes moving more stable
 		return clean(0);
 	}
+	else if (_wcsicmp(argv[1],L"setwindowsize") == 0) {
+		RECT bounds;
+		int x, y, w, h;
+		HWND hWnd = GetConsoleWindow();
+
+		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz setwindowsize [w|keep h|keep] %s]\n", windowSpecHelp); return clean(0); }
+
+		if (argc > 4) {
+			hWnd = GetWinHandle(argv[4]);
+			if (!hWnd) {
+				puts("Error: Could not find specified window");
+				return clean(-1);
+			}
+		}
+		
+		if (!hWnd) return clean(-1);
+		GetWindowRect(hWnd, &bounds);
+		
+		x = bounds.left;
+		y = bounds.top;
+		w = _wtoi(argv[2]); if (argv[2][0]=='k') w = bounds.right-bounds.left;
+		h = _wtoi(argv[3]); if (argv[3][0]=='k') h = bounds.bottom-bounds.top;
+		
+		SetWindowPos(hWnd, HWND_TOP, x, y, w, h, SWP_ASYNCWINDOWPOS | SWP_NOMOVE | SWP_SHOWWINDOW);
+		return clean(0);
+	}
 	else if (_wcsicmp(argv[1],L"getwindowbounds") == 0) {
 		RECT bounds;
 		HWND hWnd;
 		int pos = -1;
 		hWnd = GetConsoleWindow();
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h]\n\nRETURN: The requested value in ERRORLEVEL\n"); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h] %s]\n\nRETURN: The requested value in ERRORLEVEL\n", windowSpecHelp); return clean(0); }
+
+		if (argc > 3) {
+			hWnd = GetWinHandle(argv[3]);
+			if (!hWnd) {
+				puts("Error: Could not find specified window");
+				return clean(-1);
+			}
+		}
+		
+		if (!hWnd) return clean(-1);
 		GetWindowRect(hWnd, &bounds);
 
 		if (argv[2][0] == 'y') return clean(bounds.top);
@@ -1680,13 +2005,27 @@ int main(int oargc, char **oargv) {
 	else if (_wcsicmp(argv[1],L"setwindowstyle") == 0) {
 		int bExtended, bSet, i,flag;
 		long valueFlags;
+		HWND hWnd = GetConsoleWindow();
 
 		if (argc > 2) bSet = argv[2][0] == 's' ? 1 : argv[2][0] == 'c'? 0 : -1;
 		if (argc > 3) bExtended = argv[3][0] == 'e' ? 1 : argv[3][0] == 's'? 0 : -1;
 		
-		if (argc < 5 || bInfo || bSet == -1 || bExtended == -1) { printf("\nUsage: cmdwiz setwindowstyle set|clear standard|extended value1 [value2] ...\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n"); return clean(0);
+		if (argc < 5 || bInfo || bSet == -1 || bExtended == -1) { printf("\nUsage: cmdwiz setwindowstyle set|clear standard|extended value1 [value2] ... %s]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n", windowSpecHelp); return clean(0);
 		}
-		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
+		
+		if (argc > 5) {
+			TCHAR *winInf = argv[argc - 1];
+			if (wcslen(winInf) > 3 && winInf[0] == '/' && winInf[2] == ':' ) {
+				hWnd = GetWinHandle(winInf);
+				if (!hWnd) {
+					puts("Error: Could not find specified window");
+					return clean(-1);
+				}
+				argc--;
+			}
+		}
+		
+		valueFlags = GetWindowLongPtr(hWnd, bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
 		for (i = 4; i < argc; i++) {
 			TCHAR *inp = argv[i];
@@ -1695,20 +2034,30 @@ int main(int oargc, char **oargv) {
 			int flag = wcstol(inp, NULL, 16);
 			if (bSet) valueFlags |= flag; else valueFlags &= ~(flag);
 		}
-		SetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);
-		// SetWindowPos(GetConsoleWindow(), HWND_TOP, 0,0,0,0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		SetWindowLongPtr(hWnd, bExtended? GWL_EXSTYLE : GWL_STYLE, valueFlags);
+		// SetWindowPos(hWnd, HWND_TOP, 0,0,0,0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 		return clean(0);
 	}
 	else if (_wcsicmp(argv[1],L"getwindowstyle") == 0) {
 		int bExtended, flag;
 		long valueFlags;
 		TCHAR *inp;
+		HWND hWnd = GetConsoleWindow();
 		
 		if (argc > 2) bExtended = argv[2][0] == 'e' ? 1 : argv[2][0] == 's'? 0 : -1;
 		
-		if (argc < 4 || bInfo || bExtended == -1) { printf("\nUsage: cmdwiz getwindowstyle standard|extended value\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n\nRETURN: ERRORLEVEL 1 if style set, otherwise 0\n"); return clean(0);
+		if (argc < 4 || bInfo || bExtended == -1) { printf("\nUsage: cmdwiz getwindowstyle standard|extended value %s]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/ms644898.aspx for style and extended style values\n\nRETURN: ERRORLEVEL 1 if style set, otherwise 0\n", windowSpecHelp); return clean(0);
 		}
-		valueFlags = GetWindowLongPtr(GetConsoleWindow(), bExtended? GWL_EXSTYLE : GWL_STYLE);
+		
+		if (argc > 4) {
+			hWnd = GetWinHandle(argv[4]);
+			if (!hWnd) {
+				puts("Error: Could not find specified window");
+				return clean(-1);
+			}
+		}
+		
+		valueFlags = GetWindowLongPtr(hWnd, bExtended? GWL_EXSTYLE : GWL_STYLE);
 		
 		inp = argv[3];
 		if (inp[0]=='0' && inp[1]=='x')
@@ -1780,15 +2129,22 @@ int main(int oargc, char **oargv) {
 		int show, doPos = 0;
 		HWND hWnd = GetConsoleWindow(), hTop;
 	
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showwindow [minimize|maximize|restore|topmost|top|bottom|close|value:n]\n"); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz showwindow [minimize|maximize|restore|topmost|top|bottom|close|value:n] %s]\n", windowSpecHelp); return clean(0); }
 
+		if (argc > 3) {
+			hWnd = GetWinHandle(argv[3]);
+			if (!hWnd) {
+				puts("Error: Could not find specified window");
+				return clean(-1);
+			}
+		}
 		GetWindowRect(hWnd, &bounds);
 		
 		if (wcsstr(argv[2], L"max") == argv[2]) show = SW_MAXIMIZE;
 		else if (wcsstr(argv[2], L"min") == argv[2]) show = SW_MINIMIZE;
 		else if (wcsstr(argv[2], L"rest") == argv[2]) show = SW_RESTORE;
 		else if (wcsstr(argv[2], L"topmost") == argv[2]) { doPos=1; hTop = HWND_TOPMOST; }
-		else if (wcsstr(argv[2], L"top") == argv[2]) { doPos=1; SetWindowPos(hWnd, HWND_NOTOPMOST, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); hTop = HWND_TOP; }
+		else if (wcsstr(argv[2], L"top") == argv[2]) { doPos=1; SetWindowPos(hWnd, HWND_NOTOPMOST, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); hTop = HWND_TOP; SetForegroundWindow(hWnd); }
 		else if (wcsstr(argv[2], L"bottom") == argv[2]) { doPos=1; SetWindowPos(hWnd, HWND_NOTOPMOST, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW); hTop = HWND_BOTTOM; }
 		else if (wcsstr(argv[2], L"close") == argv[2]) { SendMessageTimeout(hWnd, WM_CLOSE, 0, 0, SMTO_BLOCK | SMTO_NOTIMEOUTIFNOTHUNG, 2000u, NULL); return clean(0); }
 		else if (wcsstr(argv[2], L"value:") == argv[2]) show = _wtoi(&argv[2][6]);
@@ -1891,6 +2247,16 @@ int main(int oargc, char **oargv) {
 			SendInput(1,&Input,sizeof(INPUT));
 		}
 					
+		return clean(0);
+	}
+	else if (_wcsicmp(argv[1],L"windowlist") == 0) {
+		CALLBACKDATA data = {0};
+  
+		bPrintEmptyTitleWindows = (argc > 2 && (argv[2][0]=='a' || argv[2][0]=='A'));
+		
+  		if (bInfo) { printf("\nUsage: cmdwiz windowlist [all]\n\nPrints a list of all (titled) main windows in the format: window handle|process ID|thread ID|process name|window title\n\nUse 'all' to include untitled windows.\n"); return clean(0); }
+		
+		EnumWindows(EnumWindowsListCallback, (LPARAM)&data);
 		return clean(0);
 	}
 	else {

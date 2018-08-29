@@ -1,4 +1,14 @@
-/* CmdWiz (c) 2015-18 Mikael Sollenborn */
+/*
+
+CmdWiz (c) 2015-18 Mikael Sollenborn
+
+Contributions:
+
+Steffen Ilhardt: original insertbmp function, original setwindowtransparency function, getexetype function
+
+Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscreen function, showmousecursor fuction
+
+*/
 
 #ifndef WINVER
 #define WINVER 0x0502
@@ -18,6 +28,7 @@
 // TODO:
 //			(1. getwindowhandle "title" + setwinpos/getwinbounds/setwintransparency + new setwinsize WITH that handle?)
 //			2. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
+//			3. support saving Unicode with saveblock, add unicode support to gxy file format
 
 // Known bugs:
 //			1. showmousecursor to hide does not work Win10. Only tested to work on Win7.
@@ -26,13 +37,6 @@
 //			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates
 
 // Done:
-//			1. Use - for setbuffersize to remove scrollbar
-//			2. gettitle [strip] to remove last part
-//			3. setmousecursorpos middle click, mouse wheel and horizontal mouse wheel support
-//			4. showwindow: topmost|top|bottom|close added. Topmost removed from setwindowpos.
-//			5. Hopefully fixed: Using setwindowpos after setwindowstyle can in some cases cause graphical artifacts (eg after cmdwiz setwindowstyle clear standard 0x00040000L). Win10 only?
-//			6. fullscreen op now uses official Windows API SetConsoleDisplayMode. Old method kept for legacy, and can be used with legacy parameter
-//			7. sendkey op
 
 #define BUFW 0
 #define BUFH 1
@@ -827,7 +831,7 @@ int clean(int returnValue) {
 int main(int argc, char **argv) {
 	int delayVal = 0, bInfo = 0;
 
-	if (argc < 2 || (argc == 2 && strcmp(argv[1],"/?")==0) ) { printf("\nCmdWiz (Ascii) v1.1 : Mikael Sollenborn 2015-2018\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow sendkey] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2 || (argc == 2 && strcmp(argv[1],"/?")==0) ) { printf("\nCmdWiz (Ascii) v1.1 : Mikael Sollenborn 2015-2018\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow sendkey] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && strcmp(argv[2],"/?")==0) { bInfo = 1; }
 	
