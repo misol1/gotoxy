@@ -65,14 +65,19 @@ Separate executable due to lower speed. There are currently two extensions:
 cmdwiz.exe
 ----------
 ```
-Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate 
+CmdWiz (Unicode) v1.2 : Mikael Sollenborn 2015-2018
+With contributions from Steffen Ilhardt and Carlos Montiers Aguilera
+
+Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate
                flushkeys getquickedit setquickedit getmouse getch_or_mouse
                getch_and_mouse getcharat getcolorat showcursor getcursorpos
-               setcursorpos printf saveblock copyblock moveblock inspectblock
-               playsound delay stringfind stringlen gettime await getexetype 
-               cache setwindowtransparency getwindowpos setwindowpos getdisplaydim
-               getmousecursorpos setmousecursorpos insertbmp savefont setfont
-               gettitle ] [params]
-					
-Use "cmdwiz operation /?" for info on arguments and return values
+               setcursorpos print saveblock copyblock moveblock inspectblock
+               playsound delay stringfind stringlen gettime await getexetype
+               cache setwindowtransparency getwindowbounds setwindowpos
+               setwindowsize getdisplaydim getmousecursorpos setmousecursorpos
+               showmousecursor insertbmp savefont setfont gettitle getwindowstyle
+               setwindowstyle gxyinfo getpalette setpalette fullscreen
+               showwindow sendkey windowlist] [params]
+			   
+Use \"cmdwiz operation /?\" for info on arguments and return values\n
 ```
