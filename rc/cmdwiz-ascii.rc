@@ -11,7 +11,7 @@
 #define APP_DEVELOPER   "Mikael Sollenborn"
 #define APP_COMPANY     ""
 #define APP_NAME        "CmdWiz Ascii"
-#define APP_COMMENT     "A cmd line utility for the cmd window and batch scripts (old version, no Unicode support)"
+#define APP_COMMENT     "CmdWiz Ascii - Multi tool for cmd and batch (old version, no Unicode support)"
 
 // https://docs.microsoft.com/en-us/windows/desktop/menurc/stringfileinfo-block#remarks
 // ... as four HEX digits each

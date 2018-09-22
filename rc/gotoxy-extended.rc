@@ -11,7 +11,7 @@
 #define APP_DEVELOPER   "Mikael Sollenborn"
 #define APP_COMPANY     ""
 #define APP_NAME        "GotoXY Extended"
-#define APP_COMMENT     "A cmd line color text typing tool for the cmd window and batch scripts - extended"
+#define APP_COMMENT     "GotoXY Extended - Color text typing tool for cmd and batch - extended"
 
 // https://docs.microsoft.com/en-us/windows/desktop/menurc/stringfileinfo-block#remarks
 // ... as four HEX digits each
