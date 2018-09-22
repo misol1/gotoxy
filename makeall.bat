@@ -7,7 +7,7 @@ gcc -o cmdwiz.exe cmdwizU.c -O2 rc\cmdwiz.o -luser32 -lwinmm -lgdi32
 @echo.
 gcc -o cmdwiz-ascii.exe cmdwiz.c -O2 rc\cmdwiz-ascii.o -luser32 -lwinmm -lgdi32
 @echo.
-gcc -o gotoxy.exe -O2 gotoxy.c
+gcc -o gotoxy.exe -O2 rc\gotoxy.o gotoxy.c
 @echo.
 gcc -DSUPPORT_EXTENDED -O2 rc\gotoxy-extended.o -lshell32 -lwinmm -luser32 -o gotoxy_extended.exe gotoxy.c
 @echo.
