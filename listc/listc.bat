@@ -1,4 +1,4 @@
-:: LISTc : Mikael Sollenborn 2017
+:: LISTc : Mikael Sollenborn 2017/19
 @echo off
 if "%~1"=="_YESNO" call :YESNO %2&goto :eof
 if "%~1"=="_GETANSWER" call :POPUPANSWER %2 %3 %4&goto :eof
@@ -29,7 +29,7 @@ if not "%TEMP%" == "" set MYTEMP=%TEMP%\
 cls
 mode %COLS%,%LINES%
 
-cmdgfx_input.exe m0W12 | call %0 %* | cmdgfx.exe "fbox u U 20 0,0,400,400" Se
+cmdgfx_input.exe m0W12R | call %0 %* | cmdgfx.exe "fbox u U 20" Se
 set ____=
 
 if %MOUSESUPPORT%==1 cmdwiz setquickedit %QE%
@@ -96,37 +96,39 @@ call :SHOWLIST
 :MAINLOOP
 
 set /a KEY=0
-set /p INPUT=
-for /f "tokens=1,2,4,6, 8,10,12,14,16,18,20,22" %%A in ("!INPUT!") do ( set EV_BASE=%%A & set /a K_EVENT=%%B, K_DOWN=%%C, KEY=%%D,  M_EVENT=%%E, MX=%%F, MY=%%G, M_LB=%%H, M_RB=%%I, M_DBL_LB=%%J, M_DBL_RB=%%K, M_WHEEL=%%L 2>nul ) 
+set INPUT=&set /p INPUT=
+for /f "tokens=1,2,4,6, 8,10,12,14,16,18,20,22, 24,26,28" %%A in ("!INPUT!") do ( set EV_BASE=%%A & set /a K_EVENT=%%B, K_DOWN=%%C, KEY=%%D,  M_EVENT=%%E, MX=%%F, MY=%%G, M_LB=%%H, M_RB=%%I, M_DBL_LB=%%J, M_DBL_RB=%%K, M_WHEEL=%%L, RESIZED=%%M, SCRW=%%N, SCRH=%%O 2>nul ) 
 
-if %MOUSESUPPORT%==1 if !M_EVENT! == 1 call :PROCESS_MOUSE & (if not !OLDCP! == !CURRPOS! set OLDPOS=!OLDCP!& call :UPDATELIST) & if !DBLCL!==0 if !KEY!==0 goto MAINLOOP
+if !MOUSESUPPORT!==1 if !M_EVENT! == 1 call :PROCESS_MOUSE & (if not !OLDCP! == !CURRPOS! set OLDPOS=!OLDCP!& call :UPDATELIST) & if !DBLCL!==0 if !KEY!==0 goto MAINLOOP
 
-if %KEY% == 336 set OLDPOS=%CURRPOS%&set /a CURRPOS+=1 & call :UPDATELIST & goto MAINLOOP & rem DOWN
-if %KEY% == 328 set OLDPOS=%CURRPOS%&set /a CURRPOS-=1 & call :UPDATELIST & goto MAINLOOP & rem UP
-if %KEY% == 331 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH% & call :UPDATELIST & goto MAINLOOP & rem LEFT
-if %KEY% == 333 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH% & call :UPDATELIST & goto MAINLOOP & rem RIGHT
-if %KEY% == 327 set OLDPOS=%CURRPOS%&set CURRPOS=0& call :UPDATELIST & goto MAINLOOP & rem HOME
-if %KEY% == 335 set OLDPOS=%CURRPOS%&set CURRPOS=%FCOUNT%& call :UPDATELIST & goto MAINLOOP & rem END
-if %KEY% == 337 set OLDPOS=%CURRPOS%&set /a CURRPOS+=%LH%*%COLSPERSCR% & call :UPDATELIST & goto MAINLOOP & rem PAGEDOWN
-if %KEY% == 329 set OLDPOS=%CURRPOS%&set /a CURRPOS-=%LH%*%COLSPERSCR% & call :UPDATELIST & goto MAINLOOP & rem PAGEUP
-if %UPDATEBOTTOM%==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
+if "!RESIZED!"=="1" cls & cmdwiz showcursor 0 & call :SHOWLIST R & goto MAINLOOP
 
-if %KEY% == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
+if !KEY! == 336 set OLDPOS=!CURRPOS!&set /a CURRPOS+=1 & call :UPDATELIST & goto MAINLOOP & rem DOWN
+if !KEY! == 328 set OLDPOS=!CURRPOS!&set /a CURRPOS-=1 & call :UPDATELIST & goto MAINLOOP & rem UP
+if !KEY! == 331 set OLDPOS=!CURRPOS!&set /a CURRPOS-=!LH! & call :UPDATELIST & goto MAINLOOP & rem LEFT
+if !KEY! == 333 set OLDPOS=!CURRPOS!&set /a CURRPOS+=!LH! & call :UPDATELIST & goto MAINLOOP & rem RIGHT
+if !KEY! == 327 set OLDPOS=!CURRPOS!&set CURRPOS=0& call :UPDATELIST & goto MAINLOOP & rem HOME
+if !KEY! == 335 set OLDPOS=!CURRPOS!&set CURRPOS=!FCOUNT!& call :UPDATELIST & goto MAINLOOP & rem END
+if !KEY! == 337 set OLDPOS=!CURRPOS!&set /a CURRPOS+=!LH!*!COLSPERSCR! & call :UPDATELIST & goto MAINLOOP & rem PAGEDOWN
+if !KEY! == 329 set OLDPOS=!CURRPOS!&set /a CURRPOS-=!LH!*!COLSPERSCR! & call :UPDATELIST & goto MAINLOOP & rem PAGEUP
+if !UPDATEBOTTOM!==1 set UPDATEBOTTOM=0&call :SHOWBOTTOMBAR
+
+if !KEY! == 32 call :MARKITEM & goto MAINLOOP & rem SPACE
 
 set LKEY=""
-set OR=0&(if %KEY% gtr 126 set OR=1)&(if %KEY% lss 40 set OR=1)&if !OR!==1 goto NOALTPRESSED
-set /A MKEY=%KEY%-40+1
-set LKEY="!SCHR:~%MKEY%,1!"
+set OR=0&(if !KEY! gtr 126 set OR=1)&(if !KEY! lss 40 set OR=1)&if !OR!==1 goto NOALTPRESSED
+set /A MKEY=!KEY!-40+1
+for %%M in (!MKEY!) do set LKEY="!SCHR:~%%M,1!"
 
 cmdwiz getkeystate alt>nul
-set /a TR = %ERRORLEVEL% ^& 1& if !TR! == 0 goto NOALTPRESSED
-set /a TC=%CURRPOS%+1
-for /L %%a in (%TC%,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if "!FTP!"==%LKEY% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
-for /L %%a in (0,1,%FCOUNTSUB%) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if "!FTP!"==%LKEY% set OLDPOS=%CURRPOS%& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
+set /a TR = !ERRORLEVEL! ^& 1& if !TR! == 0 goto NOALTPRESSED
+set /a TC=!CURRPOS!+1
+for /L %%a in (!TC!,1,!FCOUNTSUB!) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if "!FTP!"==!LKEY! set OLDPOS=!CURRPOS!& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
+for /L %%a in (0,1,!FCOUNTSUB!) do set FTP=!FO%%a!&set FTP=!FTP:~1,1!&if "!FTP!"==!LKEY! set OLDPOS=!CURRPOS!& set CURRPOS=%%a& call :UPDATELIST & goto MAINLOOP
 goto MAINLOOP
 :NOALTPRESSED
 
-if %KEY% == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN/^M (folder)
+if !KEY! == 13 if "!FT%CURRPOS%!"=="/" cd !FO%CURRPOS%!&call :MAKEDIRLIST&call :SHOWLIST & rem RETURN/^M (folder)
 if %KEY% == 13 if not "!FT%CURRPOS%!"=="/" set ANSWER=%VIEWCMD%&call :SPLITANSWER &start "" cmd /C !ANSWER! !FO%CURRPOS%! !ANSWER2!&call :SHOWLIST R & rem RETURN/^M (file)
 
 if %KEY% == 315 call :SHOWHELP & rem F1
@@ -176,6 +178,8 @@ if %LKEY% == "b" call :COUNTITEMS CNT Y & (if !CNT! lss 1 call :SHOWBOTTOMBAR "N
 if %LKEY% == "B" call :CLIPBOARDCOPYOP copy
 if %KEY% == 2 call :CLIPBOARDCOPYOP move& rem ^B
 ::if %KEY% == 22 call :COUNTITEMS CNT Y & (if !CNT! lss 1 call :SHOWBOTTOMBAR "No files selected.") & if !CNT! geq 1 call :PUTINCB 2 &call :SHOWBOTTOMBAR "Added item(s) to clipboard."& rem ^V
+
+if %KEY% == 10 cmdwiz getfullscreen & set /a ISFS=!errorlevel! & (if !ISFS!==0 cmdwiz fullscreen 1) & (if !ISFS! gtr 0 cmdwiz fullscreen 0)
 
 if not %EXTEND% == "" if exist %EXTEND% call :EXTENDOP
 
@@ -400,6 +404,15 @@ goto :eof
 
 
 :SHOWLIST
+
+if "%1"=="R" (
+	cmdwiz getconsoledim sw
+	set /a COLS=!errorlevel!
+	cmdwiz getconsoledim sh
+	set /a LINES=!errorlevel!-0
+	set BAR=""& set /a "BARPOS=LINES-1, OLDCOLS=COLS, LH=LINES-2" & call :CALCNOFCOLUMNS & (for /L %%a in (1,1,!COLS!) do set BAR="!BAR:~1,-1! ")
+)
+
 if %CURRPOS% lss 0 set CURRPOS=0
 if %CURRPOS% gtr %FCOUNTSUB% set CURRPOS=%FCOUNTSUB%
 set /a PAGE=%CURRPOS%/(%COLSPERSCR%*%LH%)
@@ -416,7 +429,8 @@ set /a PARTPRINT=%LH%+1
 set /A FMCOUNT=%FCOUNT%-1
 
 set /A BLH=%LINES%-2
-echo "cmdgfx: fbox %FILECOL% %SCRBGCOL% 20 0,0,!COLS!,!LINES!" n
+set /a SW=!COLS!+3, SH=!LINES!+3
+echo "cmdgfx: fbox %FILECOL% %SCRBGCOL% 20 0,0,!COLS!,!LINES!" nf:0,0,!SW!,!SH!
 call :SHOWBOTTOMBAR
 call :SHOWTOPBAR
 

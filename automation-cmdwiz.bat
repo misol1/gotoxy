@@ -24,12 +24,11 @@ cmdwiz delay 1000
 if exist gotoxy-examples\123.bmp cmdwiz insertbmp gotoxy-examples\123.bmp 10 50 100 /N:notepad.exe
 cmdwiz delay 1000
 
-set /a TIMES=30
-:MOVERANDOMLOOP
-	set /a "X=(!RANDOM! %% %SW%) - 300, Y=(!RANDOM! %% %SH%) - 240, TIMES-=1"
-	cmdwiz setwindowpos %X% %Y% /N:notepad.exe
+for /l %%a in (1,1,30) do (
+	set /a "X=(!RANDOM! %% !SW!) - 300, Y=(!RANDOM! %% !SH!) - 240"
+	cmdwiz setwindowpos !X! !Y! /N:notepad.exe
 	cmdwiz delay 100
-if %TIMES% gtr 0 goto :MOVERANDOMLOOP
+)
 cmdwiz setwindowpos %WPX% %WPY% /N:notepad.exe
 
 cmdwiz delay 1000

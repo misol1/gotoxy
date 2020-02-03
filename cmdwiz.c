@@ -1672,9 +1672,9 @@ int main(int argc, char **argv) {
 		fs = atoi(argv[2]);
 
 		if (!(argc > 3 && argv[3][0] == 'l')) {
-			int res = SetConsoleDisplayMode (g_conout, fs? CONSOLE_FULLSCREEN_MODE : CONSOLE_WINDOWED_MODE, NULL);	
-			if (res) return clean(0); else fail = -1;
-		}
+			int res = SetConsoleDisplayMode (g_conout, CONSOLE_FULLSCREEN_MODE, NULL);	
+			SetConsoleDisplayMode (g_conout, fs? CONSOLE_FULLSCREEN_MODE : CONSOLE_WINDOWED_MODE, NULL);	
+			if (res) return clean(0); else fail = -1;		}
 
 		hWnd = GetConsoleWindow();
 		

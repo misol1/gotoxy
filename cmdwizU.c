@@ -1,6 +1,6 @@
 /*
 
-CmdWiz (c) 2015-18 Mikael Sollenborn (UNICODE VERSION)
+CmdWiz (c) 2015-20 Mikael Sollenborn (UNICODE VERSION)
 
 Contributions:
 
@@ -36,10 +36,10 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 // TODO:
 //			1. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
 //			2. support utf-8 arguments
-//			3. support saving Unicode with saveblock, add unicode support to gxy file format
+//			3. support saving Unicode with saveblock, add Unicode support for gxy file format
 
 // Known bugs:
-//			1. Showmousecursor to hide does not work on Win10. Only known to work on Win7.
+//			1. Showmousecursor to hide does not work on Win10 (unless legacy console is used).
 //			2. Setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
 //			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates
@@ -536,6 +536,9 @@ int SetFont(int index) {
 		FreeLibrary(dllHandle);
 	}
 
+	COORD c=GetConsoleFontSize(hOut, 0); //printf("%d %d\n",c.X,c.Y);
+	if (c.X==1 && c.Y==1) index+=3; // assume pixelfnt.exe has been run and is resident
+
 	SetConsoleFont(hOut, index);
 	CloseHandle(hOut);
 	
@@ -606,6 +609,41 @@ void evaluateCol(char ch, int *bUsesColors, int *bUsesExtendedColor, int *bUsesU
 		}	
 	}
 }
+
+int getFileDim(TCHAR *fname) {
+	unsigned long b4;
+	unsigned short b2;
+	FILE *ifp;
+	int w=-1, h=-1;
+
+	ifp=_wfopen(fname, L"rb");
+	if (ifp == NULL)
+		return 1;
+	
+	if (wcsstr(fname, L".bmp") != NULL) {
+		fseek(ifp, 18, SEEK_CUR);
+		fread(&b4, 4, 1, ifp); w = b4;
+		fread(&b4, 4, 1, ifp); h = b4;
+	}
+	else if (wcsstr(fname, L".bxy") != NULL) {
+		fread(&b4, 4, 1, ifp); w = b4;
+		fread(&b4, 4, 1, ifp); h = b4;
+	}
+	else if (wcsstr(fname, L".pcx") != NULL) {
+		fseek(ifp, 8, SEEK_CUR);
+		fread(&b2, 2, 1, ifp); w = b2+1;
+		fread(&b2, 2, 1, ifp); h = b2+1;
+	}
+
+	fclose(ifp);
+	if (w != -1 && h != -1) {
+		printf("\nDimension: %d x %d\n\n", w, h);
+		return 0;
+	}
+	
+	return -1;
+}
+
 
 int inspectGxy(TCHAR *fname, int bIgnoreCodes) {
 	char ch, *text;
@@ -1146,7 +1184,7 @@ int main(int oargc, char **oargv) {
 		}
 	} */	
 	
-	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.3 : Mikael Sollenborn 2015-2018\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen showwindow sendkey windowlist] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
+	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.4 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen getfullscreen showwindow sendkey windowlist gettaskbarinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n"); return 0; }
 
 	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
 
@@ -1327,10 +1365,17 @@ int main(int oargc, char **oargv) {
 		return clean(0);
 	}
 	else if (_wcsicmp(argv[1],L"gxyinfo") == 0) {
-		int res;
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz gxyinfo [filename.gxy] [ignoreCodes]\n\nRETURN: 0 if file could be loaded, -1 on failure\n"); return clean(0); }
+		int res, oddres;
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz gxyinfo [filename.gxy|txt|bmp|bxy|pcx] [ignoreCodes]\n\nRETURN: 0 if file could be loaded, -1 on failure\n"); return clean(0); }
 	
-		res = inspectGxy(argv[2], argc > 3);
+		oddres = getFileDim(argv[2]);
+	
+		if (oddres == -1)
+			res = inspectGxy(argv[2], argc > 3);
+		else {
+			res = oddres;
+		}
+		
 		return clean(res > 0? -1 : 0);
 	}
 	else if (_wcsicmp(argv[1],L"getcharat") == 0) {
@@ -2155,6 +2200,51 @@ int main(int oargc, char **oargv) {
 			SetWindowPos(hWnd, hTop, bounds.left, bounds.top, bounds.right-bounds.left, bounds.bottom-bounds.top, SWP_ASYNCWINDOWPOS | SWP_NOSIZE | SWP_SHOWWINDOW);
 		else
 			ShowWindow(hWnd, show);
+	
+		/*
+		DWORD currentThreadId = GetCurrentThreadId();
+		DWORD otherThreadId = GetWindowThreadProcessId(hWnd, NULL);
+		if( otherThreadId == 0 ) { printf("Error: could not attach to window thread\n"); return clean(-1); }
+		if( otherThreadId != currentThreadId )
+			AttachThreadInput(currentThreadId, otherThreadId, TRUE);
+
+		//SetActiveWindow(hWnd);
+		//SetFocus(hWnd);
+		SetForegroundWindow(hWnd);
+		
+		if( otherThreadId != currentThreadId )
+			AttachThreadInput(currentThreadId, otherThreadId, FALSE);
+		*/
+		
+		
+	} else if (_wcsicmp(argv[1],L"getfullscreen") == 0) {
+		int res;
+		long unsigned int modeRes;
+		RECT rcWorkArea, bounds;
+		
+		if (bInfo) { printf("\nUsage: cmdwiz getfullscreen\n\nRETURN: -1 if failed to get info, 0 if console is windowed, 1 if fullcreen, 2 if 'fake' (legacy) fullscreen\n"); return clean(0); }
+	
+		res = GetConsoleDisplayMode(&modeRes);
+		
+		if (!res || (res && modeRes == 0)) {
+			LONG style, ex_style;
+
+			HWND hWnd = GetConsoleWindow();
+			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcWorkArea, 0);
+
+			GetWindowRect(hWnd, &bounds);
+
+			style = GetWindowLong(hWnd, GWL_STYLE);
+			ex_style = GetWindowLong(hWnd, GWL_EXSTYLE);
+		
+			if (bounds.left == rcWorkArea.left && bounds.top == rcWorkArea.top && !(style & (WS_CAPTION | WS_THICKFRAME)) && !(ex_style & (WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
+					 WS_EX_CLIENTEDGE | WS_EX_STATICEDGE)))
+				return clean(2);
+			else
+				return 0;
+		}
+		
+		return clean(modeRes);
 		
 	} else if (_wcsicmp(argv[1],L"fullscreen") == 0) {
 		HWND hWnd;
@@ -2171,7 +2261,8 @@ int main(int oargc, char **oargv) {
 		fs = _wtoi(argv[2]);
 
 		if (!(argc > 3 && argv[3][0] == 'l')) {
-			int res = SetConsoleDisplayMode (g_conout, fs? CONSOLE_FULLSCREEN_MODE : CONSOLE_WINDOWED_MODE, NULL);	
+			int res = SetConsoleDisplayMode (g_conout, CONSOLE_FULLSCREEN_MODE, NULL);	
+			SetConsoleDisplayMode (g_conout, fs? CONSOLE_FULLSCREEN_MODE : CONSOLE_WINDOWED_MODE, NULL);	
 			if (res) return clean(0); else fail = -1;
 		}
 
@@ -2259,6 +2350,34 @@ int main(int oargc, char **oargv) {
 		
 		EnumWindows(EnumWindowsListCallback, (LPARAM)&data);
 		return clean(0);
+	}
+	else if (_wcsicmp(argv[1],L"gettaskbarinfo") == 0) {
+
+		APPBARDATA pabd = {0}, pabd2 = {0};
+		int bAutoHide=0, pos=0, res=0;
+		BOOL dResult = (BOOL) SHAppBarMessage(ABM_GETTASKBARPOS, &pabd);
+		UINT sResult = (UINT) SHAppBarMessage(ABM_GETSTATE, &pabd2);
+		if (dResult==FALSE) {
+			puts("Error: could not get taskbar info");
+			return clean(-1);			
+		}
+		if (sResult & ABS_AUTOHIDE) bAutoHide=1;
+			
+		if (bInfo) { printf("\nUsage: cmdwiz gettaskbarinfo [w|h|x|y|a|p]\n\nRETURN: Taskbar info in text, or specified info in ERRORLEVEL\n\nPos: 0=bottom, 1=top, 2=left, 3=right\n"); return clean(0); }
+
+		int x=pabd.rc.left, y=pabd.rc.top, w=pabd.rc.right-pabd.rc.left, h=pabd.rc.bottom-pabd.rc.top;
+		
+		if (w>h) { pos=0; if (y < 50) pos=1; }
+		if (h>w) { pos=3; if (x < 50) pos=2; }
+		
+		if (argc < 3) { printf("X %d Y %d W %d H %d HIDE %d POS %d\n", x, y, w, h, bAutoHide, pos ); return clean(0); }
+		if (argv[2][0] == 'x') res = x;
+		if (argv[2][0] == 'y') res = y;
+		if (argv[2][0] == 'w') res = w;
+		if (argv[2][0] == 'h') res = h;
+		if (argv[2][0] == 'a') res = bAutoHide;
+		if (argv[2][0] == 'p') res = pos;
+		return clean(res);
 	}
 	else {
 		printf("Error: unknown operation\n");

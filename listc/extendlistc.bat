@@ -1,5 +1,5 @@
-:: Keys free to extend: aghlnuwz, AGHJKLNOPQRWXZ, all special keys except ^B,^C,^F,^H,^L,^M,^T,^Y, 0-9, <,/,?, Space,^Space, Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
-:: Used in this file: a ^A ^D g ^L n N w W ^W ^X Z ^Z
+:: Keys free to extend: aghlnuwz, AGHJKLNOPQRWXZ, all special keys except ^B,^C,^F,^H,^L,^M,^T,^Y, 0-9, <,/,?, Space,^Space, Enter,^Enter, F1, Up,Down,Left,Right,Home,End,PageUp,PageDown
+:: Used in this file: a ^A ^D g ^L n N w W ^W X ^X Z ^Z
 
 @echo off
 if "%~1" == "_GET_EXTENDED_HELP" goto GETHELP
@@ -18,6 +18,8 @@ if %LKEY% == "n" if not "!FT%CURRPOS%!"=="/" cmd /C %EDITCMD2% !FO%CURRPOS%!
 if %LKEY% == "N" call :GETANSWER "Edit file:"& if not "!ANSWER!"=="" cmd /C %EDITCMD2% !ANSWER!
 
 if %LKEY% == "g" call :GETANSWER "Go:"& if not "!ANSWER!"=="" set KEY=85&call g.bat !ANSWER!& exit /b 2 & goto :eof
+
+if %LKEY% == "X" start explorer !DIR%DIROP%! & goto :eof
 
 :: ^L
 if %KEY% == 12 call :GETANSWER "Copy from:"& if not "!ANSWER!"=="" cmd /C copy /Y !ANSWER! .>nul& exit /b 3 & goto :eof
