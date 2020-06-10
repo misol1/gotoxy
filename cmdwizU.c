@@ -6,7 +6,7 @@ Contributions:
 
 Steffen Ilhardt: windowlist function, finding non-console windows for other window operations, original insertbmp function, original setwindowtransparency function, getexetype function
 
-Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscreen function, showmousecursor fuction
+Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscreen function, showmousecursor function
 
 */
 
@@ -33,17 +33,14 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 
 // Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -lwinmm -luser32 -lgdi32
 
-// TODO:
-//			1. transparentbmp (1.transparent col, 2.semi-transparent bitmap?). Color area: cmdgfx_gdi "" fa:20,20,100,100 - ff7744 ) 
-//			2. support utf-8 arguments
-//			3. support saving Unicode with saveblock, add Unicode support for gxy file format
-
-// Known bugs:
-//			1. Showmousecursor to hide does not work on Win10 (unless legacy console is used).
+// Known issues/bugs:
+//			1. Showmousecursor hide does not work on Win10 (unless legacy console is used).
 //			2. Setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates
-//			5. Like saveblock, copyblock/moveblock probably does not work with Unicode chars and/or extended Ascii chars
+//			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates too (bit overflow?)
+//			5. Saveblock, copyblock/moveblock does not work with Unicode chars and/or extended Ascii chars. Even if saveblock worked with Unicode, gxy format does not currently support Unicode anyway.
+//			6. utf-8 arguments are not supported
+//			7. only way for fullscreen op to know if it supports Alt-enter, is to run fullscreen 1. Leads to annoying behavior when running fullscreen 0 on non-legacy console since fullscreen 1 is run first, then 0
 
 #define BUFW 0
 #define BUFH 1
@@ -617,8 +614,11 @@ int getFileDim(TCHAR *fname) {
 	int w=-1, h=-1;
 
 	ifp=_wfopen(fname, L"rb");
-	if (ifp == NULL)
+	if (ifp == NULL) {
+		wprintf(TEXT("Error: file not found\n"));
+		//wprintf(TEXT("Error: file not found: %s\n"), fname);
 		return 1;
+	}
 	
 	if (wcsstr(fname, L".bmp") != NULL) {
 		fseek(ifp, 18, SEEK_CUR);
@@ -1184,7 +1184,7 @@ int main(int oargc, char **oargv) {
 		}
 	} */	
 	
-	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.4 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen getfullscreen showwindow sendkey windowlist gettaskbarinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation\n"); return 0; }
+	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.5 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen getfullscreen showwindow sendkey windowlist gettaskbarinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation\n"); return 0; }
 
 	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
 
@@ -1963,8 +1963,14 @@ int main(int oargc, char **oargv) {
 	else if (_wcsicmp(argv[1],L"getdisplaydim") == 0) {
 		int bW = 0;
 
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h]\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return clean(0); }
-		if (argv[2][0] == 'w') bW = 1;
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h] [scaled]\n\nSpecify scaled to modify result by display scaling.\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return clean(0); }
+		if (argv[2][0] == 'w' || argv[2][0] == 'W') bW = 1;
+
+		if (! (argc > 3 && argv[3][0] == 's') ) {
+			//SetThreadDpiAwarenessContext(DPI_AWARENESS_UNAWARE); // not available in my gcc header or user32 lib (Win10). The ACTUAL recommended way is to use no call, but a manifest for DPI awareness instead.
+			//SetProcessDpiAwareness(DPI_AWARENESS_UNAWARE); // same. SetProcessDpiAwareness is Win8 rec. 
+			SetProcessDPIAware(); // works, since Vista
+		}
 
 		return clean(GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN));
 	}
@@ -2307,36 +2313,132 @@ int main(int oargc, char **oargv) {
 	}
 	else if (_wcsicmp(argv[1],L"sendkey") == 0) {
 		int x, y, done = 0, j;
-		int click = 0, amount = 1;
+		int click = 0, amount = 1, repeat=1;
 		INPUT Input = {0};
 		TCHAR buf[128];
 		POINT pos;
 
-		if (argc < 4 || bInfo) { printf("\nUsage: cmdwiz sendkey [[0x]VKEY[h] p|d|u]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz sendkey [[0x]VKEY[h] p|d|u [repeatCount]] | \"string\"\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n\nFor use of string, only the following keys are directly supported, the rest are keyboard layout specific: space a-z A-Z 0-9 .,+-*/. Use prefix $ for Shift, ^ for Ctrl, @ for Alt, { for Alt-Gr, [ for Win-key, \\ for Enter, } for Tab key. \nExample: to type a ! on most keyboards, use \"$1\".\n"); return clean(0); }
 
-		if (argv[2][0] == '0' && argv[2][1] == 'x') {
-			wcscpy(buf, &argv[2][2]);
-			j = wcstol(buf, NULL, 16);
-			done = 1;
-		} else
-			wcscpy(buf, argv[2]);
-		if (!done) {
-			if (buf[wcslen(buf)-1]=='h') {
-				buf[wcslen(buf)-1]=0;
-				j = wcstol(buf, NULL, 16);
-			} else
-				j = wcstol(buf, NULL, 10);
-		}
-		
-		Input.type = INPUT_KEYBOARD;
-		Input.ki.wVk = j;
+		if (argc < 4) {
+			int shift=0, ctrl=0, alt=0, win=0;
+			for (j = 0; j < wcslen(argv[2]); j++) {
+
+				Input.type = INPUT_KEYBOARD;
+				
+				int key = argv[2][j];
+				
+				while(key == '$' || key == '^' || key == '@' || key == '{' || key == '[') {
+					if (key == '$') shift=1;
+					if (key == '^') ctrl=1;
+					if (key == '@') alt=1;
+					if (key == '{') ctrl=1, alt=1;
+					if (key == '[') win=1;
+					j++;
+					if (j >= wcslen(argv[2]))
+						return clean(0);
+					key = argv[2][j];
+				}
+				
+				if (key >= 'a' && key <= 'z')
+					key = key-'a' + 0x41;
+				else if (key >= 'A' && key <= 'Z')
+					key = key-'A' + 0x41, shift=1;
+				else if (key >= '0' && key <= '9')
+					key = key-'0' + 0x30;
+				else if (key == '.')
+					key = 0xbe;
+				else if (key == '-')
+					key = 0xbd;
+				else if (key == '+')
+					key = 0xbb;
+				else if (key == ',')
+					key = 0xbc;
+				else if (key == '*')
+					key = 0x6a;
+				else if (key == '/')
+					key = 0x6f;
+				else if (key == '\\')
+					key = 0x0D;
+				else if (key == '}')
+					key = 0x09;
+				
+				Input.ki.dwFlags = 0;
+				if (shift) {
+					Input.ki.wVk = 0x10;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+				if (ctrl) {
+					Input.ki.wVk = 0x11;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+				if (alt) {
+					Input.ki.wVk = 0x12;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+				if (win) {
+					Input.ki.wVk = 0x5b;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+				Input.ki.wVk = key;
+				SendInput(1,&Input,sizeof(INPUT));
+				Input.ki.dwFlags = KEYEVENTF_KEYUP;
+				SendInput(1,&Input,sizeof(INPUT));
+				if (shift) {
+					Input.ki.wVk = 0x10;
+					SendInput(1,&Input,sizeof(INPUT));
+					shift=0;
+				}
+				if (ctrl) {
+					Input.ki.wVk = 0x11;
+					SendInput(1,&Input,sizeof(INPUT));
+					ctrl=0;
+				}
+				if (alt) {
+					Input.ki.wVk = 0x12;
+					SendInput(1,&Input,sizeof(INPUT));
+					alt=0;
+				}
+				if (win) {
+					Input.ki.wVk = 0x5b;
+					SendInput(1,&Input,sizeof(INPUT));
+					win=0;
+				}
+			}
 			
-		if (argv[3][0] == 'p' || argv[3][0] == 'd') {
-			SendInput(1,&Input,sizeof(INPUT));
-		}
-		if (argv[3][0] == 'p' || argv[3][0] == 'u') {
-			Input.ki.dwFlags = KEYEVENTF_KEYUP;
-			SendInput(1,&Input,sizeof(INPUT));
+		} else {
+			if (argv[2][0] == '0' && argv[2][1] == 'x') {
+				wcscpy(buf, &argv[2][2]);
+				j = wcstol(buf, NULL, 16);
+				done = 1;
+			} else
+				wcscpy(buf, argv[2]);
+			if (!done) {
+				if (buf[wcslen(buf)-1]=='h') {
+					buf[wcslen(buf)-1]=0;
+					j = wcstol(buf, NULL, 16);
+				} else
+					j = wcstol(buf, NULL, 10);
+			}
+			
+			Input.type = INPUT_KEYBOARD;
+			Input.ki.wVk = j;
+
+			if (argc > 3) {
+				repeat = wcstol(argv[4], NULL, 10);
+				if (repeat < 1) repeat=1;
+			}
+			
+			for (j = 0; j < repeat; j++) {	
+				if (argv[3][0] == 'p' || argv[3][0] == 'd') {
+					Input.ki.dwFlags = 0;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+				if (argv[3][0] == 'p' || argv[3][0] == 'u') {
+					Input.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1,&Input,sizeof(INPUT));
+				}
+			}
 		}
 					
 		return clean(0);
@@ -2381,7 +2483,7 @@ int main(int oargc, char **oargv) {
 	}
 	else {
 		printf("Error: unknown operation\n");
-		return clean(0);
+		return clean(-1);
 	}
 
 	return clean(0); 

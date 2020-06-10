@@ -29,7 +29,7 @@ if not "%TEMP%" == "" set MYTEMP=%TEMP%\
 cls
 mode %COLS%,%LINES%
 
-cmdgfx_input.exe m0W12R | call %0 %* | cmdgfx.exe "fbox u U 20" Se
+cmdgfx_input.exe miR | call %0 %* | cmdgfx.exe "fbox u U 20" Sei
 set ____=
 
 if %MOUSESUPPORT%==1 cmdwiz setquickedit %QE%
@@ -588,8 +588,9 @@ set HELPTEXT=
 
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP
-cmdwiz getch
-if not %ERRORLEVEL% == 27 goto HELPLOOP
+set INPUT=&set /p INPUT=
+for /f "tokens=1,2,4,6, 8,10,12,14,16,18,20,22, 24,26,28" %%A in ("!INPUT!") do ( set EV_BASE=%%A & set /a K_EVENT=%%B, HK_DOWN=%%C, HKEY=%%D,  M_EVENT=%%E, MX=%%F, MY=%%G, M_LB=%%H, M_RB=%%I, M_DBL_LB=%%J, M_DBL_RB=%%K, M_WHEEL=%%L, RESIZED=%%M, SCRW=%%N, SCRH=%%O 2>nul )
+if not %HKEY% == 27 goto HELPLOOP
 call :SHOWLIST
 goto :eof
 
