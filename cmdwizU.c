@@ -40,7 +40,6 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 //			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates too (bit overflow?)
 //			5. Saveblock, copyblock/moveblock does not work with Unicode chars and/or extended Ascii chars. Even if saveblock worked with Unicode, gxy format does not currently support Unicode anyway.
 //			6. utf-8 arguments are not supported
-//			7. only way for fullscreen op to know if it supports Alt-enter, is to run fullscreen 1. Leads to annoying behavior when running fullscreen 0 on non-legacy console since fullscreen 1 is run first, then 0
 
 #define BUFW 0
 #define BUFH 1
@@ -1145,6 +1144,34 @@ void DrawSemiTransparentBitmap(CDC *pDstDC, int x, int y, int nWidth, int nHeigh
 }
 */
 
+int GetIsFullscreen() {
+	int res;
+	long unsigned int modeRes;
+	RECT rcWorkArea, bounds;
+	
+	res = GetConsoleDisplayMode(&modeRes);
+	
+	if (!res || (res && modeRes == 0)) {
+		LONG style, ex_style;
+
+		HWND hWnd = GetConsoleWindow();
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rcWorkArea, 0);
+
+		GetWindowRect(hWnd, &bounds);
+
+		style = GetWindowLong(hWnd, GWL_STYLE);
+		ex_style = GetWindowLong(hWnd, GWL_EXSTYLE);
+	
+		if (bounds.left == rcWorkArea.left && bounds.top == rcWorkArea.top && !(style & (WS_CAPTION | WS_THICKFRAME)) && !(ex_style & (WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
+				 WS_EX_CLIENTEDGE | WS_EX_STATICEDGE)))
+			return 2;
+		else
+			return 0;
+	}
+	
+	return modeRes;
+}
+
 
 TCHAR **argv;
 
@@ -1182,7 +1209,7 @@ int main(int oargc, char **oargv) {
 			if (argv[i][j] > 255) 
 				printf("%d\n", argv[i][j]);
 		}
-	} */	
+	} */
 	
 	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.5 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen getfullscreen showwindow sendkey windowlist gettaskbarinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation\n"); return 0; }
 
@@ -2230,27 +2257,8 @@ int main(int oargc, char **oargv) {
 		
 		if (bInfo) { printf("\nUsage: cmdwiz getfullscreen\n\nRETURN: -1 if failed to get info, 0 if console is windowed, 1 if fullcreen, 2 if 'fake' (legacy) fullscreen\n"); return clean(0); }
 	
-		res = GetConsoleDisplayMode(&modeRes);
-		
-		if (!res || (res && modeRes == 0)) {
-			LONG style, ex_style;
-
-			HWND hWnd = GetConsoleWindow();
-			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcWorkArea, 0);
-
-			GetWindowRect(hWnd, &bounds);
-
-			style = GetWindowLong(hWnd, GWL_STYLE);
-			ex_style = GetWindowLong(hWnd, GWL_EXSTYLE);
-		
-			if (bounds.left == rcWorkArea.left && bounds.top == rcWorkArea.top && !(style & (WS_CAPTION | WS_THICKFRAME)) && !(ex_style & (WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
-					 WS_EX_CLIENTEDGE | WS_EX_STATICEDGE)))
-				return clean(2);
-			else
-				return 0;
-		}
-		
-		return clean(modeRes);
+		res = GetIsFullscreen();
+		return clean(res);
 		
 	} else if (_wcsicmp(argv[1],L"fullscreen") == 0) {
 		HWND hWnd;
@@ -2261,13 +2269,19 @@ int main(int oargc, char **oargv) {
 		RECT rcWorkArea;
 		DWORD mode;
 		int fs, fail = 0;
+		long unsigned int modeRes = 0;
 	
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz fullscreen [0|1] [legacy]\n\nRETURN: -1 if normal method failed and had to use legacy method, otherwise 0\n"); return clean(0); }
 		
 		fs = _wtoi(argv[2]);
 
 		if (!(argc > 3 && argv[3][0] == 'l')) {
-			int res = SetConsoleDisplayMode (g_conout, CONSOLE_FULLSCREEN_MODE, NULL);	
+			
+			RECT rcWorkArea, bounds;
+
+			if (GetIsFullscreen() == 0 && fs == 0) return clean(0); // don't try to set fullscreen 0 if it already not fullscreen (avoid flicker on the next line)
+			
+			int	res = SetConsoleDisplayMode (g_conout, CONSOLE_FULLSCREEN_MODE, NULL); // only way to know if we support "new" fullscreen is to try it
 			SetConsoleDisplayMode (g_conout, fs? CONSOLE_FULLSCREEN_MODE : CONSOLE_WINDOWED_MODE, NULL);	
 			if (res) return clean(0); else fail = -1;
 		}
