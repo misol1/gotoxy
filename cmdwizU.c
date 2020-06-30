@@ -1211,12 +1211,32 @@ int main(int oargc, char **oargv) {
 		}
 	} */
 	
-	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.5 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen getfullscreen showwindow sendkey windowlist gettaskbarinfo] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation\n"); return 0; }
+	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0) ) { printf("\nCmdWiz (Unicode) v1.6 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate flushkeys getquickedit setquickedit getmouse getch_or_mouse getch_and_mouse getcharat getcolorat showcursor getcursorpos setcursorpos print saveblock copyblock moveblock inspectblock playsound delay stringfind stringlen gettime await getexetype cache setwindowtransparency getwindowbounds setwindowpos setwindowsize getdisplaydim getmousecursorpos setmousecursorpos showmousecursor insertbmp savefont setfont gettitle getwindowstyle setwindowstyle gxyinfo getpalette setpalette fullscreen getfullscreen showwindow sendkey windowlist gettaskbarinfo getdisplayscale] [params]\n\nUse \"cmdwiz operation /?\" for info on arguments and return values\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation\n"); return 0; }
 
 	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
 
 	g_conin = GetInputHandle();
 	g_conout = GetOutputHandle();
+
+	if (_wcsicmp(argv[1],L"getdisplaydim") == 0 && argc > 3 && argv[3][0] == 's') {
+		int bW = 0;
+		if (argv[2][0] == 'w' || argv[2][0] == 'W') bW = 1;
+		return clean(GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN));
+	}
+	else if (_wcsicmp(argv[1],L"getdisplayscale") == 0) {
+		
+		if (bInfo) { printf("\nUsage: cmdwiz getdisplayscale\n\nRETURN: Scale in ERRORLEVEL\n"); return clean(0); }
+		
+		int scaled = GetSystemMetrics(SM_CXSCREEN);
+		SetProcessDPIAware();
+		int unscaled = GetSystemMetrics(SM_CXSCREEN);
+		float ratio = (float)unscaled / (float) scaled;
+		
+		return clean((int)(ratio*100));
+	}
+
+	SetProcessDPIAware(); // SetThreadDpiAwarenessContext(DPI_AWARENESS_UNAWARE) and SetProcessDpiAwareness(DPI_AWARENESS_UNAWARE) not available in my gcc headers or user32 lib (Win10). Anyway the ACTUAL recommended way is to use no call, but a manifest file for DPI awareness.
+
 
 	if (_wcsicmp(argv[1],L"cache") == 0) {
 		FILE *ifp, *ifp2;
@@ -1934,25 +1954,45 @@ int main(int oargc, char **oargv) {
 		RECT bounds;
 		HWND hWnd;
 		int pos = -1;
+		int bExcludeBorders = 0;
 		hWnd = GetConsoleWindow();
 				
-		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h] %s]\n\nRETURN: The requested value in ERRORLEVEL\n", windowSpecHelp); return clean(0); }
+		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getwindowbounds [x|y|w|h] [includeBorders|excludeBorders|alwaysExcludeBorders] %s]\n\nRETURN: The requested value in ERRORLEVEL\n", windowSpecHelp); return clean(0); }
 
-		if (argc > 3) {
-			hWnd = GetWinHandle(argv[3]);
+		if (argc > 4 || (argc > 3 && argv[3][0] == '/')) {
+			hWnd = GetWinHandle(argc > 4? argv[4] : argv[3]);
 			if (!hWnd) {
 				puts("Error: Could not find specified window");
 				return clean(-1);
 			}
 		}
+
+		if (argc > 3 && argv[3][0] == 'e') bExcludeBorders = 1;
+		if (argc > 3 && argv[3][0] == 'a') bExcludeBorders = 2;
 		
 		if (!hWnd) return clean(-1);
 		GetWindowRect(hWnd, &bounds);
 
-		if (argv[2][0] == 'y') return clean(bounds.top);
-		if (argv[2][0] == 'w') return clean(bounds.right - bounds.left);
-		if (argv[2][0] == 'h') return clean(bounds.bottom - bounds.top);
-		return clean(bounds.left);
+		if (!bExcludeBorders) {
+			if (argv[2][0] == 'y') return clean(bounds.top);
+			if (argv[2][0] == 'w') return clean(bounds.right - bounds.left);
+			if (argv[2][0] == 'h') return clean(bounds.bottom - bounds.top);
+			return clean(bounds.left);
+		} else {
+			int fw=0, fh=0, fth=0;
+			long valueFlags = GetWindowLongPtr(hWnd, GWL_STYLE);
+		
+			if (GetIsFullscreen() == 0) {
+				if ((valueFlags && WS_BORDER) || bExcludeBorders == 2) fw = GetSystemMetrics(SM_CXSIZEFRAME);
+				if ((valueFlags && WS_CAPTION) || bExcludeBorders == 2) fth = GetSystemMetrics(SM_CYCAPTION);
+				if ((valueFlags && WS_BORDER) || bExcludeBorders == 2) fh = GetSystemMetrics(SM_CYSIZEFRAME);
+			}
+
+			if (argv[2][0] == 'y') return clean(bounds.top + fth + fh);
+			if (argv[2][0] == 'w') return clean(bounds.right - bounds.left - fw*2);
+			if (argv[2][0] == 'h') return clean(bounds.bottom - bounds.top - fth - fh*2);
+			return clean(bounds.left + fw);
+		}
 	}
 	else if (_wcsicmp(argv[1],L"gettitle") == 0) {
 		TCHAR title[1024];
@@ -1992,12 +2032,6 @@ int main(int oargc, char **oargv) {
 
 		if (argc < 3 || bInfo) { printf("\nUsage: cmdwiz getdisplaydim [w|h] [scaled]\n\nSpecify scaled to modify result by display scaling.\n\nRETURN: The requested screen dimension in ERRORLEVEL\n"); return clean(0); }
 		if (argv[2][0] == 'w' || argv[2][0] == 'W') bW = 1;
-
-		if (! (argc > 3 && argv[3][0] == 's') ) {
-			//SetThreadDpiAwarenessContext(DPI_AWARENESS_UNAWARE); // not available in my gcc header or user32 lib (Win10). The ACTUAL recommended way is to use no call, but a manifest for DPI awareness instead.
-			//SetProcessDpiAwareness(DPI_AWARENESS_UNAWARE); // same. SetProcessDpiAwareness is Win8 rec. 
-			SetProcessDPIAware(); // works, since Vista
-		}
 
 		return clean(GetSystemMetrics(bW ? SM_CXSCREEN : SM_CYSCREEN));
 	}
