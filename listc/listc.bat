@@ -255,7 +255,7 @@ goto :eof
 
 :PAUSE
 echo Press a key to continue...
-cmdwiz getch
+call :GETCH NOTUSED
 goto :eof
 
 
@@ -347,8 +347,7 @@ goto :eof
 :SORTOP
 call :SHOWBOTTOMBAR "Sort using (n)ame, (e)xtension, (s)ize, or (d)date? "
 :SORTLOOP
-cmdwiz getch
-set YNKEY=%ERRORLEVEL%
+call :GETCH YNKEY
 if %YNKEY% == 110 set SORT=N&set YNKEY=-1
 if %YNKEY% == 101 set SORT=EN&set YNKEY=-1
 if %YNKEY% == 115 set SORT=-SN&set YNKEY=-1
@@ -530,12 +529,19 @@ goto :eof
 :YESNO
 call :SHOWBOTTOMBAR %1
 :YNLOOP
-cmdwiz getch
-set YNKEY=%ERRORLEVEL%
+call :GETCH YNKEY
 if %YNKEY% == 110 set ANSWER=N&set YNKEY=-1
 if %YNKEY% == 121 set ANSWER=Y&set YNKEY=-1
 if not %YNKEY%==-1 goto YNLOOP
 call :SHOWBOTTOMBAR
+goto :eof
+
+
+:GETCH
+set INPUT=&set /p INPUT=
+for /f "tokens=1,2,4,6" %%A in ("!INPUT!") do ( set EV_BASE=%%A & set /a K_EVENT=%%B, GK_DOWN=%%C, GKEY=%%D 2>nul )
+if !GKEY!==0 goto :GETCH
+set %1=!GKEY!
 goto :eof
 
 
@@ -588,8 +594,7 @@ set HELPTEXT=
 
 call :SHOWBOTTOMBAR "Press ESCAPE to go back."
 :HELPLOOP
-set INPUT=&set /p INPUT=
-for /f "tokens=1,2,4,6, 8,10,12,14,16,18,20,22, 24,26,28" %%A in ("!INPUT!") do ( set EV_BASE=%%A & set /a K_EVENT=%%B, HK_DOWN=%%C, HKEY=%%D,  M_EVENT=%%E, MX=%%F, MY=%%G, M_LB=%%H, M_RB=%%I, M_DBL_LB=%%J, M_DBL_RB=%%K, M_WHEEL=%%L, RESIZED=%%M, SCRW=%%N, SCRH=%%O 2>nul )
+call :GETCH HKEY
 if not %HKEY% == 27 goto HELPLOOP
 call :SHOWLIST
 goto :eof

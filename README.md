@@ -1,14 +1,16 @@
 # gotoxy
-Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015-2016)
+Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015-2018)
 
 Sorry about the current lack of documentation; have a look at the example files and all will be (kind of) clear...
 
-Notable examples: L/Listb(file manager), Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll3, Blocks6
+Notable examples: Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll3, Blocks6
 
 
 gotoxy.exe
 ----------
 ```
+GotoXY v1.1 : Mikael Sollenborn 2015-2020
+
 Usage: gotoxy x(1) y(1) [text|file.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapxpos]
 
 Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray
@@ -56,7 +58,7 @@ gotoxy_extended.exe
 ```
 Separate executable due to lower speed. There are currently two extensions:
 
-1. Control code \k[:xx..;]: check for key xx, yy etc, don't wait; return keystate(s)
+1. Control code \L[:xx..;]: check for key xx, yy etc, don't wait; return keystate(s)
 
 2. Correctly prints extended ascii characters as input when written as-is
 
@@ -65,19 +67,34 @@ Separate executable due to lower speed. There are currently two extensions:
 cmdwiz.exe
 ----------
 ```
-CmdWiz (Unicode) v1.2 : Mikael Sollenborn 2015-2018
+CmdWiz (Unicode) v1.7 : Mikael Sollenborn 2015-2020
 With contributions from Steffen Ilhardt and Carlos Montiers Aguilera
 
-Usage: cmdwiz [getconsoledim setbuffersize getconsolecolor getch getkeystate
-               flushkeys getquickedit setquickedit getmouse getch_or_mouse
-               getch_and_mouse getcharat getcolorat showcursor getcursorpos
-               setcursorpos print saveblock copyblock moveblock inspectblock
-               playsound delay stringfind stringlen gettime await getexetype
-               cache setwindowtransparency getwindowbounds setwindowpos
-               setwindowsize getdisplaydim getmousecursorpos setmousecursorpos
-               showmousecursor insertbmp savefont setfont gettitle getwindowstyle
-               setwindowstyle gxyinfo getpalette setpalette fullscreen
-               showwindow sendkey windowlist] [params]
-			   
-Use \"cmdwiz operation /?\" for info on arguments and return values\n
+Usage: cmdwiz operation [arguments]
+
+
+Console window: fullscreen getconsoledim getfullscreen getpalette setbuffersize setpalette
+
+Window and display: getdisplaydim getdisplayscale getwindowbounds getwindowstyle setwindowpos 
+setwindowsize setwindowstyle setwindowtransparency showwindow windowlist
+
+Input: flushkeys getch getch_and_mouse getch_or_mouse getkeystate getmouse getquickedit setquickedit
+
+Fonts and buffer: getcharat getcolorat getconsolecolor setfont savefont
+
+Cursor and printing: getcursorpos print setcursorpos showcursor
+
+String and delay: await delay gettime stringfind stringlen
+
+Mouse and keyboard: getmousecursorpos sendkey setmousecursorpos showmousecursor
+
+Block: copyblock inspectblock moveblock saveblock
+
+Misc: cache getexetype gettaskbarinfo gettitle gxyinfo insertbmp playsound server
+
+
+Use "cmdwiz operation /?" for info on an operation's arguments and return values, for example cmdwiz delay /?
+
+See https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation.```
+
 ```

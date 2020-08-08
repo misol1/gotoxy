@@ -5,7 +5,7 @@ call :WAITWIN notepad.exe 1
 start notepad.exe
 call :WAITWIN notepad.exe 0
 
-set winTarget=/N:notepad.exe
+set winTarget=/N:notepad.exe:f
 
 cmdwiz showwindow top %winTarget%
 cmdwiz setwindowsize 600 480 %winTarget%

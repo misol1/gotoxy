@@ -28,7 +28,7 @@ set /a DDY+=9
 set /a DY+=%DDY%
 set /a Y=(%MID%+%DY%)/256
 
-gotoxy_extended.exe 5 %OY% " \p5;%Y%O\p%BARX%;%BAR1Y%%BAR:~1,-1%\p%BARX%;%BAR2Y%%BAR:~1,-1%\k:111b;%DELAY%" 14
+gotoxy_extended.exe 5 %OY% " \p5;%Y%O\p%BARX%;%BAR1Y%%BAR:~1,-1%\p%BARX%;%BAR2Y%%BAR:~1,-1%\L:111b;%DELAY%" 14
 set VKEYS=%ERRORLEVEL%
 set OY=%Y%
 

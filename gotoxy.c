@@ -1,4 +1,4 @@
-/* GotoXY (c) 2015-18 Mikael Sollenborn */
+/* GotoXY (c) 2015-20 Mikael Sollenborn */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,12 +6,6 @@
 #include <windows.h>
 #include <ctype.h>
 #include <conio.h>
-
-// Compilation with tcc(32 bit version) : tcc -lshell32 -lwinmm -luser32 -o gotoxy.exe gotoxy.c
-
-// TODO: 1. Transparency (with \T switch) does not work with encoded characters in the input.
-//       2. If end of line, \I: should not have to finish with ;
-//       3. Can write \ak, to use last color for bg and "a" for fg, but not \ka, then "a" is not used for bg, instead last color is used for both fg and bg
 
 //#define SUPPORT_EXTENDED
 #ifdef SUPPORT_EXTENDED
@@ -21,22 +15,15 @@
 
 //#define DEBUG_PRINT
 #ifdef DEBUG_PRINT
-void DebugPrint(char *msg, int px, int py, int waitVal);
-void DebugPrintI(int v, int px, int py, int waitVal);
-void DebugPrintIS(int v);
+static void DebugPrint(char * const msg, const int px, const int py, const int waitVal);
+static void DebugPrintI(const int v, const int px, const int py, const int waitVal);
+static void DebugPrintIS(const int v);
 #endif
 
 // Constants
 #define UNKNOWN -999999
-#define HIGH_NUMBER 1000000
 #define MAX_STR_SIZE 64000
 #define MAX_BUF_SIZE 128000
-
-#define OFFSCREEN_NEW_COPY   1
-#define OFFSCREEN_NEW_CLEAR  2
-
-#define KEY_WAIT   1
-#define KEY_CHECK  2
 
 #define DIM_WIDTH  0
 #define DIM_HEIGHT 1
@@ -68,20 +55,23 @@ void DebugPrintIS(int v);
 #define OR_EXISTING_FG 8192
 #define ADD_EXISTING_FG 16384
 
+// Server
+#define MAX_SERVER_STRING_SIZE 128000
 
-HANDLE g_conout;
 
-HANDLE GetOutputHandle() {
+static HANDLE g_conout;
+
+static HANDLE GetOutputHandle(void) {
 	return CreateFile("CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 }
 
-int GetDim(HANDLE h, int bH) {
+static int GetDim(const HANDLE h, const int bH) {
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 	GetConsoleScreenBufferInfo(h, &screenBufferInfo);
 	return bH? screenBufferInfo.dwSize.Y : screenBufferInfo.dwSize.X;
 }
 
-void GotoXY(HANDLE h, int x, int y) {
+static void GotoXY(const HANDLE h, int x, int y) {
 	COORD coord;
 	BOOL res;
 	if (x < 0) x = 0;
@@ -99,21 +89,21 @@ void GotoXY(HANDLE h, int x, int y) {
 	}
 }
 
-void GetXY(HANDLE h, int *x, int *y) {
+static void GetXY(const HANDLE h, int *x, int *y) {
 	CONSOLE_SCREEN_BUFFER_INFO	csbInfo;
 	GetConsoleScreenBufferInfo(h, &csbInfo);
 	*x = csbInfo.dwCursorPosition.X;
 	*y = csbInfo.dwCursorPosition.Y;
 }
 
-void ClrScr(HANDLE h, int attrib, int glyph) {
+static void ClrScr(const HANDLE h, const int attrib, const int glyph) {
 	COORD a = {0,0};
 	DWORD nwrite;
 	FillConsoleOutputAttribute(h, attrib, GetDim(h,DIM_WIDTH)*GetDim(h,DIM_HEIGHT), a, &nwrite);
 	FillConsoleOutputCharacter(h, glyph, GetDim(h,DIM_WIDTH)*GetDim(h,DIM_HEIGHT), a, &nwrite);
 }
 
-int GetHex(char c) {
+static int GetHex(const char c) {
 	int pc = c -'0';
 	if (pc > 9 || pc < 0) pc=0;
 	switch(c) {
@@ -127,7 +117,7 @@ int GetHex(char c) {
 	return pc;
 }
 
-int GetCol(char c, int oldc, int orgConsoleCol, int *forceCol) {
+static int GetCol(const char c, const int oldc, const int orgConsoleCol, int * const forceCol) {
 	int pc = c -'0';
 	if (pc > 9 || pc < 0) pc=oldc;
 	switch(c) {
@@ -163,11 +153,10 @@ int GetCol(char c, int oldc, int orgConsoleCol, int *forceCol) {
 	return pc;
 }
 
-void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx, int ny) {
+static void CopyBuffer(const HANDLE hSrc, const HANDLE hDest, const int ox, const int oy, const int w, const int h, const int nx, const int ny) {
 	COORD a, b = {0,0};
 	SMALL_RECT r;
 	CHAR_INFO *str;
-	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 
 	str = (CHAR_INFO *) malloc (sizeof(CHAR_INFO) * MAX_STR_SIZE);
 	if (!str)
@@ -204,7 +193,7 @@ void CopyBuffer(HANDLE hSrc, HANDLE hDest, int ox, int oy, int w, int h, int nx,
 		case ADD_EXISTING_FG: colType = (attribs & 0xf) + (colType-ADD_EXISTING_FG); if (colType > 15) colType=15; break; \
 	}	
 		
-int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreateBuffer, CHAR_INFO **currentConsoleOutput) {
+static int GetColorTranspCol(const HANDLE h, int fgCol, int bgCol, const int x, const int y, int * const bCreateBuffer, CHAR_INFO ** const currentConsoleOutput) {
 	static HANDLE hOldHandle = INVALID_HANDLE_VALUE;
 	static int height = 0, width = 0;
 	SMALL_RECT r;
@@ -272,7 +261,7 @@ int GetColorTranspCol(HANDLE h, int fgCol, int bgCol, int x, int y, int *bCreate
 		return fgCol | (bgCol<<4);
 }
 
-void ScrollUp(HANDLE h, int scrolldims[], int orgConsoleCol) {
+static void ScrollUp(const HANDLE h, const int * const scrolldims, const int orgConsoleCol) {
 	COORD np = {0,0};
 	SMALL_RECT r;
 	CHAR_INFO chiFill;
@@ -290,17 +279,27 @@ void ScrollUp(HANDLE h, int scrolldims[], int orgConsoleCol) {
 	ScrollConsoleScreenBuffer(h, &r, NULL, np, &chiFill);
 }
 
-int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int flags, int wrapxpos, int orgConsoleCol, unsigned int startT) {
+static int WriteText(unsigned char * const text, int fgCol, int bgCol, int * const x, int * const y, const int flags, const int wrapxpos, const int orgConsoleCol, unsigned int startT) {
+	
+	#define OFFSCREEN_NEW_COPY   1
+	#define OFFSCREEN_NEW_CLEAR  2
+
+	#define KEY_WAIT   1
+	#define KEY_CHECK  2
+
+	#define HIGH_NUMBER 1000000
+	
 	HANDLE hCurrHandle, hNewScreenBuffer = INVALID_HANDLE_VALUE;
 	int bufdims[4] = {0,0,80,25}, scrolldims[4] = {0,0,80,25}, newscrolldims[4], bNewHandle = 0, bCopyback = 0, bNewScrollDims = 0, bIgnoreNewline = 0;
 	int newX=UNKNOWN, newY=UNKNOWN, waitValue = -1, awaitValue = -1;
 	int transpChar = -1, transpFg = -1, transpBg = -1, fgBgCol;
 	int bForceFg = 0, bForceBg = 0, oldfc, oldbc;
-	int maxY = HIGH_NUMBER, bDoScroll = 1, bScrollNow = 0, wrap = 0, wordwrap = 0, bAllowCodes = 1, lastSep = -1, lastSepj;
+	int maxY = HIGH_NUMBER, bDoScroll = 1, bScrollNow = 0, wrap = 0, wordwrap = 0, bAllowCodes = 1, lastSep = -1, lastSepj = 0;
 	CHAR_INFO *currentConsoleOutput = NULL;
-	int i, j, inlen, orgx, yp = 0, keyWait = 0, bUseCurrentConsoleOutput = 0;
+	int j, orgx, yp = 0, keyWait = 0, bUseCurrentConsoleOutput = 0;
 	int keyret = 0, bBreakToWrite, bCheckWrap, bHandleTransp;
-	int bY, k, ks, v, v16, dI, tmp1, tmp2, relX, relY, bWroteTab = 0, transparentMode = 0;
+	int bY, k, v, v16, dI, tmp1, tmp2, relX, relY, bWroteTab = 0, transparentMode = 0;
+	unsigned int inlen, i;
 	char ch, number[1024];
 	SMALL_RECT r;
 	CHAR_INFO *str;
@@ -334,7 +333,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	if (bgCol < 0) { bForceBg = 1; bgCol = -bgCol; if (bgCol > 15 && bgCol < USE_EXISTING_FG) bgCol=0; }
 	fgBgCol = fgCol | (bgCol<<4);
 	if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG) fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
-	inlen = strlen(text);
+	inlen = strlen((char *)text);
 
 	if (flags & F_FOLLOWCURSORVISIBLE)
 		GotoXY(hCurrHandle, *x, *y);
@@ -363,6 +362,10 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 							v = GetHex(text[i]);
 						}
 						v16 = (v16*16) + v;
+						if (transpChar >= 0) {
+							ch = v16;
+							goto UGLY_TRANSPARENT_ENCODED_CHAR_FIX_JUMP;
+						}
 						str[j].Char.AsciiChar = v16;
 						if (fgCol >= USE_EXISTING_FG || bgCol >= USE_EXISTING_FG)
 							fgBgCol = GetColorTranspCol(hCurrHandle, fgCol, bgCol, *x+j, *y, &bUseCurrentConsoleOutput, &currentConsoleOutput);
@@ -461,11 +464,12 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 						break;
 					}
 					
-					case 'k': {
+					case 'L': {
 						i++;
 						keyWait = KEY_CHECK;
 #ifdef SUPPORT_KEYCODES_CHECK
 						if (text[i] == ':') { 
+							int ks;
 							k = 0;
 							keyret = 0;
 							keyWait = 0;
@@ -481,6 +485,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 #endif
 						break;
 					}
+
 /*
 					case 't': { // tab support
 						tmp1 = 4;
@@ -679,7 +684,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 						if (!bForceFg || ch=='h' || fgCol > USE_EXISTING_BG ) fgCol = GetCol(ch, fgCol, orgConsoleCol, &bForceFg);
 						i++;
 						if (i < inlen) {
-							if (!bForceBg || text[i]=='h' || bgCol > USE_EXISTING_BG ) bgCol = GetCol(text[i], bgCol, orgConsoleCol, &bForceBg);
+							if (!bForceBg || text[i]=='h' || bgCol > USE_EXISTING_BG ) { bgCol = GetCol(text[i], bgCol, orgConsoleCol, &bForceBg); }
 						}
 						fgBgCol = fgCol | (bgCol<<4);
 					}
@@ -688,6 +693,7 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 				if (bBreakToWrite) break;
 				
 			} else {
+UGLY_TRANSPARENT_ENCODED_CHAR_FIX_JUMP:
 				if (transparentMode == 0 && ch == transpChar && (transpFg == fgCol || transpFg==-1) && (transpBg == bgCol || transpBg==-1)) {
 					bCheckWrap = bHandleTransp = 1;
 				} else if (ch == 10) {
@@ -854,31 +860,39 @@ int WriteText(unsigned char *text, int fgCol, int bgCol, int *x, int *y, int fla
 	if (*x!=orgx) (*x)--;
 	
 	return keyret;
+	
+	#undef OFFSCREEN_NEW_COPY
+	#undef OFFSCREEN_NEW_CLEAR
+	#undef KEY_WAIT
+	#undef KEY_CHECK
+	#undef HIGH_NUMBER
 }
 
+
 #ifdef DEBUG_PRINT
-void DebugPrint(char *msg, int px, int py, int waitVal) {
+static void DebugPrint(char * const msg, int px, int py, const int waitVal) {
 	static int bDebugPrinting = 0;
 	if (bDebugPrinting) return;
 	bDebugPrinting = 1;
-	WriteText(msg, 15, 0, &px, &py, 0, 0, 7, 0);
+	WriteText((unsigned char *)msg, 15, 0, &px, &py, 0, 0, 7, 0);
 	bDebugPrinting = 0;
 	if (waitVal > 0)
 		Sleep(waitVal);
 }
 
-void DebugPrintI(int v, int px, int py, int waitVal) {
+static void DebugPrintI(const int v, const int px, const int py, const int waitVal) {
 	char dbuf[64];
 	sprintf(dbuf, "%d                ", v);
 	DebugPrint(dbuf, px, py, waitVal);
 }
 
-void DebugPrintIS(int v) {
+// note: inline is to get rid of "unused function" warning 
+inline static void DebugPrintIS(const int v) {
 	DebugPrintI(v, 66, 0, 0);
 }
 #endif
 
-int GetConsoleColor(){
+static int GetConsoleColor(void){
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	if (!GetConsoleScreenBufferInfo(g_conout, &info))
 		return 0x7;
@@ -886,7 +900,7 @@ int GetConsoleColor(){
 }
 
 
-char *InlineGxy(char *inp, int bAllocated) {
+static char *InlineGxy(char *inp, __attribute__((unused)) int bAllocated) {
 	char *nb = NULL, *nf = NULL, *fnd, *fnd2, fname[256], *currI, *currO, nofile[64] = "[FILE NOT FOUND]";
 	FILE *ifp;
 	int fr;
@@ -936,11 +950,11 @@ char *InlineGxy(char *inp, int bAllocated) {
 }
 
 
-char *EvaluateExpression(char *inp, int bAllocated) {
+static char *EvaluateExpression(char *inp, int bAllocated) {
 	int i, j, sl, l, reps, bExp, bMoreExp, biggestSl, slen;
 	char nofrep[64], *nb = NULL, *oldnb = NULL, *subs, *in=inp;
 
-	subs = (unsigned char *)malloc(MAX_STR_SIZE);
+	subs = malloc(MAX_STR_SIZE);
 	if (!subs) return NULL;
 
 	do {
@@ -975,7 +989,7 @@ char *EvaluateExpression(char *inp, int bAllocated) {
 	
 		if (bExp && biggestSl < MAX_STR_SIZE) {
 			oldnb = nb;
-			nb = (unsigned char *)malloc(l + 1);
+			nb = malloc(l + 1);
 			l = 0;
 			if (nb) {
 				nb[0] = 0;
@@ -1026,7 +1040,8 @@ char *EvaluateExpression(char *inp, int bAllocated) {
 	return nb? nb : NULL;
 }
 
-int main(int argc, char **argv) {
+
+int main(int argc, char **oargv) {
 #ifdef SUPPORT_EXTENDED	
 	char verS[16] = " (extended)";
 #else
@@ -1034,191 +1049,266 @@ int main(int argc, char **argv) {
 #endif
 	
 #ifdef SUPPORT_KEYCODES_CHECK
-	char iH[128] = "\\k[:xx..;]: check for key xx,yy etc, don't wait; return keystate(s)\n";
+	char iH[128] = "\\L[:xx..;]: check for hex key xx,yy etc, don't wait; return keystate(s)\n";
 #else
 	char iH[128] = "";
 #endif
-	int ox = UNKNOWN, oy;
+	int ox = UNKNOWN, oy = UNKNOWN;
 	int x, y, dummy;
 	int orgConsoleCol = 0x7;
-	int fgCol = 7, bgCol = 0, wrap = 0, wrapxpos = 0, bAllowCodes = 1;
+	int fgCol = 7, bgCol = 0, wrapxpos = 0;
 	int flags = 0;
 	unsigned char *u8buf = NULL;
 	char ch;
 	int keyret = 0;
 	unsigned int startT;
 	HANDLE h;
-
-	startT = GetTickCount();
+	int bServer = 0;
+	char *ops = NULL;
+	char **argv = oargv;
+	char *tokArgs[10];
 
 	if (argc < 3 || argc > 8) {
-		printf("\nGotoXY%s v1.0 : Mikael Sollenborn 2015-2018\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n", verS);
+		printf("\nGotoXY%s v1.1 : Mikael Sollenborn 2015-2020\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n", verS);
 		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
+		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value, 'S' to enable (and disable) server mode\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
 		return keyret;
 	}
 	
 	g_conout = h = GetOutputHandle();	
-	
-	ch = argv[1][0];
-	switch(ch) {
-		case 'k':case '/':case '+': GetXY(h, &ox, &oy); x = ox; if (ch == '+') x += atoi(&(argv[1][1])); if (ch == '/') x -= atoi(&(argv[1][1])); break;
-		default: x = atoi(argv[1]);
-	}
-	ch = argv[2][0];
-	switch(ch) {
-		case 'k':case '/':case '+': if (ox == UNKNOWN) GetXY(h, &ox, &oy); y = oy; if (ch == '+') y += atoi(&(argv[2][1])); if (ch == '/') y -= atoi(&(argv[2][1])); break;
-		default: y = atoi(argv[2]);
-	}
-	
-	if (argc > 6) {
-		int wxp, i;
-		for (i=0; i < strlen(argv[6]); i++) {
-			switch(argv[6][i]) {
-			case 'w': flags |= F_WRAPSPRITE; break;
-			case 'z': flags |= F_WRAP0; break;
-			case 'W': flags |= F_WORDWRAP; break;
-			case 's': flags |= F_YSCROLL; break;
-			case 'i': flags |= F_IGNORECODES; break;
-			case 'c': flags |= F_FOLLOWCURSOR; break;
-			case 'C': flags |= F_FOLLOWCURSORVISIBLE | F_FOLLOWCURSOR; break;
-			case 'r': flags |= F_RESTORECURSOR; break;
-			case 'x': flags |= F_EVALUATEEXPRESSIONS; break;
-			case 'F': flags |= F_FORCE_FILE_INPUT; break;
-			case 'T': flags |= F_FORCE_TEXT_INPUT; break;
-			case 'k': flags |= F_RETURN_KEY_INPUT; break;
-			case 'n': flags |= F_IGNORE_NEWLINE_CHAR; break;
-			}
+
+	do {
+		startT = GetTickCount();
+		
+		orgConsoleCol = 0x7;
+		fgCol = 7, bgCol = 0, wrapxpos = 0; flags = 0;
+		u8buf = NULL;		
+		
+		ch = argv[1][0];
+		switch(ch) {
+			case 'k':case '/':case '+': GetXY(h, &ox, &oy); x = ox; if (ch == '+') x += atoi(&(argv[1][1])); if (ch == '/') x -= atoi(&(argv[1][1])); break;
+			default: x = atoi(argv[1]);
 		}
-		wrapxpos = GetDim(h, DIM_WIDTH) - 1;
-		if (argc > 7) {
-			wxp = atoi(argv[7]);
-			if (wxp >= x)
-				wrapxpos = wxp;
+		ch = argv[2][0];
+		switch(ch) {
+			case 'k':case '/':case '+': if (ox == UNKNOWN) GetXY(h, &ox, &oy); y = oy; if (ch == '+') y += atoi(&(argv[2][1])); if (ch == '/') y -= atoi(&(argv[2][1])); break;
+			default: y = atoi(argv[2]);
 		}
-	}
-	
-	if (argc > 3) {
-		int al=strlen(argv[3]);
-
-		if ((flags & F_FORCE_FILE_INPUT) || (!(flags & F_FORCE_TEXT_INPUT) && al > 4 && argv[3][al-4]=='.' && tolower(argv[3][al-3])=='g' && tolower(argv[3][al-2])=='x' && tolower(argv[3][al-1])=='y')) {
-			FILE *ifp;
-			LPWSTR *szArglist;
-			int nArgs;
-			
-			szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
-			if( NULL == szArglist )
-				ifp=fopen(argv[3], "r");
-			else
-				ifp=_wfopen(szArglist[3], L"r");
-
-			if (ifp == NULL) {
-				printf("Error: file not found.\n");
-				CloseHandle(g_conout);
-				return -1;
-			}
-			u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
-			if (u8buf) {
-				int fr;
-				fr=fread(u8buf, 1, MAX_BUF_SIZE, ifp);
-				u8buf[fr]=0;
-				fclose(ifp);
-			}
-			if (szArglist)
-				LocalFree(szArglist);
-		} 
-#ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE
-		else { // ASCII characters over 127 (exteded Ascii) come as wrong values. Get/convert Unicode to IBM437 code page if such characters exist in string.
-		       // Downside: exe files become slower even if not using Extended Ascii characters in the string (due to having to link extra lib).
-			int i, bExt = 0;
-
-			for (i=0; i < al; i++)
-				if (argv[3][i] < 0)
-					bExt = 1;
-
-			if (bExt) {
-				LPWSTR *szArglist;
-				int nArgs, wlen = 0, result = 0;
-
-				szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
-				if( NULL == szArglist ) {
-				} else if (nArgs < 4) {
-					LocalFree(szArglist);
-				} else {
-
-				while(szArglist[3][wlen] != 0)
-					wlen++;
-
-					u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
-					if (u8buf)
-						result = WideCharToMultiByte(
-						437,          // convert to IBM437 ("extended AscII")
-						0,            // conversion behavior
-						szArglist[3], // source UTF-16 string
-						wlen+1,       // total source string length, in WCHAR’s, including end-of-string
-						u8buf,
-						MAX_BUF_SIZE,
-						NULL, NULL
-						);
-					if (result == 0 && u8buf) {
-						free(u8buf); u8buf = NULL;
-					}
-
-					LocalFree(szArglist);
+		
+		if (argc > 6) {
+			unsigned int i;
+			int wxp;
+			for (i=0; i < strlen(argv[6]); i++) {
+				switch(argv[6][i]) {
+				case 'w': flags |= F_WRAPSPRITE; break;
+				case 'z': flags |= F_WRAP0; break;
+				case 'W': flags |= F_WORDWRAP; break;
+				case 's': flags |= F_YSCROLL; break;
+				case 'i': flags |= F_IGNORECODES; break;
+				case 'c': flags |= F_FOLLOWCURSOR; break;
+				case 'C': flags |= F_FOLLOWCURSORVISIBLE | F_FOLLOWCURSOR; break;
+				case 'r': flags |= F_RESTORECURSOR; break;
+				case 'x': flags |= F_EVALUATEEXPRESSIONS; break;
+				case 'F': flags |= F_FORCE_FILE_INPUT; break;
+				case 'T': flags |= F_FORCE_TEXT_INPUT; break;
+				case 'k': flags |= F_RETURN_KEY_INPUT; break;
+				case 'n': flags |= F_IGNORE_NEWLINE_CHAR; break;
+				case 'S': bServer = 1 - bServer; if (bServer && ops == NULL) { ops = (TCHAR *) malloc(sizeof(TCHAR) * MAX_SERVER_STRING_SIZE); setvbuf ( stdin , NULL , _IOLBF , MAX_SERVER_STRING_SIZE ); } break;
 				}
 			}
+			wrapxpos = GetDim(h, DIM_WIDTH) - 1;
+			if (argc > 7) {
+				wxp = atoi(argv[7]);
+				if (wxp >= x)
+					wrapxpos = wxp;
+			}
 		}
-#endif
-	}
-
-	if (!(flags & F_RESTORECURSOR))
-		GotoXY(h, x, y);
-
-	orgConsoleCol = GetConsoleColor();
-	fgCol = orgConsoleCol & 0xf;
-	bgCol = (orgConsoleCol>>4) & 0xf;
-
-	if (argc > 5) {
-		int mul = 1;
-		char *pfg = argv[5];
-		if (*pfg=='-') { mul = -1; pfg++; }
-		bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol, &dummy) : atoi(pfg)) * mul;
-		if (bgCol == 0 && mul < 1) bgCol = -16;
-		if (bgCol > 15 && bgCol < USE_EXISTING_FG) bgCol = 0;
-	}
-	if (argc > 4) {
-		int mul = 1;
-		char *pfg = argv[4];
-		if (*pfg=='-') { mul = -1; pfg++; }
-		fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol, &dummy) : atoi(pfg)) * mul;
-		if (fgCol == 0 && mul < 1) fgCol = -16;
-		if (fgCol > 15 && fgCol < USE_EXISTING_FG) fgCol = 0;
-	}
-	
-	if (flags & F_EVALUATEEXPRESSIONS) {
-		char *u8tmp = EvaluateExpression(u8buf? u8buf : (unsigned char *)argv[3], u8buf? 1:0);
-		if (u8tmp) u8buf = u8tmp;
-	}
-
-	if (argc > 3) {
-		char *u8tmp = InlineGxy(u8buf? u8buf : (unsigned char *)argv[3], u8buf? 1:0);
-		if (u8tmp) u8buf = u8tmp;
-
-		if (u8tmp && (flags & F_EVALUATEEXPRESSIONS)) {
-			char *u8tmp = EvaluateExpression(u8buf? u8buf : (unsigned char *)argv[3], u8buf? 1:0);
-			if (u8tmp) u8buf = u8tmp;
-		}
-	}
-
-	if (argc > 3)
-		keyret = WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol, startT);
 		
-	if (flags & F_FOLLOWCURSOR) {
-		GotoXY(h, x, y);
-	}
-	if (u8buf)
-		free(u8buf);
+		if (argc > 3) {
+			int al=strlen(argv[3]);
+
+			if ((flags & F_FORCE_FILE_INPUT) || (!(flags & F_FORCE_TEXT_INPUT) && al > 4 && argv[3][al-4]=='.' && tolower(argv[3][al-3])=='g' && tolower(argv[3][al-2])=='x' && tolower(argv[3][al-1])=='y')) {
+				FILE *ifp;
+				LPWSTR *szArglist = NULL;
+				int nArgs;
+				
+				if (!bServer)
+					szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
+				if( NULL == szArglist)
+					ifp=fopen(argv[3], "r");
+				else
+					ifp=_wfopen(szArglist[3], L"r");
+
+				if (ifp == NULL) {
+					if (bServer)
+						goto SERVER_FAULTY_LINE;
+					printf("Error: file not found.\n");
+					CloseHandle(g_conout);
+					return -1;
+				}
+				u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
+				if (u8buf) {
+					int fr;
+					fr=fread(u8buf, 1, MAX_BUF_SIZE, ifp);
+					u8buf[fr]=0;
+					fclose(ifp);
+				}
+				if (szArglist)
+					LocalFree(szArglist);
+			} 
+	#ifdef SUPPORT_EXTENDED_ASCII_ON_CMD_LINE
+			else { // ASCII characters over 127 (exteded Ascii) come as wrong values. Get/convert Unicode to IBM437 code page if such characters exist in string.
+				   // Downside: exe files become slower even if not using Extended Ascii characters in the string (due to having to link extra lib).
+				int i, bExt = 0;
+
+				for (i=0; i < al; i++)
+					if (argv[3][i] < 0)
+						bExt = 1;
+
+				if (bExt) {
+					LPWSTR *szArglist;
+					int nArgs, wlen = 0, result = 0;
+
+					szArglist = (LPWSTR *)CommandLineToArgvW(GetCommandLineW(), &nArgs);
+					if( NULL == szArglist ) {
+					} else if (nArgs < 4) {
+						LocalFree(szArglist);
+					} else {
+
+						while(szArglist[3][wlen] != 0)
+							wlen++;
+
+						u8buf = (unsigned char *)malloc(MAX_BUF_SIZE);
+						if (u8buf)
+							result = WideCharToMultiByte(
+							437,          // convert to IBM437 ("extended AscII")
+							0,            // conversion behavior
+							szArglist[3], // source UTF-16 string
+							wlen+1,       // total source string length, in WCHAR’s, including end-of-string
+							(char *)u8buf,
+							MAX_BUF_SIZE,
+							NULL, NULL
+							);
+						if (result == 0 && u8buf) {
+							free(u8buf); u8buf = NULL;
+						}
+
+						LocalFree(szArglist);
+					}
+				}
+			}
+	#endif
+		}
+
+		if (!(flags & F_RESTORECURSOR))
+			GotoXY(h, x, y);
+
+		orgConsoleCol = GetConsoleColor();
+		fgCol = orgConsoleCol & 0xf;
+		bgCol = (orgConsoleCol>>4) & 0xf;
+
+		if (argc > 5) {
+			int mul = 1;
+			char *pfg = argv[5];
+			if (*pfg=='-') { mul = -1; pfg++; }
+			bgCol = (pfg[1]==0? GetCol(*pfg, bgCol, orgConsoleCol, &dummy) : atoi(pfg)) * mul;
+			if (bgCol == 0 && mul < 1) bgCol = -16;
+			if (bgCol > 15 && bgCol < USE_EXISTING_FG) bgCol = 0;
+		}
+		if (argc > 4) {
+			int mul = 1;
+			char *pfg = argv[4];
+			if (*pfg=='-') { mul = -1; pfg++; }
+			fgCol = (pfg[1]==0? GetCol(*pfg, fgCol, orgConsoleCol, &dummy) : atoi(pfg)) * mul;
+			if (fgCol == 0 && mul < 1) fgCol = -16;
+			if (fgCol > 15 && fgCol < USE_EXISTING_FG) fgCol = 0;
+		}
+		
+		if (flags & F_EVALUATEEXPRESSIONS) {
+			char *u8tmp = EvaluateExpression(u8buf? (char *)u8buf : (char *)argv[3], u8buf? 1:0);
+			if (u8tmp) u8buf = (unsigned char *)u8tmp;
+			}
+
+		if (argc > 3) {
+			char *u8tmp = InlineGxy(u8buf? (char *)u8buf : (char *)argv[3], u8buf? 1:0);
+			if (u8tmp) u8buf = (unsigned char *)u8tmp;
+
+			if (u8tmp && (flags & F_EVALUATEEXPRESSIONS)) {
+				u8tmp = EvaluateExpression(u8buf? (char *)u8buf : (char *)argv[3], u8buf? 1:0);
+				if (u8tmp) u8buf = (unsigned char *)u8tmp;
+			}
+		}
+
+		if (argc > 3)
+			keyret = WriteText(u8buf? u8buf : (unsigned char *)argv[3], fgCol, bgCol, &x, &y, flags, wrapxpos, orgConsoleCol, startT);
+			
+		if (flags & F_FOLLOWCURSOR) {
+			GotoXY(h, x, y);
+		}
+		if (u8buf)
+			free(u8buf);
+		
+
+SERVER_FAULTY_LINE:
+		if (bServer) {
+			char *input, *fndMe;
+
+			do {
+				input = fgets(ops, MAX_SERVER_STRING_SIZE-1, stdin); // this call blocks if there is no input
+				if (input != NULL) {
+					fndMe = strstr(input, "gotoxy:");
+					if (!fndMe) {
+						puts(input);
+						fflush(stdout);
+					}
+				}
+			} while (fndMe == NULL && input != NULL);
+
+			if (input != NULL) {
+				if (fndMe != NULL) {
+					unsigned int i;
+					char *token;
+					int ast = 0;
+					argc = 0;
+					
+					if (input[strlen(input) - 1] == '\n') input[strlen(input) - 1] = 0;
+					if (input[strlen(input) - 1] == '\"') input[strlen(input) - 1] = 0;
+					if (input[0] == '\"') input++;
+
+
+					for (i = 0; i < strlen(input); i++) {
+						if (input[i] == ' ' && ast) input[i] = 1;
+						if (input[i] == '\"') { ast = 1 - ast; }
+					}
+
+					token = strtok(input, " ");
+   
+					while( token != NULL ) {
+						if (token[strlen(token) - 1] == '\"') token[strlen(token) - 1] = 0;
+						if (token[0] == '\"') token++;
+						tokArgs[argc] = token;
+
+						for (i = 0; i < strlen(token); i++)
+							if (token[i] == 1) token[i] = ' ';
+						
+						token = strtok(NULL, " ");
+						argc++;
+					}
+					argv = tokArgs;
+					if (argc < 3 || argc > 8)
+						goto SERVER_FAULTY_LINE;
+				}
+			} else {
+				printf("\nGOTOXY: Client appears to have ended prematurely. Use 'S' flag to stop the server.\n\nExit server... Press a key.\n");
+				getch();
+				bServer = 0;
+			}
+		}
+		
+		
+	} while (bServer);
 
 	CloseHandle(g_conout);
+	if (ops != NULL) free(ops);
 	return keyret;
 }
