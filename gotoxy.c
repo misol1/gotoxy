@@ -1041,7 +1041,21 @@ static char *EvaluateExpression(char *inp, int bAllocated) {
 }
 
 
-int main(int argc, char **oargv) {
+typedef struct {
+    int newmode;
+} _startupinfo;
+
+void __getmainargs(int *_Argc, char ***_Argv, char ***_Env,
+		   int _DoWildCard, _startupinfo * _StartInfo);
+
+
+// int main(int argc, char **oargv) {
+
+int _main(void) {
+	int argc;
+	char **oargv = NULL;
+	char **env;
+
 #ifdef SUPPORT_EXTENDED	
 	char verS[16] = " (extended)";
 #else
@@ -1065,17 +1079,27 @@ int main(int argc, char **oargv) {
 	HANDLE h;
 	int bServer = 0;
 	char *ops = NULL;
-	char **argv = oargv;
+	char **argv;
 	char *tokArgs[10];
 
+    _startupinfo start_info = { 0 };
+
+    __getmainargs(&argc, &oargv, &env, 0, &start_info);
+    if (oargv == NULL) {
+		puts("Error getting parameters");
+		ExitProcess(-2);
+	}
+
 	if (argc < 3 || argc > 8) {
-		printf("\nGotoXY%s v1.1 : Mikael Sollenborn 2015-2020\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n", verS);
-		printf("\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n");
-		printf("\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value, 'S' to enable (and disable) server mode\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", iH);
+		printf("\nGotoXY%s v1.1 : Mikael Sollenborn 2015-2020\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n" \
+			"\nCols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray\n      8=Gray 9=LBlue 10=LGreen 11=LAqua 12=LRed 13=LPurple 14=LYellow 15=White\n" \
+			"\n[text] supports control codes:\n    \\px;y;: cursor position x y (1)\n       \\xx: fgcol and bgcol in hex, eg \\A0 (4)\n        \\r: restore old color\n      \\gxx: ascii character in hex\n   \\TxxXXm: set character xx with col XX as transparent with mode m (5)\n        \\n: newline\n      \\Nxx: fill screen with hex character xx\n        \\-: skip character (transparent)\n        \\\\: print \\\n        \\G: print existing character at position\n  \\I:file;: insert contents of file\n      \\wx;: delay x ms\n      \\Wx;: delay up to x ms\n        \\K: wait for key press; last key value is returned\n%s        \\R: read/refresh buffer for v/V/Z/z/Y/X/\\G (faster but not updated)\n\\ox;y;w;h;: copy/write to offscreen buffer, copy back at end or next \\o\n\\Ox;y;w;h;: clear/write to offscreen buffer, copy back at end or next \\O\n    \\Mx{T}: repeat T x times (only if 'x' flag set)\n\\Sx;y;w;h;: set active scroll zone (only if 's' flag set)\n\n(1) Use 'k' to keep current. Precede with '+' or '/' to move from current\n\n(2) Use 'u/U' for console fgcol/bgcol, 'v/V' to use existing fgcol/bgcol at current position, 'x/y/z/q' and 'X/Y/Z/Q' to xor/and/or/add with fgcol/bgcol at current position. Precede with '-' to force color and ignore color codes in [text]\n\n(3) One or more of: 'r/c/C' to restore/follow/visibly-follow cursor position, 'w/W/z' to wrap/wordwrap/0-wrap text, 'i' to ignore all control codes, 's' to enable vertical scrolling, 'x' to enable support for expressions, F/T' to force input as file/text, 'n' to ignore newline characters, 'k' to check for key press(es) and return last key value, 'S' to enable (and disable) server mode\n\n(4) Same as (2) for both values, but '-' to force is not supported. In addition, use 'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for next color, '/' for previous color\n\n(5) Use 'k' to ignore color, 'u/U' for console fgcol/bgcol. Mode 0 skips characters (same as \\-), mode 1 writes them back (faster if using \\R)\n", verS, iH);
 		return keyret;
 	}
 	
 	g_conout = h = GetOutputHandle();	
+
+	argv = oargv;
 
 	do {
 		startT = GetTickCount();
@@ -1251,7 +1275,7 @@ int main(int argc, char **oargv) {
 
 SERVER_FAULTY_LINE:
 		if (bServer) {
-			char *input, *fndMe;
+			char *input, *fndMe = NULL;
 
 			do {
 				input = fgets(ops, MAX_SERVER_STRING_SIZE-1, stdin); // this call blocks if there is no input

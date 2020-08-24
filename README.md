@@ -1,15 +1,15 @@
 # gotoxy
-Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015-2018)
+Windows command line input/output tools, for text based games/utils by Mikael Sollenborn (2015-2020)
 
 Sorry about the current lack of documentation; have a look at the example files and all will be (kind of) clear...
 
-Notable examples: Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll3, Blocks6
+Notable examples: Editor, Freecell, Solitaire, Flappy, Snake, Yahtzee, World, Bigscroll3, Blocks6, Adventure(Kings of Steam)
 
 
 gotoxy.exe
 ----------
 ```
-GotoXY v1.1 : Mikael Sollenborn 2015-2020
+GotoXY v1.2 : Mikael Sollenborn 2015-2020
 
 Usage: gotoxy x(1) y(1) [text|file.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapxpos]
 
@@ -45,7 +45,7 @@ Cols: 0=Black 1=Blue 2=Green 3=Aqua 4=Red 5=Purple 6=Yellow 7=LGray
       'w/W/z' to wrap/wordwrap/wrap-0 text, 'i' to ignore all control codes,
       's' to enable vertical scrolling, 'x' to enable support for expressions,
       'n' to ignore newline characters, 'k' to check for key press(es) and return last
-      key value
+      key value, 'S' to enable (and disable) server mode
 (4)   Same as (2) for both values, but '-' to force is not supported. In addition, use
       'k' to keep current color, 'H/h' to start/stop forcing current color, '+' for
       next color, '/' for previous color
@@ -67,7 +67,7 @@ Separate executable due to lower speed. There are currently two extensions:
 cmdwiz.exe
 ----------
 ```
-CmdWiz (Unicode) v1.7 : Mikael Sollenborn 2015-2020
+CmdWiz (Unicode) v1.8 : Mikael Sollenborn 2015-2020
 With contributions from Steffen Ilhardt and Carlos Montiers Aguilera
 
 Usage: cmdwiz operation [arguments]
