@@ -1,6 +1,6 @@
 /*
 
-CmdWiz (c) 2015-20 Mikael Sollenborn (UNICODE VERSION)
+CmdWiz (c) 2015-23 Mikael Sollenborn (UNICODE VERSION)
 
 Contributions:
 
@@ -33,9 +33,9 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 #include <errno.h>
 #include <tlhelp32.h>
 
-// Compilation with gcc: gcc -Wl,-e,__main -nostartfiles -s -o cmdwiz.exe cmdwizU.c -Os rc\cmdwiz.o -luser32 -lwinmm -lgdi32
+// Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -Os rc\cmdwiz.o -luser32 -lwinmm -lgdi32
 
-// v1.8 compiles without warnings for flags: -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wno-unused-parameter -Wshadow -Wwrite-strings -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wstrict-prototypes -Wold-style-definition
+// v1.9 compiles without warnings for flags: -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wno-unused-parameter -Wshadow -Wwrite-strings -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wstrict-prototypes -Wold-style-definition
 
 // Known issues/bugs:
 //			1. Showmousecursor hide does not work for Win10 (unless legacy console is used)
@@ -1246,9 +1246,7 @@ static int clean(const int returnValue) {
 #define NON_SERVER_PRINTF2(n,o) ;
 #endif
 
-//int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv) {
-
-int _main(void) { // note: compiler adds _ to function name, hence -Wl,-e,__main  (using name "main" and "-Wl,-e,_main" does not work for some reason)
+int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv) {
 	
 	int delayVal = 0, bInfo = 0;
 #ifndef NO_HELP	
@@ -1259,11 +1257,6 @@ int _main(void) { // note: compiler adds _ to function name, hence -Wl,-e,__main
 	int bServer = 0;
 	int argc;
 	
-	//TCHAR **env;
-	//STARTUPINFO start_info = { 0 };
-	//TCHAR *argv[128];
-	//__wgetmainargs(&argc, &argv, &env, 0, &start_info);
-		
 	argv = (TCHAR **)CommandLineToArgvW(GetCommandLineW(), &argc);
 
 	// If enabling this, input coming as UTF-8 without BOM will be received correctly, but NOT Utf-16 LE
@@ -1275,7 +1268,7 @@ int _main(void) { // note: compiler adds _ to function name, hence -Wl,-e,__main
 	
 	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0)) {
 #ifndef NO_HELP		
-		printf("\nCmdWiz (Unicode) v1.8 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz operation [arguments]\n\n\nConsole window: fullscreen getconsoledim getfullscreen getpalette setbuffersize setpalette\n\nWindow and display: getdisplaydim getdisplayscale getwindowbounds getwindowstyle setwindowpos setwindowsize setwindowstyle setwindowtransparency showwindow windowlist\n\nInput: flushkeys getch getch_and_mouse getch_or_mouse getkeystate getmouse getquickedit setquickedit\n\nFonts and buffer: getcharat getcolorat getconsolecolor setfont savefont\n\nCursor and printing: getcursorpos print setcursorpos showcursor\n\nString and delay: await delay gettime stringfind stringlen\n\nMouse and keyboard: getmousecursorpos sendkey setmousecursorpos showmousecursor\n\nBlock: copyblock inspectblock moveblock saveblock\n\nMisc: cache getexetype gettaskbarinfo gettitle gxyinfo insertbmp playsound server\n\n\nUse \"cmdwiz operation /?\" for info on an operation's arguments and return values, for example cmdwiz delay /?\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation.\n");
+		printf("\nCmdWiz (Unicode) v1.9 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz operation [arguments]\n\n\nConsole window: fullscreen getconsoledim getfullscreen getpalette setbuffersize setpalette\n\nWindow and display: getdisplaydim getdisplayscale getwindowbounds getwindowstyle setwindowpos setwindowsize setwindowstyle setwindowtransparency showwindow windowlist\n\nInput: flushkeys getch getch_and_mouse getch_or_mouse getkeystate getmouse getquickedit setquickedit\n\nFonts and buffer: getcharat getcolorat getconsolecolor setfont savefont\n\nCursor and printing: getcursorpos print setcursorpos showcursor\n\nString and delay: await delay gettime stringfind stringlen\n\nMouse and keyboard: getmousecursorpos sendkey setmousecursorpos showmousecursor\n\nBlock: copyblock inspectblock moveblock saveblock\n\nMisc: cache getexetype gettaskbarinfo gettitle gxyinfo insertbmp playsound server\n\n\nUse \"cmdwiz operation /?\" for info on an operation's arguments and return values, for example cmdwiz delay /?\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation.\n");
 #else
 		puts("\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for documentation.");
 #endif

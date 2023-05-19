@@ -1,4 +1,4 @@
-/* GotoXY (c) 2015-20 Mikael Sollenborn */
+/* GotoXY (c) 2015-2023 Mikael Sollenborn */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1041,20 +1041,7 @@ static char *EvaluateExpression(char *inp, int bAllocated) {
 }
 
 
-typedef struct {
-    int newmode;
-} _startupinfo;
-
-void __getmainargs(int *_Argc, char ***_Argv, char ***_Env,
-		   int _DoWildCard, _startupinfo * _StartInfo);
-
-
-// int main(int argc, char **oargv) {
-
-int _main(void) {
-	int argc;
-	char **oargv = NULL;
-	char **env;
+int main(int argc, char **oargv) {
 
 #ifdef SUPPORT_EXTENDED	
 	char verS[16] = " (extended)";
@@ -1079,16 +1066,8 @@ int _main(void) {
 	HANDLE h;
 	int bServer = 0;
 	char *ops = NULL;
-	char **argv;
+	char **argv = oargv;
 	char *tokArgs[10];
-
-    _startupinfo start_info = { 0 };
-
-    __getmainargs(&argc, &oargv, &env, 0, &start_info);
-    if (oargv == NULL) {
-		puts("Error getting parameters");
-		ExitProcess(-2);
-	}
 
 	if (argc < 3 || argc > 8) {
 		printf("\nGotoXY%s v1.1 : Mikael Sollenborn 2015-2020\n\nUsage: gotoxy x(1) y(1) [text|in.gxy] [fgcol(2)] [bgcol(2)] [flags(3)] [wrapx]\n" \
