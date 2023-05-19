@@ -6,6 +6,7 @@ if not defined _ (
 	goto :eof
 )
 
+setlocal EnableDelayedExpansion
 for /l %%1 in (1,3,1000) do (
 	set /p INPUT=
 	for /f "tokens=6" %%A in ("!INPUT!") do ( set /a KEY=%%A 2>nul )
@@ -15,3 +16,4 @@ for /l %%1 in (1,3,1000) do (
 
 echo "cmdwiz: server quit"
 title input:q
+endlocal

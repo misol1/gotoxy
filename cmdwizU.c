@@ -41,11 +41,11 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 //			1. Showmousecursor hide does not work for Win10 (unless legacy console is used)
 //			2. Setbuffersize has scroll bar cut off a number of character columns. Only Win10?
 //			3. AsyncKeyState catches key presses even if console is not the active window. Use ReadConsoleInput instead?
-//			4. getmouse etc does not report mouse wheel on Window10. Seems API related. Also on Win7 it is odd, because mouse wheel is reported but affects the coordinates too (bit overflow?)
+//			4. getmouse etc does not reliably report mouse wheel on Win10. Seems API related. Also odd for Win7, because mouse wheel is reported but affects the coordinates too (bit overflow?)
 //			5. Saveblock, copyblock/moveblock does not work with Unicode chars and/or extended Ascii chars. Even if saveblock worked with Unicode, gxy format does not currently support Unicode anyway.
 //			6. utf-8 arguments are not supported
 
-// Todo?:	1. Add +- support to setcursorpos, setmousecursorpos, setwindowpos, setwindowsize
+// Todo?:	1. Add +- support to setcursorpos, setmousecursorpos, setwindowpos, setwindowsize (setbuffersize, setwindowtransparency)
 
 #ifndef ENABLE_QUICK_EDIT_MODE
 #define ENABLE_QUICK_EDIT_MODE 0x0040
@@ -221,7 +221,6 @@ static char DecToHex(int i) {
 	}
 	return i;
 }
-
 
 /* Windows ns high-precision sleep */
 static BOOLEAN nanosleep(const LONGLONG ns){
@@ -1268,7 +1267,7 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 	
 	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0)) {
 #ifndef NO_HELP		
-		printf("\nCmdWiz (Unicode) v1.9 : Mikael Sollenborn 2015-2020\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz operation [arguments]\n\n\nConsole window: fullscreen getconsoledim getfullscreen getpalette setbuffersize setpalette\n\nWindow and display: getdisplaydim getdisplayscale getwindowbounds getwindowstyle setwindowpos setwindowsize setwindowstyle setwindowtransparency showwindow windowlist\n\nInput: flushkeys getch getch_and_mouse getch_or_mouse getkeystate getmouse getquickedit setquickedit\n\nFonts and buffer: getcharat getcolorat getconsolecolor setfont savefont\n\nCursor and printing: getcursorpos print setcursorpos showcursor\n\nString and delay: await delay gettime stringfind stringlen\n\nMouse and keyboard: getmousecursorpos sendkey setmousecursorpos showmousecursor\n\nBlock: copyblock inspectblock moveblock saveblock\n\nMisc: cache getexetype gettaskbarinfo gettitle gxyinfo insertbmp playsound server\n\n\nUse \"cmdwiz operation /?\" for info on an operation's arguments and return values, for example cmdwiz delay /?\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation.\n");
+		printf("\nCmdWiz (Unicode) v1.9 : Mikael Sollenborn 2015-2023\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz operation [arguments]\n\n\nConsole window: fullscreen getconsoledim getfullscreen getpalette setbuffersize setpalette\n\nWindow and display: getdisplaydim getdisplayscale getwindowbounds getwindowstyle setwindowpos setwindowsize setwindowstyle setwindowtransparency showwindow windowlist\n\nInput: flushkeys getch getch_and_mouse getch_or_mouse getkeystate getmouse getquickedit setquickedit\n\nFonts and buffer: getcharat getcolorat getconsolecolor setfont savefont\n\nCursor and printing: getcursorpos print setcursorpos showcursor\n\nString and delay: await delay gettime stringfind stringlen\n\nMouse and keyboard: getmousecursorpos sendkey setmousecursorpos showmousecursor\n\nBlock: copyblock inspectblock moveblock saveblock\n\nMisc: cache getexetype gettaskbarinfo gettitle gxyinfo insertbmp playsound server\n\n\nUse \"cmdwiz operation /?\" for info on an operation's arguments and return values, for example cmdwiz delay /?\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation.\n");
 #else
 		puts("\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for documentation.");
 #endif
@@ -1454,7 +1453,7 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 			// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 			int i, j = 0, k = 0, done=0;
 			TCHAR buf[128];
-			if (argc < 3 || bInfo) { hrintf("\nUsage: cmdwiz getkeystate [all|[l|r]ctrl|[l|r]alt|[l|r]shift|[0x]VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
+			if (argc < 3 || bInfo) { hrintf("\nUsage: cmdwiz getkeystate [any|all|[l|r]ctrl|[l|r]alt|[l|r]shift|[0x]VKEY[h]] [VK2] ...\n\nRETURN: Text output of the form VKEY VKEY2 etc, and in ERRORLEVEL a bit pattern where VKEY1 is bit 1, VKEY2 is bit 2, etc.\n\n[all] equals testing [shift lshift rshift ctrl lctrl rctrl alt lalt ralt]\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n"); return clean(0); }
 
 			if (_wcsicmp(argv[2],L"all") == 0) {
 				int vKeys[16] = { VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_MENU, VK_LMENU, VK_RMENU }; 
@@ -1476,6 +1475,16 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 				else if (_wcsicmp(argv[i],L"alt") == 0) j = GetAsyncKeyState(VK_MENU);
 				else if (_wcsicmp(argv[i],L"lalt") == 0) j = GetAsyncKeyState(VK_LMENU);
 				else if (_wcsicmp(argv[i],L"ralt") == 0) j = GetAsyncKeyState(VK_RMENU);
+				else if (_wcsicmp(argv[i],L"any") == 0) {
+					int n;
+					for(n = 0; n < 256; n++) {
+						j = GetAsyncKeyState(n);
+						if (j & 0x8000){
+							break;
+						}
+					}
+					if (n == 256) j = 0;
+				}
 				else {
 					if (argv[i][0] == '0' && argv[i][1] == 'x') {
 						wcscpy(buf, &argv[i][2]);
@@ -1888,8 +1897,9 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 			UINT oldCP;		
 			char *tempOut;
 			BOOL cpRes;
+			TCHAR buf[128];
 			
-			if (argc < 3 || bInfo) { NON_SERVER_PRINTF("\nUsage: cmdwiz print [\"string\"]\nSupported formatting is \\n \\r \\t \\a \\b \\\" \\\\\n"); NON_SERVER_RETURN(0); }
+			if (argc < 3 || bInfo) { NON_SERVER_PRINTF("\nUsage: cmdwiz print [\"string\"]\n\nEscape sequences:\n\n\\a : alert\n\\b : backspace\n\\e : escape character\n\\n : newline\n\\r : carriage return\n\\t : tab\n\\' : apostrophe\n\\\" : double quotation mark\n\\\\ : backslash\n\\xhh : hexadecimal ascii character hh (e.g. \\x21=! \\x25=%%)\n\\uhhhh : hexadecimal Unicode point hhhh (e.g. \\u03cf for a greek glyph (if supported by font))\n"); NON_SERVER_RETURN(0); }
 			if (argv[2][0] == '\\') bFirst=1;
 
 			oldCP = GetConsoleOutputCP();
@@ -1906,22 +1916,40 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 					switch(token[0]) {
 						case 'a': printf("\a"); token++; break;
 						case 'b': printf("\b"); token++; break;
+						case 'e': printf("%c", 27); token++; break;
 						case 'n': printf("\n"); token++; break;
 						case 'r': printf("\r"); token++; break;
 						case 1: printf("\\"); token++; break;
 						case 't': printf("\t"); token++; break;
 						case '\"': printf("\""); token++; break;
+						case 0x27: printf("'"); token++; break;
+						case 'x': { token++; int j, chNof=2; for (j=0; j<chNof; j++) { if (*token == 0) break; buf[j]=*token; token++; } if (j == chNof) { buf[chNof]=0; int asciiVal=wcstol(buf, NULL, 16); if (asciiVal > 0 && asciiVal < 256) printf("%c", asciiVal); }} break;
+						case 'u': { token++; int j, chNof=4; for (j=0; j<chNof; j++) { if (*token == 0) break; buf[j]=*token; token++; } if (j == chNof) { buf[chNof]=0; int UCVal=wcstol(buf, NULL, 16); if (UCVal > 0 && UCVal < 65536) {
+							buf[0] = UCVal; buf[1] = 0;
+							if (cpRes) {
+								bufferSize = WideCharToMultiByte(CP_UTF8, 0, buf, -1, NULL, 0, NULL, NULL);
+								tempOut = (char *)malloc(bufferSize);
+								WideCharToMultiByte(CP_UTF8, 0, buf, -1, tempOut, bufferSize, NULL, NULL);
+								wprintf(L"%S", tempOut);
+								free(tempOut);
+							} else {
+								wprintf(L"%s", buf);
+							}
+						}}}
+						break;
 					}
 				}
 				
-				if (cpRes) {
-					bufferSize = WideCharToMultiByte(CP_UTF8, 0, token, -1, NULL, 0, NULL, NULL);
-					tempOut = (char *)malloc(bufferSize);
-					WideCharToMultiByte(CP_UTF8, 0, token, -1, tempOut, bufferSize, NULL, NULL);
-					wprintf(L"%S", tempOut);
-					free(tempOut);
-				} else
-					wprintf(L"%s", token);
+				if (*token) {
+					if (cpRes) {
+						bufferSize = WideCharToMultiByte(CP_UTF8, 0, token, -1, NULL, 0, NULL, NULL);
+						tempOut = (char *)malloc(bufferSize);
+						WideCharToMultiByte(CP_UTF8, 0, token, -1, tempOut, bufferSize, NULL, NULL);
+						wprintf(L"%S", tempOut);
+						free(tempOut);
+					} else
+						wprintf(L"%s", token);
+				}
 				
 				token = wcstok(NULL, L"\\");
 				i++;
@@ -2440,7 +2468,7 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 			INPUT Input = {0};
 			TCHAR buf[128];
 
-			if (argc < 3 || bInfo) { NON_SERVER_PRINTF("\nUsage: cmdwiz sendkey [[0x]VKEY[h] p|d|u [repeatCount]] | \"string\"\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n\nFor use of string, only the following keys are directly supported, the rest are keyboard layout specific: space a-z A-Z 0-9 .,+-*/. Use prefix $ for Shift, ^ for Ctrl, @ for Alt, { for Alt-Gr, [ for Win-key, \\ for Enter, } for Tab key. \nExample: to type a ! on most keyboards, use \"$1\".\n"); NON_SERVER_RETURN(0); }
+			if (argc < 3 || bInfo) { NON_SERVER_PRINTF("\nUsage: cmdwiz sendkey [[0x]VKEY[h] p|d|u [repeatCount]] | \"string\"\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%%28v=vs.85%%29.aspx for virtual key codes\n\nFor use of string, only these keys are directly supported, the rest are keyboard layout specific: space a-z A-Z 0-9 .,+-*/. Use prefix $ for Shift, ^ for Ctrl, @ for Alt, { for Alt-Gr, [ for Win-key, \\ for Enter, } for Tab key. \nExample: to type a ! on most keyboards, use \"$1\".\n"); NON_SERVER_RETURN(0); }
 
 			if (argc < 4) {
 				int shift=0, ctrl=0, alt=0, win=0;
