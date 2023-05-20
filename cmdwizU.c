@@ -1,10 +1,10 @@
 /*
 
-CmdWiz (c) 2015-23 Mikael Sollenborn (UNICODE VERSION)
+CmdWiz (UNICODE VERSION) (c) 2015-2023 Mikael Sollenborn
 
 Contributions:
 
-Steffen Ilhardt: windowlist function, original finding non-console windows for other window operations, original insertbmp function, original setwindowtransparency function, getexetype function
+Steffen Ilhardt: windowlist function, original finding non-console windows function, original insertbmp function, original setwindowtransparency function, getexetype function
 
 Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscreen function, showmousecursor function
 
@@ -33,7 +33,7 @@ Carlos Montiers Aguilera : Original setfont function, original (legacy) fullscre
 #include <errno.h>
 #include <tlhelp32.h>
 
-// Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -Os rc\cmdwiz.o -luser32 -lwinmm -lgdi32
+// Compilation with gcc: gcc -o cmdwiz.exe cmdwizU.c -O2 rc\cmdwiz.o -luser32 -lwinmm -lgdi32
 
 // v1.9 compiles without warnings for flags: -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wno-unused-parameter -Wshadow -Wwrite-strings -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wstrict-prototypes -Wold-style-definition
 
@@ -1264,20 +1264,20 @@ int main(__attribute__((unused)) int oargc, __attribute__((unused)) char **oargv
 		MultiByteToWideChar(CP_UTF8, 0, oargv[i], -1, argv[i], 1000);
 	}
 	argc=oargc; */	
-	
+
 	if (argc < 2 || (argc == 2 && wcscmp(argv[1],L"/?")==0)) {
 #ifndef NO_HELP		
 		printf("\nCmdWiz (Unicode) v1.9 : Mikael Sollenborn 2015-2023\nWith contributions from Steffen Ilhardt and Carlos Montiers Aguilera\n\nUsage: cmdwiz operation [arguments]\n\n\nConsole window: fullscreen getconsoledim getfullscreen getpalette setbuffersize setpalette\n\nWindow and display: getdisplaydim getdisplayscale getwindowbounds getwindowstyle setwindowpos setwindowsize setwindowstyle setwindowtransparency showwindow windowlist\n\nInput: flushkeys getch getch_and_mouse getch_or_mouse getkeystate getmouse getquickedit setquickedit\n\nFonts and buffer: getcharat getcolorat getconsolecolor setfont savefont\n\nCursor and printing: getcursorpos print setcursorpos showcursor\n\nString and delay: await delay gettime stringfind stringlen\n\nMouse and keyboard: getmousecursorpos sendkey setmousecursorpos showmousecursor\n\nBlock: copyblock inspectblock moveblock saveblock\n\nMisc: cache getexetype gettaskbarinfo gettitle gxyinfo insertbmp playsound server\n\n\nUse \"cmdwiz operation /?\" for info on an operation's arguments and return values, for example cmdwiz delay /?\n\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for full documentation.\n");
 #else
 		puts("\nSee https://www.dostips.com/forum/viewtopic.php?t=7402 for documentation.");
 #endif
-		return 0; }
+		return 0;
+	}
 	
 	if (argc == 3 && wcscmp(argv[2],L"/?")==0) { bInfo = 1; }
 
 	g_conin = GetInputHandle();
 	g_conout = GetOutputHandle();
-
 	if (_wcsicmp(argv[1],L"getdisplaydim") == 0 && argc > 3 && argv[3][0] == 's') {
 		int bW = 0;
 		if (argv[2][0] == 'w' || argv[2][0] == 'W') bW = 1;
